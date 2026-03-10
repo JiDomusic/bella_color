@@ -4,6 +4,7 @@ class SubscriptionStatus {
   final bool isActive;
   final bool isBlocked;
   final bool isTrial;
+  final bool shouldAutoBlock;
   final int daysRemaining;
   final String message;
 
@@ -11,6 +12,7 @@ class SubscriptionStatus {
     required this.isActive,
     required this.isBlocked,
     required this.isTrial,
+    this.shouldAutoBlock = false,
     required this.daysRemaining,
     required this.message,
   });
@@ -55,6 +57,7 @@ class SubscriptionService {
 
     final now = DateTime.now();
     final trialEnd = startDate.add(Duration(days: tenant.trialDays));
+
     // Periodo de prueba
     if (now.isBefore(trialEnd)) {
       final remaining = trialEnd.difference(now).inDays;
@@ -76,22 +79,24 @@ class SubscriptionService {
       // Ya paso el dia de vencimiento este mes
       final daysPastDue = now.difference(nextDue).inDays;
       if (daysPastDue > 5) {
-        // Mas de 5 dias de gracia -> bloqueado
+        // Mas de 5 dias de gracia -> AUTO-BLOQUEAR
         return SubscriptionStatus(
           isActive: false,
-          isBlocked: false, // no bloqueado manualmente, pero vencido
+          isBlocked: false,
           isTrial: false,
+          shouldAutoBlock: true,
           daysRemaining: -daysPastDue,
-          message: 'Pago vencido hace $daysPastDue dias. El sistema se bloqueara pronto.',
+          message: 'Pago vencido hace $daysPastDue dias. Sistema suspendido automaticamente.',
         );
       } else {
         // Periodo de gracia
+        final graceDays = 5 - daysPastDue;
         return SubscriptionStatus(
           isActive: true,
           isBlocked: false,
           isTrial: false,
-          daysRemaining: 5 - daysPastDue,
-          message: 'Tu pago vencio el $dueDay de este mes. Tenes ${5 - daysPastDue} dias de gracia.',
+          daysRemaining: graceDays,
+          message: 'Tu pago vencio el $dueDay de este mes. Tenes $graceDays dia${graceDays == 1 ? '' : 's'} de gracia.',
         );
       }
     } else {

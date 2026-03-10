@@ -41,7 +41,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       // Check subscription
       final status = SubscriptionService.check(tenant);
 
-      if (!status.isActive || tenant.isBlocked) {
+      // Auto-bloqueo: si vencio el periodo de gracia, bloquear automaticamente
+      if (status.shouldAutoBlock && !tenant.isBlocked) {
+        await svc.blockTenant(tenant.id, 'Bloqueado automaticamente por falta de pago');
+        // Avisar por WhatsApp a la duena
+        if (tenant.whatsappNumero.isNotEmpty) {
+          WhatsappService.openChat(
+            phone: tenant.whatsappNumero,
+            countryCode: tenant.codigoPaisTelefono,
+            message: 'Hola ${tenant.nombreSalon}! Tu sistema de turnos fue suspendido por falta de pago. '
+                'Contacta a ${AppConfig.nombreEmpresa} al ${AppConfig.whatsappSoporte} para reactivarlo.',
+          );
+        }
+      }
+
+      if (!status.isActive || tenant.isBlocked || status.shouldAutoBlock) {
         setState(() {
           _blocked = true;
           _blockMessage = status.message.isNotEmpty
