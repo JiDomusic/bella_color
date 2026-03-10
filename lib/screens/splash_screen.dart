@@ -6,6 +6,8 @@ import '../services/whatsapp_service.dart';
 import 'home_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'admin/admin_login_screen.dart';
+import 'admin/super_admin_screen.dart';
+import '../services/pin_auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -44,7 +46,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       // Auto-bloqueo: si vencio el periodo de gracia, bloquear automaticamente
       if (status.shouldAutoBlock && !tenant.isBlocked) {
         await svc.blockTenant(tenant.id, 'Bloqueado automaticamente por falta de pago');
-        // Avisar por WhatsApp a la duena
         if (tenant.whatsappNumero.isNotEmpty) {
           WhatsappService.openChat(
             phone: tenant.whatsappNumero,
@@ -76,8 +77,64 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         ),
       );
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      final msg = e.toString();
+      if (mounted) {
+        setState(() {
+          if (msg.contains('Salon no encontrado') || msg.contains('tenant')) {
+            _error = 'Salon no configurado. Contacta al administrador.';
+          } else {
+            _error = 'No se pudo conectar. Verifica tu conexion a internet.';
+          }
+        });
+      }
     }
+  }
+
+  void _showSuperAdminAuth() {
+    final auth = PinAuthService.instance;
+    if (auth.isLocked) {
+      final mins = (auth.remainingLockSeconds / 60).ceil();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Demasiados intentos. Espera $mins minuto${mins == 1 ? '' : 's'}.'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+    final pinCtrl = TextEditingController();
+    void tryPin() {
+      if (auth.verify(pinCtrl.text)) {
+        Navigator.pop(context);
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SuperAdminScreen()));
+      } else {
+        Navigator.pop(context);
+        final msg = auth.isLocked
+            ? 'Demasiados intentos. Espera ${PinAuthService.lockoutMinutes} minutos.'
+            : 'PIN incorrecto. ${auth.remainingAttempts} intento${auth.remainingAttempts == 1 ? '' : 's'}.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppConfig.colorFondoOscuro,
+        title: const Text('Super Admin', style: TextStyle(color: AppConfig.colorTexto)),
+        content: TextField(
+          controller: pinCtrl,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          style: const TextStyle(color: AppConfig.colorTexto, letterSpacing: 6, fontSize: 20),
+          textAlign: TextAlign.center,
+          decoration: const InputDecoration(labelText: 'PIN'),
+          onSubmitted: (_) => tryPin(),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: tryPin, child: const Text('Entrar')),
+        ],
+      ),
+    );
   }
 
   @override
@@ -172,11 +229,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                          );
-                        },
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                        ),
                         icon: const Icon(Icons.admin_panel_settings, size: 16),
                         label: const Text('Admin'),
                       ),
@@ -195,29 +250,26 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.admin_panel_settings, size: 16),
-                            label: const Text('Admin'),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                        ),
+                        onLongPress: _showSuperAdminAuth,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppConfig.colorPrimario.withAlpha(100)),
                           ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.key, size: 16),
-                            label: const Text('Super Admin (PIN)'),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.admin_panel_settings, size: 16, color: AppConfig.colorPrimario),
+                              const SizedBox(width: 8),
+                              Text('Admin', style: TextStyle(color: AppConfig.colorPrimario)),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),

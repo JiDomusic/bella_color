@@ -166,7 +166,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
       if (mounted) Navigator.pop(context); // cerrar progress
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('No se pudo crear el salon. Verifica los datos e intenta de nuevo.'), backgroundColor: Colors.redAccent),
         );
       }
     }

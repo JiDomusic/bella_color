@@ -88,6 +88,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         title: Text(_tenant?.nombreSalon ?? 'Admin'),
         actions: [
           IconButton(
+            icon: Icon(Icons.favorite, color: Colors.pink.shade200, size: 22),
+            onPressed: _showHelp,
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () { setState(() => _loading = true); _loadAll(); },
           ),
@@ -138,6 +142,146 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelp() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: AppConfig.colorFondoCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [_primary.withAlpha(40), _accent.withAlpha(20)]),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.favorite, color: Colors.pink.shade200, size: 28),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text('Guia de Uso', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppConfig.colorTexto)),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppConfig.colorTextoSecundario),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    _helpSection('Profesionales', Icons.person, [
+                      'Anda a la pestana "Profesionales"',
+                      'Toca "Agregar Profesional"',
+                      'Pone nombre y especialidad',
+                      'Usa el switch para activar/desactivar',
+                    ]),
+                    _helpSection('Servicios', Icons.spa, [
+                      'Anda a la pestana "Servicios"',
+                      'Toca "Agregar Servicio"',
+                      'Pone nombre, categoria, duracion y precio',
+                      'Usa el switch para activar/desactivar',
+                    ]),
+                    _helpSection('Horarios', Icons.access_time, [
+                      'Anda a la pestana "Horarios"',
+                      'Toca "Editar Horarios"',
+                      'Pone hora inicio, hora fin e intervalo',
+                      'Selecciona los dias que abris',
+                    ]),
+                    _helpSection('Turnos', Icons.calendar_today, [
+                      'Anda a la pestana "Turnos"',
+                      'Selecciona la fecha para ver los turnos del dia',
+                      'Confirmar: cuando la clienta confirma que va',
+                      'Atender: cuando llega y empieza el servicio',
+                      'Completar: cuando termino',
+                      'No Show: si no vino',
+                      'Cancelar: si cancela',
+                    ]),
+                    _helpSection('Bloqueos', Icons.block, [
+                      'Anda a "Bloqueos" para cerrar dias u horas',
+                      'Dia completo: feriados, vacaciones',
+                      'Hora especifica: si necesitas cerrar un rato',
+                    ]),
+                    _helpSection('Lista de espera', Icons.people, [
+                      'Cuando no hay turnos, las clientas se anotan',
+                      'Vos ves la lista en "Espera"',
+                      'Toca el icono de WhatsApp para avisarles',
+                    ]),
+                    _helpSection('Tu suscripcion', Icons.favorite, [
+                      'Tenes 15 dias gratis para probar',
+                      'Despues, el pago se vence el dia ${_tenant?.subscriptionDueDay ?? 18} de cada mes',
+                      'Si no pagas, tenes 5 dias de gracia',
+                      'Pasados los 5 dias, el sistema se bloquea',
+                      'Contacta a soporte para reactivar',
+                    ]),
+                    const SizedBox(height: 16),
+                    const Divider(color: Colors.white12),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          WhatsappService.openSupport();
+                        },
+                        icon: const Icon(Icons.chat, size: 18),
+                        label: const Text('Contactar Soporte'),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        '${AppConfig.nombreEmpresa} - WhatsApp ${AppConfig.whatsappSoporte}',
+                        style: TextStyle(fontSize: 11, color: _primary.withAlpha(100)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _helpSection(String title, IconData icon, List<String> steps) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: _accent),
+              const SizedBox(width: 8),
+              Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _primary)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ...steps.map((s) => Padding(
+            padding: const EdgeInsets.only(left: 26, bottom: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('- ', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 13)),
+                Expanded(child: Text(s, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 13))),
+              ],
+            ),
+          )),
         ],
       ),
     );

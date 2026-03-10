@@ -60,22 +60,48 @@ class SupabaseService {
 
   // ---- Tenant ----
   Future<Tenant> loadTenant() async {
+    try {
+      // Intenta con funcion server-side que valida bloqueo/vencimiento
+      final res = await _client.rpc('get_tenant_validated', params: {'p_id': _tenantId});
+      if (res != null) {
+        _currentTenant = Tenant.fromJson(res);
+        return _currentTenant!;
+      }
+    } catch (_) {
+      // Si la funcion no existe, usa query directa
+    }
     final res = await _client.from('tenants').select().eq('id', _tenantId).maybeSingle();
     if (res == null) {
-      throw Exception('No existe el tenant "$_tenantId". Crea el salón en onboarding/super admin.');
+      throw Exception('Salon no encontrado.');
     }
     _currentTenant = Tenant.fromJson(res);
     return _currentTenant!;
   }
 
   Future<List<Tenant>> loadAllTenants() async {
-    final res = await _client.from('tenants').select().order('nombre_salon');
-    return res.map<Tenant>((e) => Tenant.fromJson(e)).toList();
+    try {
+      final res = await _client.rpc('list_all_tenants');
+      return (res as List).map<Tenant>((e) => Tenant.fromJson(e)).toList();
+    } catch (_) {
+      final res = await _client.from('tenants').select().order('nombre_salon');
+      return res.map<Tenant>((e) => Tenant.fromJson(e)).toList();
+    }
   }
 
   Future<Tenant> createTenant(Map<String, dynamic> data) async {
-    final res = await _client.from('tenants').insert(data).select().single();
-    return Tenant.fromJson(res);
+    try {
+      final res = await _client.rpc('create_tenant', params: {
+        'p_id': data['id'],
+        'p_nombre_salon': data['nombre_salon'],
+        'p_admin_user_id': data['admin_user_id'],
+        'p_subscription_start_date': data['subscription_start_date'],
+        'p_trial_days': data['trial_days'] ?? 15,
+      });
+      return Tenant.fromJson(res);
+    } catch (_) {
+      final res = await _client.from('tenants').insert(data).select().single();
+      return Tenant.fromJson(res);
+    }
   }
 
   Future<void> updateTenant(Map<String, dynamic> data) async {
@@ -88,19 +114,27 @@ class SupabaseService {
   }
 
   Future<void> blockTenant(String id, String reason) async {
-    await _client.from('tenants').update({
-      'is_blocked': true,
-      'blocked_at': DateTime.now().toIso8601String(),
-      'block_reason': reason,
-    }).eq('id', id);
+    try {
+      await _client.rpc('block_tenant', params: {'p_id': id, 'p_reason': reason});
+    } catch (_) {
+      await _client.from('tenants').update({
+        'is_blocked': true,
+        'blocked_at': DateTime.now().toIso8601String(),
+        'block_reason': reason,
+      }).eq('id', id);
+    }
   }
 
   Future<void> unblockTenant(String id) async {
-    await _client.from('tenants').update({
-      'is_blocked': false,
-      'blocked_at': null,
-      'block_reason': '',
-    }).eq('id', id);
+    try {
+      await _client.rpc('unblock_tenant', params: {'p_id': id});
+    } catch (_) {
+      await _client.from('tenants').update({
+        'is_blocked': false,
+        'blocked_at': null,
+        'block_reason': '',
+      }).eq('id', id);
+    }
   }
 
   // ---- Professionals ----
@@ -354,15 +388,26 @@ class SupabaseService {
     required String salonName,
     required String adminUserId,
   }) async {
-    await _client.from('tenants').insert({
-      'id': tenantId,
-      'nombre_salon': salonName,
-      'admin_user_id': adminUserId,
-      'admin_emails': '[]',
-      'onboarding_completed': false,
-      'subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
-      'trial_days': 15,
-    });
+    final data = {
+      'p_id': tenantId,
+      'p_nombre_salon': salonName,
+      'p_admin_user_id': adminUserId,
+      'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
+      'p_trial_days': 15,
+    };
+    try {
+      await _client.rpc('create_tenant', params: data);
+    } catch (_) {
+      await _client.from('tenants').insert({
+        'id': tenantId,
+        'nombre_salon': salonName,
+        'admin_user_id': adminUserId,
+        'admin_emails': '[]',
+        'onboarding_completed': false,
+        'subscription_start_date': data['p_subscription_start_date'],
+        'trial_days': 15,
+      });
+    }
   }
 
   // ---- Storage ----

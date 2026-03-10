@@ -10,6 +10,7 @@ import '../widgets/professional_card.dart';
 import 'booking/booking_flow_screen.dart';
 import 'admin/admin_login_screen.dart';
 import 'admin/super_admin_screen.dart';
+import '../services/pin_auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,6 +59,16 @@ class _HomeScreenState extends State<HomeScreen> {
       : AppConfig.colorAcento;
 
   void _showSuperAdminAuth() {
+    final pin = PinAuthService.instance;
+
+    if (pin.isLocked) {
+      final mins = (pin.remainingLockSeconds / 60).ceil();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Demasiados intentos. Espera $mins minuto${mins == 1 ? '' : 's'}.'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
     final pinCtrl = TextEditingController();
 
     showDialog(
@@ -86,14 +97,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handlePin(String pin, BuildContext ctx) {
-    if (pin == AppConfig.superAdminPin) {
+  void _handlePin(String input, BuildContext ctx) {
+    final pin = PinAuthService.instance;
+    if (pin.verify(input)) {
       Navigator.pop(ctx);
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SuperAdminScreen()));
     } else {
       Navigator.pop(ctx);
+      final msg = pin.isLocked
+          ? 'Demasiados intentos. Espera ${PinAuthService.lockoutMinutes} minutos.'
+          : 'PIN incorrecto. ${pin.remainingAttempts} intento${pin.remainingAttempts == 1 ? '' : 's'} restante${pin.remainingAttempts == 1 ? '' : 's'}.';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN incorrecto'), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -167,23 +182,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   GestureDetector(
-                    onLongPress: _showSuperAdminAuth,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                     ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: _accent.withOpacity(0.2),
+                        color: _accent.withAlpha(50),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _accent.withOpacity(0.6)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _accent.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        border: Border.all(color: _accent.withAlpha(150)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -368,6 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () => WhatsappService.openSupport(),
+            onLongPress: _showSuperAdminAuth,
             child: Text(
               'Desarrollado por ${AppConfig.nombreEmpresa}',
               style: TextStyle(fontSize: 11, color: _primary.withAlpha(100)),
