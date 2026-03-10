@@ -295,6 +295,74 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     );
   }
 
+  Future<void> _toggleBlock(Tenant t) async {
+    if (t.isBlocked) {
+      // Desbloquear
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.favorite, color: Colors.pink.shade300, size: 24),
+              const SizedBox(width: 8),
+              const Text('Desbloquear salon?', style: TextStyle(color: AppConfig.colorTexto)),
+            ],
+          ),
+          content: Text(
+            'Se desbloqueara "${t.nombreSalon}" y podra volver a operar normalmente.',
+            style: const TextStyle(color: AppConfig.colorTextoSecundario),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: const Text('Desbloquear'),
+            ),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        await _svc.unblockTenant(t.id);
+        _loadTenants();
+      }
+    } else {
+      // Bloquear
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.heart_broken, color: Colors.pink.shade300, size: 24),
+              const SizedBox(width: 8),
+              const Text('Bloquear salon?', style: TextStyle(color: AppConfig.colorTexto)),
+            ],
+          ),
+          content: Text(
+            'Se bloqueara "${t.nombreSalon}" por falta de pago. El admin vera un mensaje de bloqueo.',
+            style: const TextStyle(color: AppConfig.colorTextoSecundario),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              child: const Text('Bloquear'),
+            ),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        await _svc.blockTenant(t.id, 'Bloqueado por falta de pago');
+        _loadTenants();
+      }
+    }
+  }
+
   Future<void> _deleteSalon(Tenant t) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -388,22 +456,31 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Heart button: pink = blocked, green = active
+                            IconButton(
+                              icon: Icon(
+                                t.isBlocked ? Icons.heart_broken : Icons.favorite,
+                                color: t.isBlocked ? Colors.pink.shade300 : Colors.green,
+                                size: 22,
+                              ),
+                              onPressed: () => _toggleBlock(t),
+                            ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (t.onboardingCompleted ? Colors.green : Colors.amber).withAlpha(25),
+                                color: (t.isBlocked ? Colors.red : t.onboardingCompleted ? Colors.green : Colors.amber).withAlpha(25),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                t.onboardingCompleted ? 'Activo' : 'Pendiente',
+                                t.isBlocked ? 'Bloqueado' : t.onboardingCompleted ? 'Activo' : 'Pendiente',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: t.onboardingCompleted ? Colors.green : Colors.amber,
+                                  color: t.isBlocked ? Colors.red : t.onboardingCompleted ? Colors.green : Colors.amber,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
                               onPressed: () => _deleteSalon(t),

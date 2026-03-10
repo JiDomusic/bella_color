@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../config/app_config.dart';
 import '../services/supabase_service.dart';
+import '../services/subscription_service.dart';
+import '../services/whatsapp_service.dart';
 import 'home_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'admin/admin_login_screen.dart';
@@ -16,6 +18,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _fadeIn;
   String? _error;
+  bool _blocked = false;
+  String _blockMessage = '';
 
   @override
   void initState() {
@@ -30,9 +34,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     try {
       await Future.delayed(const Duration(milliseconds: 800));
       final svc = SupabaseService.instance;
-      await svc.loadTenant();
+      final tenant = await svc.loadTenant();
 
       if (!mounted) return;
+
+      // Check subscription
+      final status = SubscriptionService.check(tenant);
+
+      if (!status.isActive || tenant.isBlocked) {
+        setState(() {
+          _blocked = true;
+          _blockMessage = status.message.isNotEmpty
+              ? status.message
+              : 'Sistema bloqueado. Contacta a soporte para reactivar.';
+        });
+        return;
+      }
 
       final isAdmin = svc.isLoggedIn;
       final destination = isAdmin ? const AdminDashboardScreen() : const HomeScreen();
@@ -99,7 +116,61 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ),
               ],
               const SizedBox(height: 40),
-              if (_error != null)
+              // BLOCKED STATE
+              if (_blocked)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withAlpha(20),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.red.withAlpha(60)),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(Icons.heart_broken, size: 40, color: Colors.pink.shade300),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Sistema Suspendido',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _blockMessage,
+                              style: const TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => WhatsappService.openSupport(),
+                        icon: const Icon(Icons.chat, size: 18),
+                        label: const Text('Contactar Soporte'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366),
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.admin_panel_settings, size: 16),
+                        label: const Text('Admin'),
+                      ),
+                    ],
+                  ),
+                )
+              // ERROR STATE
+              else if (_error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Column(
@@ -116,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           OutlinedButton.icon(
                             onPressed: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => AdminLoginScreen()),
+                                MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                               );
                             },
                             icon: const Icon(Icons.admin_panel_settings, size: 16),
@@ -126,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ElevatedButton.icon(
                             onPressed: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => AdminLoginScreen()),
+                                MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                               );
                             },
                             icon: const Icon(Icons.key, size: 16),
@@ -137,6 +208,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ],
                   ),
                 )
+              // LOADING STATE
               else
                 SizedBox(
                   width: 24,

@@ -8,6 +8,7 @@ import '../../models/operating_hours.dart';
 import '../../models/block.dart';
 import '../../models/waitlist_entry.dart';
 import '../../services/supabase_service.dart';
+import '../../services/subscription_service.dart';
 import '../../services/whatsapp_service.dart';
 import 'admin_login_screen.dart';
 
@@ -119,16 +120,80 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildAppointmentsTab(),
-          _buildProfessionalsTab(),
-          _buildServicesTab(),
-          _buildHoursTab(),
-          _buildBlocksTab(),
-          _buildWaitlistTab(),
-          _buildSalonTab(),
+          // Subscription warning banner
+          if (_tenant != null) _buildSubscriptionBanner(),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildAppointmentsTab(),
+                _buildProfessionalsTab(),
+                _buildServicesTab(),
+                _buildHoursTab(),
+                _buildBlocksTab(),
+                _buildWaitlistTab(),
+                _buildSalonTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionBanner() {
+    final status = SubscriptionService.check(_tenant!);
+    if (status.message.isEmpty) return const SizedBox.shrink();
+
+    final Color bannerColor;
+    final IconData icon;
+    if (status.isBlocked || !status.isActive) {
+      bannerColor = Colors.red;
+      icon = Icons.heart_broken;
+    } else if (status.isTrial && status.daysRemaining <= 3) {
+      bannerColor = Colors.orange;
+      icon = Icons.timer;
+    } else if (status.isTrial) {
+      bannerColor = Colors.amber;
+      icon = Icons.card_giftcard;
+    } else if (status.daysRemaining <= 5) {
+      bannerColor = Colors.orange;
+      icon = Icons.warning_amber;
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: bannerColor.withAlpha(25),
+        border: Border(bottom: BorderSide(color: bannerColor.withAlpha(60))),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: bannerColor, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              status.message,
+              style: TextStyle(color: bannerColor, fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (!status.isActive)
+            GestureDetector(
+              onTap: () => WhatsappService.openSupport(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF25D366).withAlpha(30),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text('Soporte', style: TextStyle(color: Color(0xFF25D366), fontSize: 11, fontWeight: FontWeight.w600)),
+              ),
+            ),
         ],
       ),
     );

@@ -247,11 +247,73 @@ La clienta abre el link del salon (ej: `https://bella-color.web.app?tenant=nails
 
 ---
 
+## SUSCRIPCION Y PAGOS
+
+### Como funciona la prueba gratis
+
+Cuando creas un salon nuevo, automaticamente tiene **15 dias gratis** de prueba. No hay que hacer nada extra.
+
+El admin del salon ve un banner arriba en su panel:
+- **"Prueba gratis: X dias restantes"** (amarillo)
+- Cuando quedan **3 dias o menos**: **"Tu prueba gratis vence en X dias!"** (naranja)
+
+### Que pasa despues de los 15 dias
+
+Si la clienta no paga:
+1. Primero ve avisos de vencimiento (naranja)
+2. Tiene **5 dias de gracia** despues del dia de vencimiento
+3. Pasados los 5 dias, el sistema muestra: **"Pago vencido"**
+4. Si vos (Super Admin) lo bloqueas, la clienta ve: **"Sistema Suspendido"** con un corazon roto y un boton de WhatsApp para contactar soporte
+
+### Como bloquear un salon (Super Admin)
+
+1. Entra como Super Admin (long press Admin + PIN 987654)
+2. En la lista de salones, cada uno tiene un icono de **corazon**:
+   - **Corazon verde** = salon activo
+   - **Corazon rosa roto** = salon bloqueado
+3. Toca el corazon verde para **bloquear** (te pide confirmacion)
+4. El salon queda bloqueado: la duena y sus clientas ven pantalla de "Sistema Suspendido"
+
+### Como desbloquear un salon (cuando paga)
+
+1. Entra como Super Admin
+2. Toca el **corazon rosa roto** del salon bloqueado
+3. Confirma el desbloqueo
+4. El salon vuelve a funcionar inmediatamente
+
+### Que ve la duena cuando esta bloqueado
+
+Pantalla con:
+- Icono de corazon roto
+- Mensaje: **"Sistema Suspendido"**
+- Razon del bloqueo
+- Boton **"Contactar Soporte"** (abre WhatsApp con vos)
+- Boton **"Admin"** (puede entrar al panel pero el sistema esta deshabilitado para clientas)
+
+### Que ve la clienta cuando el salon esta bloqueado
+
+La misma pantalla de "Sistema Suspendido". No puede reservar turnos.
+
+### El dia de vencimiento mensual
+
+Despues del trial de 15 dias, el pago se vence el dia **18 de cada mes** (configurable por salon). La duena ve avisos cuando se acerca el vencimiento:
+- **5 dias antes**: banner naranja con cuenta regresiva
+- **Dia del vencimiento**: banner naranja de gracia
+- **5 dias despues sin pagar**: banner rojo, vos lo bloqueas manualmente con el corazon
+
+### SQL adicional (ejecutar en Supabase)
+
+Hay un nuevo archivo SQL que agrega los campos de bloqueo:
+- Abri `sql/004_subscription_fields.sql`
+- Copia todo, pega en SQL Editor, Run
+
+---
+
 ## PARA LANZAR (CHECKLIST)
 
 Antes de decirle a tu clienta que ya esta listo, verifica:
 
-- [ ] Los 3 SQL ejecutados en Supabase (tablas, seguridad, storage)
+- [ ] Los 4 SQL ejecutados en Supabase (tablas, seguridad, storage, suscripcion)
 - [ ] Bucket `salon-images` creado en Supabase Storage (privado)
 - [ ] `flutter build web` ejecutado sin errores
 - [ ] `firebase deploy` exitoso

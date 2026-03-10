@@ -87,6 +87,22 @@ class SupabaseService {
     await _client.from('tenants').delete().eq('id', id);
   }
 
+  Future<void> blockTenant(String id, String reason) async {
+    await _client.from('tenants').update({
+      'is_blocked': true,
+      'blocked_at': DateTime.now().toIso8601String(),
+      'block_reason': reason,
+    }).eq('id', id);
+  }
+
+  Future<void> unblockTenant(String id) async {
+    await _client.from('tenants').update({
+      'is_blocked': false,
+      'blocked_at': null,
+      'block_reason': '',
+    }).eq('id', id);
+  }
+
   // ---- Professionals ----
   Future<List<Professional>> loadProfessionals() async {
     final res = await _client
@@ -344,6 +360,8 @@ class SupabaseService {
       'admin_user_id': adminUserId,
       'admin_emails': '[]',
       'onboarding_completed': false,
+      'subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
+      'trial_days': 15,
     });
   }
 
