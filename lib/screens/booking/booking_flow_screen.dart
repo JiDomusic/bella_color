@@ -1,0 +1,719 @@
+import 'package:flutter/material.dart';
+import '../../config/app_config.dart';
+import '../../models/service.dart';
+import '../../models/professional.dart';
+import '../../models/appointment.dart';
+import '../../models/operating_hours.dart';
+import '../../models/block.dart';
+import '../../services/supabase_service.dart';
+import '../../services/confirmation_code_service.dart';
+import '../../widgets/time_slot_widget.dart';
+import '../../widgets/urgency_banner.dart';
+import '../confirmation_screen.dart';
+
+class BookingFlowScreen extends StatefulWidget {
+  final Service? preselectedService;
+  final Professional? preselectedProfessional;
+
+  const BookingFlowScreen({super.key, this.preselectedService, this.preselectedProfessional});
+
+  @override
+  State<BookingFlowScreen> createState() => _BookingFlowScreenState();
+}
+
+class _BookingFlowScreenState extends State<BookingFlowScreen> {
+  final _svc = SupabaseService.instance;
+  final _pageController = PageController();
+  int _currentPage = 0;
+
+  List<Service> _services = [];
+  List<Professional> _professionals = [];
+  List<OperatingHours> _hours = [];
+  List<Block> _blocks = [];
+  List<Appointment> _existingAppointments = [];
+
+  Service? _selectedService;
+  Professional? _selectedProfessional;
+  DateTime? _selectedDate;
+  String? _selectedTime;
+
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _commentsController = TextEditingController();
+
+  List<String> _timeSlots = [];
+  Map<String, bool> _slotAvailability = {};
+  int _availableSlots = 0;
+  int _totalSlots = 0;
+  bool _loading = true;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedService = widget.preselectedService;
+    _selectedProfessional = widget.preselectedProfessional;
+    _loadInitial();
+  }
+
+  Color get _primary {
+    final t = _svc.currentTenant;
+    return t != null ? AppConfig.hexToColor(t.colorPrimario) : AppConfig.colorPrimario;
+  }
+
+  Color get _accent {
+    final t = _svc.currentTenant;
+    return t != null ? AppConfig.hexToColor(t.colorAcento) : AppConfig.colorAcento;
+  }
+
+  Future<void> _loadInitial() async {
+    try {
+      final services = await _svc.loadActiveServices();
+      final professionals = await _svc.loadActiveProfessionals();
+      final hours = await _svc.loadOperatingHours();
+      if (mounted) {
+        setState(() {
+          _services = services;
+          _professionals = professionals;
+          _hours = hours;
+          _loading = false;
+          // Skip steps if preselected
+          if (_selectedService != null && _selectedProfessional != null) {
+            _currentPage = 2;
+            _pageController.jumpToPage(2);
+          } else if (_selectedService != null) {
+            _currentPage = 1;
+            _pageController.jumpToPage(1);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _goToPage(int page) {
+    setState(() => _currentPage = page);
+    _pageController.animateToPage(page, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+  }
+
+  Future<void> _loadTimeSlots() async {
+    if (_selectedDate == null) return;
+
+    final dateStr = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+    final dayOfWeek = _selectedDate!.weekday % 7;
+
+    final dayHours = _hours.where((h) => h.diaSemana == dayOfWeek).toList();
+    if (dayHours.isEmpty) {
+      setState(() {
+        _timeSlots = [];
+        _slotAvailability = {};
+      });
+      return;
+    }
+
+    // Load blocks and appointments for date
+    _blocks = await _svc.loadBlocks(fecha: dateStr);
+    _existingAppointments = await _svc.loadAppointmentsByDate(dateStr);
+
+    final slots = <String>[];
+    for (final h in dayHours) {
+      final start = _parseTime(h.horaInicio);
+      final end = _parseTime(h.horaFin);
+      final interval = h.intervaloMinutos;
+      var current = start;
+      while (current < end) {
+        final timeStr = '${(current ~/ 60).toString().padLeft(2, '0')}:${(current % 60).toString().padLeft(2, '0')}';
+        slots.add(timeStr);
+        current += interval;
+      }
+    }
+
+    // Check availability
+    final availability = <String, bool>{};
+    final now = DateTime.now();
+    final tenant = _svc.currentTenant;
+    final minHoras = tenant?.minAnticipacionHoras ?? 2;
+
+    for (final slot in slots) {
+      bool available = true;
+
+      // Check if in the past
+      if (_selectedDate!.year == now.year && _selectedDate!.month == now.month && _selectedDate!.day == now.day) {
+        final slotMinutes = _parseTime(slot);
+        final nowMinutes = now.hour * 60 + now.minute + (minHoras * 60);
+        if (slotMinutes <= nowMinutes) available = false;
+      }
+
+      // Check blocks
+      for (final block in _blocks) {
+        if (block.diaCompleto) {
+          available = false;
+          break;
+        }
+        if (block.hora == slot) {
+          if (block.professionalId == null || block.professionalId == _selectedProfessional?.id) {
+            available = false;
+            break;
+          }
+        }
+      }
+
+      // Check existing appointments for same service/professional
+      if (available && _selectedService != null) {
+        final slotsForTime = _existingAppointments.where((a) { // ignore: unused_local_variable
+          if (a.hora != slot) return false;
+          if (_selectedProfessional != null && a.professionalId == _selectedProfessional!.id) return true;
+          if (a.servicioId == _selectedService!.id) return true;
+          return false;
+        }).length;
+
+        final maxTurnos = _selectedService!.maxTurnosDia;
+        // Count all appointments for this service on this date
+        final totalForService = _existingAppointments.where((a) => a.servicioId == _selectedService!.id).length;
+        if (totalForService >= maxTurnos) {
+          available = false;
+        }
+
+        // Check professional busy at this time
+        if (_selectedProfessional != null) {
+          final profBusy = _existingAppointments.any((a) =>
+            a.hora == slot && a.professionalId == _selectedProfessional!.id);
+          if (profBusy) available = false;
+        }
+      }
+
+      availability[slot] = available;
+    }
+
+    final avail = availability.values.where((v) => v).length;
+    setState(() {
+      _timeSlots = slots;
+      _slotAvailability = availability;
+      _availableSlots = avail;
+      _totalSlots = slots.length;
+    });
+  }
+
+  int _parseTime(String time) {
+    final parts = time.split(':');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
+
+  Future<void> _submit() async {
+    if (_selectedService == null || _selectedDate == null || _selectedTime == null) return;
+    if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
+      _showError('Por favor completa nombre y telefono');
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final dateStr = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
+      final code = ConfirmationCodeService.generate();
+
+      final appointment = await _svc.createAppointment({
+        'fecha': dateStr,
+        'hora': _selectedTime,
+        'duracion_minutos': _selectedService!.duracionMinutos,
+        'nombre_cliente': _nameController.text.trim(),
+        'telefono': _phoneController.text.trim(),
+        'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        'servicio_id': _selectedService!.id,
+        'servicio_nombre': _selectedService!.nombre,
+        'professional_id': _selectedProfessional?.id,
+        'professional_nombre': _selectedProfessional?.nombre,
+        'codigo_confirmacion': code,
+        'comentarios': _commentsController.text.trim().isEmpty ? null : _commentsController.text.trim(),
+      });
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => ConfirmationScreen(appointment: appointment)),
+        );
+      }
+    } catch (e) {
+      _showError('Error al crear el turno: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showError(String msg) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppConfig.colorFondoCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            const Text('Error', style: TextStyle(color: AppConfig.colorTexto)),
+          ],
+        ),
+        content: Text(msg, style: const TextStyle(color: AppConfig.colorTextoSecundario)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('OK', style: TextStyle(color: _primary))),
+        ],
+      ),
+    );
+  }
+
+  void _showWaitlistDialog() {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppConfig.colorFondoCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.local_fire_department, color: _accent),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Lista de espera', style: TextStyle(color: _primary, fontSize: 18))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Todos los turnos estan ocupados. Dejanos tus datos y te avisaremos cuando haya disponibilidad.',
+              style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+              style: const TextStyle(color: AppConfig.colorTexto),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              decoration: const InputDecoration(labelText: 'Telefono'),
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: AppConfig.colorTexto),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancelar', style: TextStyle(color: AppConfig.colorTextoSecundario)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) return;
+              final dateStr = _selectedDate != null
+                  ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
+                  : DateTime.now().toIso8601String().substring(0, 10);
+              await _svc.addToWaitlist({
+                'fecha': dateStr,
+                'servicio_id': _selectedService?.id,
+                'professional_id': _selectedProfessional?.id,
+                'nombre': nameCtrl.text.trim(),
+                'telefono': phoneCtrl.text.trim(),
+              });
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: const Text('Te agregamos a la lista de espera!'), backgroundColor: _primary),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: _accent),
+            child: const Text('Anotarme'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _commentsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppConfig.colorFondoOscuro,
+        appBar: AppBar(title: const Text('Reservar Turno')),
+        body: Center(child: CircularProgressIndicator(color: _primary)),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppConfig.colorFondoOscuro,
+      appBar: AppBar(
+        title: const Text('Reservar Turno'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4),
+          child: LinearProgressIndicator(
+            value: (_currentPage + 1) / 4,
+            backgroundColor: Colors.white.withAlpha(20),
+            valueColor: AlwaysStoppedAnimation(_primary),
+          ),
+        ),
+      ),
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (i) => setState(() => _currentPage = i),
+        children: [
+          _buildServicePage(),
+          _buildProfessionalPage(),
+          _buildDateTimePage(),
+          _buildDataPage(),
+        ],
+      ),
+    );
+  }
+
+  // Page 0: Select Service
+  Widget _buildServicePage() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Elige tu servicio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
+        const SizedBox(height: 16),
+        ..._services.map((s) => _selectionTile(
+          title: s.nombre,
+          subtitle: '${s.duracionMinutos} min${s.precio != null ? ' - \$${s.precio!.toStringAsFixed(0)}' : ''}',
+          icon: Icons.spa,
+          selected: _selectedService?.id == s.id,
+          imageUrl: s.imagenUrl,
+          onTap: () {
+            setState(() => _selectedService = s);
+            _goToPage(1);
+          },
+        )),
+      ],
+    );
+  }
+
+  // Page 1: Select Professional
+  Widget _buildProfessionalPage() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Elige tu profesional', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
+        const SizedBox(height: 8),
+        Text('(opcional)', style: TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario)),
+        const SizedBox(height: 16),
+        // "Sin preferencia" option
+        _selectionTile(
+          title: 'Sin preferencia',
+          subtitle: 'Cualquier profesional disponible',
+          icon: Icons.group,
+          selected: _selectedProfessional == null,
+          onTap: () {
+            setState(() => _selectedProfessional = null);
+            _goToPage(2);
+          },
+        ),
+        ..._professionals.map((p) => _selectionTile(
+          title: p.nombre,
+          subtitle: p.especialidad,
+          icon: Icons.person,
+          selected: _selectedProfessional?.id == p.id,
+          imageUrl: p.fotoUrl,
+          onTap: () {
+            setState(() => _selectedProfessional = p);
+            _goToPage(2);
+          },
+        )),
+        const SizedBox(height: 16),
+        TextButton.icon(
+          onPressed: () => _goToPage(0),
+          icon: const Icon(Icons.arrow_back, size: 16),
+          label: const Text('Volver'),
+          style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
+        ),
+      ],
+    );
+  }
+
+  // Page 2: Select Date & Time
+  Widget _buildDateTimePage() {
+    final tenant = _svc.currentTenant;
+    final maxDays = tenant?.maxAnticipacionDias ?? 60;
+    final closedDay = tenant?.diaCerrado ?? 0;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Fecha y hora', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
+        const SizedBox(height: 16),
+        // Date picker
+        GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 1)),
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(Duration(days: maxDays)),
+              selectableDayPredicate: (d) => d.weekday % 7 != closedDay,
+              builder: (context, child) => Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: ColorScheme.dark(primary: _primary, secondary: _accent, surface: AppConfig.colorFondoCard),
+                ),
+                child: child!,
+              ),
+            );
+            if (picked != null) {
+              setState(() {
+                _selectedDate = picked;
+                _selectedTime = null;
+                _timeSlots = [];
+              });
+              await _loadTimeSlots();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppConfig.colorFondoCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _primary.withAlpha(60)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, color: _primary),
+                const SizedBox(width: 12),
+                Text(
+                  _selectedDate != null
+                      ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                      : 'Seleccionar fecha',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: _selectedDate != null ? AppConfig.colorTexto : AppConfig.colorTextoSecundario,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Time slots
+        if (_timeSlots.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          UrgencyBanner(available: _availableSlots, total: _totalSlots, primary: _primary),
+          const SizedBox(height: 12),
+          Text('Horarios disponibles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppConfig.colorTextoSecundario)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _timeSlots.map((slot) => TimeSlotWidget(
+              time: slot,
+              isSelected: _selectedTime == slot,
+              isAvailable: _slotAvailability[slot] ?? false,
+              primary: _primary,
+              onTap: () {
+                setState(() => _selectedTime = slot);
+              },
+            )).toList(),
+          ),
+          if (_availableSlots == 0) ...[
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _showWaitlistDialog,
+              icon: const Icon(Icons.notification_add, size: 18),
+              label: const Text('Anotarme en lista de espera'),
+              style: ElevatedButton.styleFrom(backgroundColor: _accent),
+            ),
+          ],
+        ] else if (_selectedDate != null && _timeSlots.isEmpty) ...[
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.withAlpha(20),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.red.withAlpha(60)),
+            ),
+            child: const Text(
+              'No hay horarios disponibles para esta fecha',
+              style: TextStyle(color: Colors.redAccent, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: () => _goToPage(1),
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: const Text('Volver'),
+              style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
+            ),
+            const Spacer(),
+            if (_selectedTime != null)
+              ElevatedButton(
+                onPressed: () => _goToPage(3),
+                style: ElevatedButton.styleFrom(backgroundColor: _primary),
+                child: const Text('Continuar'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Page 3: Client Data
+  Widget _buildDataPage() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Tus datos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
+        const SizedBox(height: 8),
+        // Summary
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _primary.withAlpha(15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _primary.withAlpha(40)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _summaryRow(Icons.spa, _selectedService?.nombre ?? ''),
+              if (_selectedProfessional != null) _summaryRow(Icons.person, _selectedProfessional!.nombre),
+              _summaryRow(Icons.calendar_today, '${_selectedDate?.day}/${_selectedDate?.month}/${_selectedDate?.year}'),
+              _summaryRow(Icons.access_time, _selectedTime ?? ''),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        UrgencyBanner(available: _availableSlots, total: _totalSlots, primary: _primary),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(labelText: 'Nombre completo *', prefixIcon: Icon(Icons.person_outline)),
+          style: const TextStyle(color: AppConfig.colorTexto),
+          textCapitalization: TextCapitalization.words,
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _phoneController,
+          decoration: const InputDecoration(labelText: 'Telefono *', prefixIcon: Icon(Icons.phone)),
+          keyboardType: TextInputType.phone,
+          style: const TextStyle(color: AppConfig.colorTexto),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _emailController,
+          decoration: const InputDecoration(labelText: 'Email (opcional)', prefixIcon: Icon(Icons.email_outlined)),
+          keyboardType: TextInputType.emailAddress,
+          style: const TextStyle(color: AppConfig.colorTexto),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _commentsController,
+          decoration: const InputDecoration(labelText: 'Comentarios (opcional)', prefixIcon: Icon(Icons.comment_outlined)),
+          maxLines: 3,
+          style: const TextStyle(color: AppConfig.colorTexto),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: () => _goToPage(2),
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: const Text('Volver'),
+              style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
+            ),
+            const Spacer(),
+            ElevatedButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.check),
+              label: Text(_submitting ? 'Reservando...' : 'Confirmar Turno'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accent,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: _primary),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontSize: 13, color: AppConfig.colorTexto)),
+        ],
+      ),
+    );
+  }
+
+  Widget _selectionTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool selected,
+    String? imageUrl,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? _primary.withAlpha(25) : AppConfig.colorFondoCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? _primary : Colors.white.withAlpha(20), width: selected ? 2 : 1),
+        ),
+        child: Row(
+          children: [
+            if (imageUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(imageUrl, width: 48, height: 48, fit: BoxFit.cover),
+              )
+            else
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: _primary, size: 24),
+              ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppConfig.colorTexto)),
+                  if (subtitle.isNotEmpty)
+                    Text(subtitle, style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
+                ],
+              ),
+            ),
+            if (selected) Icon(Icons.check_circle, color: _primary, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
