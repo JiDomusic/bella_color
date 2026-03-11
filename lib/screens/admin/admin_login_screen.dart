@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../config/app_config.dart';
 import '../../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
-import 'super_admin_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -14,16 +13,14 @@ class AdminLoginScreen extends StatefulWidget {
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _pinCtrl = TextEditingController();
   bool _loading = false;
-  bool _showSuperAdmin = false;
+  bool _obscure = true;
   String? _error;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
-    _pinCtrl.dispose();
     super.dispose();
   }
 
@@ -52,77 +49,93 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     }
   }
 
-  void _checkSuperAdminPin() {
-    if (_pinCtrl.text == AppConfig.superAdminPin) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const SuperAdminScreen()),
-      );
-    } else {
-      setState(() => _error = 'PIN incorrecto');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppConfig.colorFondoOscuro,
-      appBar: AppBar(title: const Text('Administracion')),
+      backgroundColor: const Color(0xFFFFF0F3),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFFF0F3),
+        foregroundColor: const Color(0xFF8B6B6B),
+        elevation: 0,
+        title: const Text('Administracion', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+      ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.admin_panel_settings, size: 60, color: AppConfig.colorPrimario.withAlpha(120)),
-              const SizedBox(height: 24),
+              const Icon(Icons.spa, size: 56, color: Color(0xFFD4A0A0)),
+              const SizedBox(height: 28),
               TextField(
                 controller: _emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  labelStyle: const TextStyle(color: Color(0xFF8B6B6B), fontSize: 16),
+                  prefixIcon: const Icon(Icons.email, color: Color(0xFFD4A0A0)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: const Color(0xFFD4A0A0).withAlpha(80)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFD4A0A0), width: 2),
+                  ),
+                ),
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppConfig.colorTexto),
+                style: const TextStyle(color: Color(0xFF4A3535), fontSize: 16),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextField(
                 controller: _passCtrl,
-                decoration: const InputDecoration(labelText: 'Contrasena', prefixIcon: Icon(Icons.lock)),
-                obscureText: true,
-                style: const TextStyle(color: AppConfig.colorTexto),
+                decoration: InputDecoration(
+                  labelText: 'Contrasena',
+                  labelStyle: const TextStyle(color: Color(0xFF8B6B6B), fontSize: 16),
+                  prefixIcon: const Icon(Icons.lock, color: Color(0xFFD4A0A0)),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscure ? Icons.visibility_off : Icons.visibility,
+                      color: const Color(0xFFB89999),
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: const Color(0xFFD4A0A0).withAlpha(80)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFD4A0A0), width: 2),
+                  ),
+                ),
+                obscureText: _obscure,
+                style: const TextStyle(color: Color(0xFF4A3535), fontSize: 16),
               ),
               if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+                const SizedBox(height: 14),
+                Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 14)),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: _loading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4A0A0),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                  ),
                   child: _loading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Text('Ingresar'),
                 ),
               ),
-              const SizedBox(height: 32),
-              // Super Admin toggle
-              GestureDetector(
-                onTap: () => setState(() => _showSuperAdmin = !_showSuperAdmin),
-                child: Text(
-                  'Super Admin',
-                  style: TextStyle(fontSize: 12, color: Colors.white.withAlpha(30)),
-                ),
-              ),
-              if (_showSuperAdmin) ...[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _pinCtrl,
-                  decoration: const InputDecoration(labelText: 'PIN', prefixIcon: Icon(Icons.vpn_key)),
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
-                  style: const TextStyle(color: AppConfig.colorTexto),
-                ),
-                const SizedBox(height: 8),
-                TextButton(onPressed: _checkSuperAdminPin, child: const Text('Acceder')),
-              ],
             ],
           ),
         ),

@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../models/tenant.dart';
@@ -49,6 +47,10 @@ class SupabaseService {
 
   Future<void> signOut() async {
     await _client.auth.signOut();
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   Future<String?> getTenantIdForCurrentUser() async {
@@ -110,7 +112,11 @@ class SupabaseService {
   }
 
   Future<void> deleteTenant(String id) async {
-    await _client.from('tenants').delete().eq('id', id);
+    try {
+      await _client.rpc('delete_tenant', params: {'p_id': id});
+    } catch (_) {
+      await _client.from('tenants').delete().eq('id', id);
+    }
   }
 
   Future<void> blockTenant(String id, String reason) async {
@@ -303,6 +309,26 @@ class SupabaseService {
     await _client.from('appointments').update(update).eq('id', id);
   }
 
+  Future<void> markReminderSent(String id) async {
+    await _client.from('appointments').update({
+      'recordatorio_enviado': true,
+      'recordatorio_enviado_at': DateTime.now().toIso8601String(),
+    }).eq('id', id);
+  }
+
+  Future<List<Appointment>> loadTomorrowConfirmedAppointments() async {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final fecha = '${tomorrow.year}-${tomorrow.month.toString().padLeft(2, '0')}-${tomorrow.day.toString().padLeft(2, '0')}';
+    final res = await _client
+        .from('appointments')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('fecha', fecha)
+        .eq('estado', 'confirmada')
+        .order('hora');
+    return res.map<Appointment>((e) => Appointment.fromJson(e)).toList();
+  }
+
   Future<void> deleteAppointment(String id) async {
     await _client.from('appointments').delete().eq('id', id);
   }
@@ -355,58 +381,52 @@ class SupabaseService {
     await _client.from('waitlist').delete().eq('id', id);
   }
 
-  // ---- Auth (REST - no afecta sesion actual) ----
-  Future<String> createAuthUser(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('${AppConfig.supabaseUrl}/auth/v1/signup'),
-      headers: {
-        'apikey': AppConfig.supabaseAnonKey,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'email_confirm': true,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      final body = jsonDecode(response.body);
-      throw Exception(body['msg'] ?? body['error_description'] ?? 'Error al crear usuario');
-    }
-
-    final body = jsonDecode(response.body);
-    final userId = body['id'] as String?;
-    if (userId == null) {
-      throw Exception('No se pudo obtener el ID del usuario creado');
-    }
-    return userId;
-  }
-
-  Future<void> createSalon({
+  // ---- Crear salon completo (usuario + tenant) ----
+  Future<Map<String, dynamic>> createSalonComplete({
+    required String email,
+    required String password,
     required String tenantId,
     required String salonName,
-    required String adminUserId,
   }) async {
-    final data = {
-      'p_id': tenantId,
-      'p_nombre_salon': salonName,
-      'p_admin_user_id': adminUserId,
-      'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
-      'p_trial_days': 15,
-    };
+    // Intentar via RPC atomica (crea usuario + tenant en una transaccion)
     try {
-      await _client.rpc('create_tenant', params: data);
-    } catch (_) {
-      await _client.from('tenants').insert({
-        'id': tenantId,
-        'nombre_salon': salonName,
-        'admin_user_id': adminUserId,
-        'admin_emails': '[]',
-        'onboarding_completed': false,
-        'subscription_start_date': data['p_subscription_start_date'],
-        'trial_days': 15,
+      final res = await _client.rpc('create_auth_user_and_tenant', params: {
+        'p_email': email,
+        'p_password': password,
+        'p_tenant_id': tenantId,
+        'p_nombre_salon': salonName,
       });
+      return Map<String, dynamic>.from(res as Map);
+    } catch (rpcError) {
+      // Fallback: signUp + esperar + create_tenant
+      try {
+        final authRes = await _client.auth.signUp(email: email, password: password);
+        final userId = authRes.user?.id;
+        if (userId == null) throw Exception('No se pudo crear el usuario');
+
+        // signUp cambia la sesion -> volver a anon para que el RPC funcione
+        await _client.auth.signOut();
+
+        // Esperar a que auth.users se sincronice completamente
+        await Future.delayed(const Duration(seconds: 3));
+
+        // Crear tenant (create_tenant es SECURITY DEFINER, funciona como anon)
+        await _client.rpc('create_tenant', params: {
+          'p_id': tenantId,
+          'p_nombre_salon': salonName,
+          'p_admin_user_id': userId,
+          'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
+          'p_trial_days': 15,
+        });
+
+        return {'user_id': userId, 'tenant_id': tenantId};
+      } catch (fallbackError) {
+        throw Exception(
+          'Error creando salon. '
+          'RPC: $rpcError | '
+          'Fallback: $fallbackError'
+        );
+      }
     }
   }
 

@@ -10,6 +10,7 @@ import '../widgets/professional_card.dart';
 import 'booking/booking_flow_screen.dart';
 import 'admin/admin_login_screen.dart';
 import 'admin/super_admin_screen.dart';
+import 'confirm_appointment_screen.dart';
 import '../services/pin_auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -335,8 +336,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ElevatedButton.icon(
               onPressed: () => _openBooking(),
               icon: const Icon(Icons.calendar_today, size: 18),
-              label: const Text('Reservar'),
-              style: ElevatedButton.styleFrom(backgroundColor: _accent),
+              label: const Text('Reservar Turno'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accent,
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ConfirmAppointmentScreen()),
+              ),
+              icon: const Icon(Icons.confirmation_number, size: 18),
+              label: const Text('Tengo un codigo de turno'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _primary,
+                side: BorderSide(color: _primary.withAlpha(100)),
+                minimumSize: const Size(double.infinity, 48),
+              ),
             ),
           ],
         ),

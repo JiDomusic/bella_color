@@ -140,14 +140,12 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     _showProgress('Creando salon...');
 
     try {
-      // 1. Crear usuario auth via REST (sin afectar sesion del super admin)
-      final userId = await _svc.createAuthUser(email, password);
-
-      // 2. Crear tenant en la base de datos
-      await _svc.createSalon(
+      // Crear usuario + tenant en una sola llamada RPC segura
+      await _svc.createSalonComplete(
+        email: email,
+        password: password,
         tenantId: tenantId,
         salonName: name,
-        adminUserId: userId,
       );
 
       if (mounted) Navigator.pop(context); // cerrar progress
@@ -167,7 +165,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
       if (mounted) Navigator.pop(context); // cerrar progress
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo crear el salon. Verifica los datos e intenta de nuevo.'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent, duration: const Duration(seconds: 8)),
         );
       }
     }
@@ -232,7 +230,10 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(link, style: TextStyle(color: AppConfig.colorAcento, fontFamily: 'monospace', fontSize: 12)),
+                      child: GestureDetector(
+                        onTap: () => launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication),
+                        child: Text(link, style: TextStyle(color: AppConfig.colorAcento, fontFamily: 'monospace', fontSize: 12, decoration: TextDecoration.underline)),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.copy, color: Colors.white54, size: 20),

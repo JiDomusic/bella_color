@@ -1,4 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../config/app_config.dart';
 import '../../models/tenant.dart';
 import '../../models/professional.dart';
@@ -11,6 +14,8 @@ import '../../services/supabase_service.dart';
 import '../../services/subscription_service.dart';
 import '../../services/whatsapp_service.dart';
 import 'admin_login_screen.dart';
+import 'reports_tab.dart';
+import '../home_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -31,13 +36,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   List<Block> _blocks = [];
   List<WaitlistEntry> _waitlist = [];
   bool _loading = true;
+  bool _changingPassword = false;
 
   String _selectedDate = '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
     final now = DateTime.now();
     _selectedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     _loadAll();
@@ -82,27 +88,54 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       );
     }
 
+    // Si el onboarding no esta completo, mostrar pantalla de configuracion inicial
+    if (_tenant != null && !_tenant!.onboardingCompleted) {
+      return _buildOnboardingScreen();
+    }
+
     return Scaffold(
       backgroundColor: AppConfig.colorFondoOscuro,
       appBar: AppBar(
         title: Text(_tenant?.nombreSalon ?? 'Admin'),
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite, color: Colors.pink.shade200, size: 22),
-            onPressed: _showHelp,
+            icon: Icon(Icons.home, color: _accent),
+            tooltip: 'Ir al inicio',
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                (route) => false,
+              );
+            },
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () { setState(() => _loading = true); _loadAll(); },
+            icon: const Icon(Icons.lock_outline, color: Colors.white70),
+            tooltip: 'Cambiar contrasena',
+            onPressed: _promptChangePassword,
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white70),
+            tooltip: 'Cerrar sesion',
             onPressed: () async {
-              await _svc.signOut();
-              if (mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                );
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Cerrar sesion'),
+                  content: const Text('Vas a salir del panel de administracion.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Salir')),
+                  ],
+                ),
+              );
+              if (confirm == true && mounted) {
+                await _svc.signOut();
+                if (mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    (route) => false,
+                  );
+                }
               }
             },
           ),
@@ -120,6 +153,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             Tab(text: 'Horarios'),
             Tab(text: 'Bloqueos'),
             Tab(text: 'Espera'),
+            Tab(text: 'Reportes'),
             Tab(text: 'Salon'),
           ],
         ),
@@ -138,6 +172,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 _buildHoursTab(),
                 _buildBlocksTab(),
                 _buildWaitlistTab(),
+                ReportsTab(primary: _primary, accent: _accent),
                 _buildSalonTab(),
               ],
             ),
@@ -387,6 +422,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ),
           ),
         ),
+        // Reminder button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _showRemindersDialog,
+              icon: const Icon(Icons.notifications_active, size: 18),
+              label: const Text('Enviar recordatorios de mañana'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _accent,
+                side: BorderSide(color: _accent.withAlpha(100)),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         // Appointments list
         Expanded(
           child: _appointments.isEmpty
@@ -471,6 +525,54 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     _refreshAppointments();
   }
 
+  Future<void> _showRemindersDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(child: CircularProgressIndicator(color: _accent)),
+    );
+
+    try {
+      final appointments = await _svc.loadTomorrowConfirmedAppointments();
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+
+      if (appointments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No hay turnos confirmados para mañana')),
+        );
+        return;
+      }
+
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final fechaStr = '${tomorrow.day.toString().padLeft(2, '0')}/${tomorrow.month.toString().padLeft(2, '0')}/${tomorrow.year}';
+      final salonName = _tenant?.nombreSalon ?? '';
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: AppConfig.colorFondoCard,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (ctx) => _RemindersSheet(
+          appointments: appointments,
+          fechaStr: fechaStr,
+          salonName: salonName,
+          tenant: _tenant,
+          primary: _primary,
+          accent: _accent,
+          svc: _svc,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
   Color _stateColor(String estado) {
     switch (estado) {
       case 'pendiente_confirmacion': return Colors.amber;
@@ -503,6 +605,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               final p = _professionals[i];
               return Card(
                 child: ListTile(
+                  onTap: () => _editProfessionalDialog(p),
                   leading: CircleAvatar(
                     backgroundColor: _primary.withAlpha(30),
                     backgroundImage: p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
@@ -544,32 +647,145 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   void _addProfessionalDialog() {
     final nameCtrl = TextEditingController();
     final specCtrl = TextEditingController();
+    Uint8List? imageBytes;
+    String? imageName;
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: AppConfig.colorFondoCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Nuevo Profesional', style: TextStyle(color: AppConfig.colorTexto)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
-            const SizedBox(height: 8),
-            TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad'), style: const TextStyle(color: AppConfig.colorTexto)),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDState) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Nuevo Profesional', style: TextStyle(color: AppConfig.colorTexto)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 85);
+                    if (picked != null) {
+                      final bytes = await picked.readAsBytes();
+                      setDState(() { imageBytes = bytes; imageName = picked.name; });
+                    }
+                  },
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundColor: _primary.withAlpha(30),
+                    backgroundImage: imageBytes != null ? MemoryImage(imageBytes!) : null,
+                    child: imageBytes == null
+                        ? Column(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.camera_alt, color: _primary, size: 24),
+                            Text('Foto', style: TextStyle(color: _primary, fontSize: 10)),
+                          ])
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 8),
+                TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad'), style: const TextStyle(color: AppConfig.colorTexto)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                String? fotoUrl;
+                if (imageBytes != null) {
+                  fotoUrl = await _svc.uploadImage('professionals/${DateTime.now().millisecondsSinceEpoch}_$imageName', imageBytes!);
+                }
+                await _svc.createProfessional({
+                  'nombre': nameCtrl.text.trim(),
+                  'especialidad': specCtrl.text.trim(),
+                  if (fotoUrl != null) 'foto_url': fotoUrl,
+                });
+                _professionals = await _svc.loadProfessionals();
+                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+              },
+              child: const Text('Crear'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameCtrl.text.trim().isEmpty) return;
-              await _svc.createProfessional({'nombre': nameCtrl.text.trim(), 'especialidad': specCtrl.text.trim()});
-              _professionals = await _svc.loadProfessionals();
-              if (context.mounted) { Navigator.pop(context); setState(() {}); }
-            },
-            child: const Text('Crear'),
+      ),
+    );
+  }
+
+  void _editProfessionalDialog(Professional p) {
+    final nameCtrl = TextEditingController(text: p.nombre);
+    final specCtrl = TextEditingController(text: p.especialidad);
+    Uint8List? imageBytes;
+    String? imageName;
+    String? currentFotoUrl = p.fotoUrl;
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDState) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Editar Profesional', style: TextStyle(color: AppConfig.colorTexto)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 85);
+                    if (picked != null) {
+                      final bytes = await picked.readAsBytes();
+                      setDState(() { imageBytes = bytes; imageName = picked.name; });
+                    }
+                  },
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundColor: _primary.withAlpha(30),
+                    backgroundImage: imageBytes != null
+                        ? MemoryImage(imageBytes!) as ImageProvider
+                        : (currentFotoUrl != null ? NetworkImage(currentFotoUrl!) : null),
+                    child: (imageBytes == null && currentFotoUrl == null)
+                        ? Column(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.camera_alt, color: _primary, size: 24),
+                            Text('Foto', style: TextStyle(color: _primary, fontSize: 10)),
+                          ])
+                        : null,
+                  ),
+                ),
+                if (currentFotoUrl != null && imageBytes == null)
+                  TextButton(
+                    onPressed: () => setDState(() => currentFotoUrl = null),
+                    child: const Text('Quitar foto', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                  ),
+                const SizedBox(height: 12),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 8),
+                TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad'), style: const TextStyle(color: AppConfig.colorTexto)),
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                String? fotoUrl = currentFotoUrl;
+                if (imageBytes != null) {
+                  fotoUrl = await _svc.uploadImage('professionals/${DateTime.now().millisecondsSinceEpoch}_$imageName', imageBytes!);
+                }
+                await _svc.updateProfessional(p.id, {
+                  'nombre': nameCtrl.text.trim(),
+                  'especialidad': specCtrl.text.trim(),
+                  'foto_url': fotoUrl,
+                });
+                _professionals = await _svc.loadProfessionals();
+                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -594,6 +810,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               final s = _services[i];
               return Card(
                 child: ListTile(
+                  onTap: () => _editServiceDialog(s),
                   leading: Container(
                     width: 44,
                     height: 44,
@@ -643,6 +860,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     final durCtrl = TextEditingController(text: '60');
     final priceCtrl = TextEditingController();
     String selectedCat = 'otro';
+    Uint8List? imageBytes;
+    String? imageName;
 
     showDialog(
       context: context,
@@ -655,6 +874,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+                    if (picked != null) {
+                      final bytes = await picked.readAsBytes();
+                      setDState(() { imageBytes = bytes; imageName = picked.name; });
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: _primary.withAlpha(20),
+                      borderRadius: BorderRadius.circular(12),
+                      image: imageBytes != null ? DecorationImage(image: MemoryImage(imageBytes!), fit: BoxFit.cover) : null,
+                    ),
+                    child: imageBytes == null
+                        ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(Icons.add_photo_alternate, color: _primary, size: 32),
+                            const SizedBox(height: 4),
+                            Text('Agregar imagen', style: TextStyle(color: _primary, fontSize: 12)),
+                          ])
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
@@ -676,16 +921,117 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
+                String? imagenUrl;
+                if (imageBytes != null) {
+                  imagenUrl = await _svc.uploadImage('services/${DateTime.now().millisecondsSinceEpoch}_$imageName', imageBytes!);
+                }
                 await _svc.createService({
                   'nombre': nameCtrl.text.trim(),
                   'categoria': selectedCat,
                   'duracion_minutos': int.tryParse(durCtrl.text) ?? 60,
                   'precio': priceCtrl.text.isNotEmpty ? double.tryParse(priceCtrl.text) : null,
+                  if (imagenUrl != null) 'imagen_url': imagenUrl,
                 });
                 _services = await _svc.loadServices();
                 if (context.mounted) { Navigator.pop(context); setState(() {}); }
               },
               child: const Text('Crear'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editServiceDialog(Service s) {
+    final nameCtrl = TextEditingController(text: s.nombre);
+    final durCtrl = TextEditingController(text: s.duracionMinutos.toString());
+    final priceCtrl = TextEditingController(text: s.precio?.toStringAsFixed(0) ?? '');
+    String selectedCat = s.categoria;
+    Uint8List? imageBytes;
+    String? imageName;
+    String? currentImageUrl = s.imagenUrl;
+
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDState) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Editar Servicio', style: TextStyle(color: AppConfig.colorTexto)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+                    if (picked != null) {
+                      final bytes = await picked.readAsBytes();
+                      setDState(() { imageBytes = bytes; imageName = picked.name; });
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: _primary.withAlpha(20),
+                      borderRadius: BorderRadius.circular(12),
+                      image: imageBytes != null
+                          ? DecorationImage(image: MemoryImage(imageBytes!), fit: BoxFit.cover)
+                          : (currentImageUrl != null ? DecorationImage(image: NetworkImage(currentImageUrl!), fit: BoxFit.cover) : null),
+                    ),
+                    child: (imageBytes == null && currentImageUrl == null)
+                        ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(Icons.add_photo_alternate, color: _primary, size: 32),
+                            const SizedBox(height: 4),
+                            Text('Agregar imagen', style: TextStyle(color: _primary, fontSize: 12)),
+                          ])
+                        : null,
+                  ),
+                ),
+                if (currentImageUrl != null && imageBytes == null)
+                  TextButton(
+                    onPressed: () => setDState(() => currentImageUrl = null),
+                    child: const Text('Quitar imagen', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                  ),
+                const SizedBox(height: 12),
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedCat,
+                  decoration: const InputDecoration(labelText: 'Categoria'),
+                  dropdownColor: AppConfig.colorFondoCard,
+                  items: Service.categorias.map((c) => DropdownMenuItem(value: c, child: Text(Service.categoriaLabel(c), style: const TextStyle(color: AppConfig.colorTexto)))).toList(),
+                  onChanged: (v) => setDState(() => selectedCat = v!),
+                ),
+                const SizedBox(height: 8),
+                TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duracion (min)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 8),
+                TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Precio (opcional)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) return;
+                String? imagenUrl = currentImageUrl;
+                if (imageBytes != null) {
+                  imagenUrl = await _svc.uploadImage('services/${DateTime.now().millisecondsSinceEpoch}_$imageName', imageBytes!);
+                }
+                await _svc.updateService(s.id, {
+                  'nombre': nameCtrl.text.trim(),
+                  'categoria': selectedCat,
+                  'duracion_minutos': int.tryParse(durCtrl.text) ?? 60,
+                  'precio': priceCtrl.text.isNotEmpty ? double.tryParse(priceCtrl.text) : null,
+                  'imagen_url': imagenUrl,
+                });
+                _services = await _svc.loadServices();
+                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+              },
+              child: const Text('Guardar'),
             ),
           ],
         ),
@@ -948,37 +1294,551 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           );
   }
 
-  // ==== TAB 6: SALON (settings) ====
+  // ==== ONBOARDING SCREEN ====
+  Widget _buildOnboardingScreen() {
+    final nombreCtrl = TextEditingController(text: _tenant!.nombreSalon);
+    final subtituloCtrl = TextEditingController(text: _tenant!.subtitulo);
+    final direccionCtrl = TextEditingController(text: _tenant!.direccion);
+    final ciudadCtrl = TextEditingController(text: _tenant!.ciudad);
+    final provinciaCtrl = TextEditingController(text: _tenant!.provincia);
+    final emailCtrl = TextEditingController(text: _tenant!.emailContacto);
+    final telefonoCtrl = TextEditingController(text: _tenant!.telefonoContacto);
+    final whatsappCtrl = TextEditingController(text: _tenant!.whatsappNumero);
+    final sloganCtrl = TextEditingController(text: _tenant!.slogan);
+    bool saving = false;
+    Uint8List? logoBytes;
+    String? logoName;
+
+    return Scaffold(
+      backgroundColor: AppConfig.colorFondoOscuro,
+      appBar: AppBar(
+        title: const Text('Configuracion inicial'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await _svc.signOut();
+              if (mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+      body: StatefulBuilder(
+        builder: (ctx, setLocalState) => SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: GestureDetector(
+                  onTap: () async {
+                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 85);
+                    if (picked != null) {
+                      final bytes = await picked.readAsBytes();
+                      setLocalState(() { logoBytes = bytes; logoName = picked.name; });
+                    }
+                  },
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: _primary.withAlpha(30),
+                      borderRadius: BorderRadius.circular(20),
+                      image: logoBytes != null ? DecorationImage(image: MemoryImage(logoBytes!), fit: BoxFit.cover) : null,
+                    ),
+                    child: logoBytes == null
+                        ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            Icon(Icons.add_a_photo, size: 32, color: _primary.withAlpha(150)),
+                            const SizedBox(height: 4),
+                            Text('Logo', style: TextStyle(color: _primary, fontSize: 11)),
+                          ])
+                        : null,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  'Bienvenido a ${_tenant!.nombreSalon.isNotEmpty ? _tenant!.nombreSalon : "tu salon"}',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _primary),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Center(
+                child: Text(
+                  'Completa los datos de tu salon para empezar',
+                  style: TextStyle(fontSize: 14, color: AppConfig.colorTextoSecundario),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 28),
+              _editField(nombreCtrl, 'Nombre del salon *', Icons.store),
+              _editField(subtituloCtrl, 'Subtitulo (ej: Peluqueria & Estetica)', Icons.short_text),
+              _editField(sloganCtrl, 'Slogan', Icons.format_quote),
+              _editField(direccionCtrl, 'Direccion', Icons.location_on),
+              _editField(ciudadCtrl, 'Ciudad', Icons.location_city),
+              _editField(provinciaCtrl, 'Provincia', Icons.map),
+              _editField(emailCtrl, 'Email de contacto', Icons.email),
+              _editField(telefonoCtrl, 'Telefono', Icons.phone),
+              _editField(whatsappCtrl, 'WhatsApp (con codigo de pais)', Icons.chat),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: saving ? null : () async {
+                    if (nombreCtrl.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(content: Text('El nombre del salon es obligatorio')),
+                      );
+                      return;
+                    }
+                    setLocalState(() => saving = true);
+                    try {
+                      String? logoUrl;
+                      if (logoBytes != null) {
+                        logoUrl = await _svc.uploadImage('logo_${DateTime.now().millisecondsSinceEpoch}_$logoName', logoBytes!);
+                      }
+                      await _svc.updateTenant({
+                        'nombre_salon': nombreCtrl.text.trim(),
+                        'subtitulo': subtituloCtrl.text.trim(),
+                        'slogan': sloganCtrl.text.trim(),
+                        'direccion': direccionCtrl.text.trim(),
+                        'ciudad': ciudadCtrl.text.trim(),
+                        'provincia': provinciaCtrl.text.trim(),
+                        'email_contacto': emailCtrl.text.trim(),
+                        'telefono_contacto': telefonoCtrl.text.trim(),
+                        'whatsapp_numero': whatsappCtrl.text.trim(),
+                        if (logoUrl != null) 'logo_url': logoUrl,
+                        'onboarding_completed': true,
+                      });
+                      setState(() => _loading = true);
+                      await _loadAll();
+                    } catch (e) {
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: Text('Error al guardar: $e')),
+                        );
+                      }
+                    } finally {
+                      if (ctx.mounted) setLocalState(() => saving = false);
+                    }
+                  },
+                  icon: saving
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.check),
+                  label: Text(saving ? 'Guardando...' : 'Completar configuracion'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==== TAB 7: SALON (settings) ====
   Widget _buildSalonTab() {
     if (_tenant == null) return const Center(child: Text('Sin datos'));
+    return _SalonConfigTab(
+      tenant: _tenant!,
+      primary: _primary,
+      accent: _accent,
+      svc: _svc,
+      onSaved: () async {
+        await _svc.loadTenant();
+        setState(() => _tenant = _svc.currentTenant);
+      },
+      onChangePassword: _promptChangePassword,
+      changingPassword: _changingPassword,
+    );
+  }
+
+  Widget _editField(TextEditingController ctrl, String label, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: ctrl,
+        style: const TextStyle(color: AppConfig.colorTexto),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, size: 18),
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _promptChangePassword() async {
+    final pass1 = TextEditingController();
+    final pass2 = TextEditingController();
+    String? error;
+
+    String? validatedValue(String v1, String v2) {
+      if (v1.isEmpty || v2.isEmpty) return 'Completa ambos campos';
+      if (v1.length < 8) return 'Minimo 8 caracteres';
+      if (v1 != v2) return 'Las contrasenas no coinciden';
+      return null;
+    }
+
+    final newPass = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (_, setState) => AlertDialog(
+            backgroundColor: AppConfig.colorFondoCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Cambiar contrasena', style: TextStyle(color: AppConfig.colorTexto)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: pass1,
+                  decoration: const InputDecoration(labelText: 'Nueva contrasena'),
+                  obscureText: true,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: pass2,
+                  decoration: const InputDecoration(labelText: 'Repetir contrasena'),
+                  obscureText: true,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                ]
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+              ElevatedButton(
+                onPressed: () {
+                  final err = validatedValue(pass1.text.trim(), pass2.text.trim());
+                  if (err != null) {
+                    setState(() => error = err);
+                    return;
+                  }
+                  Navigator.pop(ctx, pass1.text.trim());
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (newPass == null) return;
+    setState(() => _changingPassword = true);
+    try {
+      await _svc.changePassword(newPass);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Contrasena actualizada')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo cambiar la contrasena')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _changingPassword = false);
+    }
+  }
+}
+
+// ============================================================
+// SALON CONFIG TAB (with image uploads + color pickers)
+// ============================================================
+class _SalonConfigTab extends StatefulWidget {
+  final Tenant tenant;
+  final Color primary;
+  final Color accent;
+  final SupabaseService svc;
+  final VoidCallback onSaved;
+  final VoidCallback onChangePassword;
+  final bool changingPassword;
+
+  const _SalonConfigTab({
+    required this.tenant,
+    required this.primary,
+    required this.accent,
+    required this.svc,
+    required this.onSaved,
+    required this.onChangePassword,
+    required this.changingPassword,
+  });
+
+  @override
+  State<_SalonConfigTab> createState() => _SalonConfigTabState();
+}
+
+class _SalonConfigTabState extends State<_SalonConfigTab> {
+  late TextEditingController _nombreCtrl;
+  late TextEditingController _subtituloCtrl;
+  late TextEditingController _sloganCtrl;
+  late TextEditingController _direccionCtrl;
+  late TextEditingController _ciudadCtrl;
+  late TextEditingController _provinciaCtrl;
+  late TextEditingController _emailCtrl;
+  late TextEditingController _telefonoCtrl;
+  late TextEditingController _whatsappCtrl;
+  late TextEditingController _codigoPaisCtrl;
+  late TextEditingController _mapsQueryCtrl;
+
+  String? _logoUrl;
+  String? _logoBlancoUrl;
+  String? _fondoUrl;
+  late Color _primaryColor;
+  late Color _secondaryColor;
+  late Color _tertiaryColor;
+  late Color _accentColor;
+  late int _minAnticipacion;
+  late int _maxAnticipacion;
+  late int _autoRelease;
+  late int _ventanaConfirmacion;
+  late int _recordatorio;
+  late int _diaCerrado;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.tenant;
+    _nombreCtrl = TextEditingController(text: t.nombreSalon);
+    _subtituloCtrl = TextEditingController(text: t.subtitulo);
+    _sloganCtrl = TextEditingController(text: t.slogan);
+    _direccionCtrl = TextEditingController(text: t.direccion);
+    _ciudadCtrl = TextEditingController(text: t.ciudad);
+    _provinciaCtrl = TextEditingController(text: t.provincia);
+    _emailCtrl = TextEditingController(text: t.emailContacto);
+    _telefonoCtrl = TextEditingController(text: t.telefonoContacto);
+    _whatsappCtrl = TextEditingController(text: t.whatsappNumero);
+    _codigoPaisCtrl = TextEditingController(text: t.codigoPaisTelefono);
+    _mapsQueryCtrl = TextEditingController(text: t.googleMapsQuery);
+    _logoUrl = t.logoUrl;
+    _logoBlancoUrl = t.logoBlancoUrl;
+    _fondoUrl = t.fondoUrl;
+    _primaryColor = AppConfig.hexToColor(t.colorPrimario);
+    _secondaryColor = AppConfig.hexToColor(t.colorSecundario);
+    _tertiaryColor = AppConfig.hexToColor(t.colorTerciario);
+    _accentColor = AppConfig.hexToColor(t.colorAcento);
+    _minAnticipacion = t.minAnticipacionHoras;
+    _maxAnticipacion = t.maxAnticipacionDias;
+    _autoRelease = t.minutosAutoLiberacion;
+    _ventanaConfirmacion = t.ventanaConfirmacionHoras;
+    _recordatorio = t.recordatorioHorasAntes;
+    _diaCerrado = t.diaCerrado;
+  }
+
+  @override
+  void dispose() {
+    _nombreCtrl.dispose();
+    _subtituloCtrl.dispose();
+    _sloganCtrl.dispose();
+    _direccionCtrl.dispose();
+    _ciudadCtrl.dispose();
+    _provinciaCtrl.dispose();
+    _emailCtrl.dispose();
+    _telefonoCtrl.dispose();
+    _whatsappCtrl.dispose();
+    _codigoPaisCtrl.dispose();
+    _mapsQueryCtrl.dispose();
+    super.dispose();
+  }
+
+  String _colorToHex(Color c) => '#${c.red.toRadixString(16).padLeft(2, '0')}${c.green.toRadixString(16).padLeft(2, '0')}${c.blue.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+
+  Future<void> _pickColor(String label, Color current, ValueChanged<Color> onPick) async {
+    Color picked = current;
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppConfig.colorFondoCard,
+        title: Text(label, style: const TextStyle(color: AppConfig.colorTexto)),
+        content: ColorPicker(
+          color: current,
+          onColorChanged: (c) => picked = c,
+          pickersEnabled: const {ColorPickerType.wheel: true},
+          width: 36,
+          height: 36,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () { onPick(picked); Navigator.pop(context); },
+            child: Text('OK', style: TextStyle(color: widget.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadImage(String label, String fileName, ValueChanged<String?> onDone) async {
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+      if (picked == null) return;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Subiendo imagen...'), duration: Duration(seconds: 10)),
+        );
+      }
+
+      final bytes = await picked.readAsBytes();
+      final url = await widget.svc.uploadImage(fileName, Uint8List.fromList(bytes));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        setState(() => onDone(url));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Imagen subida'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await widget.svc.updateTenant({
+        'nombre_salon': _nombreCtrl.text.trim(),
+        'subtitulo': _subtituloCtrl.text.trim(),
+        'slogan': _sloganCtrl.text.trim(),
+        'direccion': _direccionCtrl.text.trim(),
+        'ciudad': _ciudadCtrl.text.trim(),
+        'provincia': _provinciaCtrl.text.trim(),
+        'email_contacto': _emailCtrl.text.trim(),
+        'telefono_contacto': _telefonoCtrl.text.trim(),
+        'whatsapp_numero': _whatsappCtrl.text.trim(),
+        'codigo_pais_telefono': _codigoPaisCtrl.text.trim(),
+        'google_maps_query': _mapsQueryCtrl.text.trim(),
+        'logo_url': _logoUrl,
+        'logo_blanco_url': _logoBlancoUrl,
+        'fondo_url': _fondoUrl,
+        'color_primario': _colorToHex(_primaryColor),
+        'color_secundario': _colorToHex(_secondaryColor),
+        'color_terciario': _colorToHex(_tertiaryColor),
+        'color_acento': _colorToHex(_accentColor),
+        'min_anticipacion_horas': _minAnticipacion,
+        'max_anticipacion_dias': _maxAnticipacion,
+        'minutos_auto_liberacion': _autoRelease,
+        'ventana_confirmacion_horas': _ventanaConfirmacion,
+        'recordatorio_horas_antes': _recordatorio,
+        'dia_cerrado': _diaCerrado,
+        'onboarding_completed': true,
+      });
+      widget.onSaved();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Configuracion guardada'), backgroundColor: widget.accent),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Logo
-        Center(
-          child: _tenant!.logoUrl != null
-              ? ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.network(_tenant!.logoUrl!, width: 80, height: 80, fit: BoxFit.cover))
-              : Container(width: 80, height: 80, decoration: BoxDecoration(color: _primary.withAlpha(30), borderRadius: BorderRadius.circular(16)), child: Icon(Icons.spa, color: _primary, size: 36)),
+        _sectionTitle('Informacion Basica'),
+        _textField('Nombre del salon', _nombreCtrl),
+        _textField('Subtitulo', _subtituloCtrl),
+        _textField('Slogan', _sloganCtrl),
+        _textField('Direccion', _direccionCtrl),
+        Row(children: [
+          Expanded(child: _textField('Ciudad', _ciudadCtrl)),
+          const SizedBox(width: 8),
+          Expanded(child: _textField('Provincia', _provinciaCtrl)),
+        ]),
+        Row(children: [
+          SizedBox(width: 80, child: _textField('Cod. Pais', _codigoPaisCtrl)),
+          const SizedBox(width: 8),
+          Expanded(child: _textField('Telefono', _telefonoCtrl)),
+        ]),
+        _textField('WhatsApp', _whatsappCtrl),
+        _textField('Email', _emailCtrl),
+        _textField('Google Maps query', _mapsQueryCtrl),
+
+        const SizedBox(height: 24),
+        _sectionTitle('Imagenes'),
+        _imageUploadField('Logo color', _logoUrl, 'logo_color.png', (url) => _logoUrl = url),
+        _imageUploadField('Logo blanco', _logoBlancoUrl, 'logo_blanco.png', (url) => _logoBlancoUrl = url),
+        _imageUploadField('Foto de fondo', _fondoUrl, 'fondo.jpg', (url) => _fondoUrl = url),
+
+        const SizedBox(height: 24),
+        _sectionTitle('Colores de Marca'),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _colorButton('Primario', _primaryColor, (c) => setState(() => _primaryColor = c)),
+            _colorButton('Secundario', _secondaryColor, (c) => setState(() => _secondaryColor = c)),
+            _colorButton('Terciario', _tertiaryColor, (c) => setState(() => _tertiaryColor = c)),
+            _colorButton('Acento', _accentColor, (c) => setState(() => _accentColor = c)),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+        _sectionTitle('Reglas de Turnos'),
+        Row(children: [
+          Expanded(child: _numberField('Min anticipacion (hs)', _minAnticipacion, (v) => setState(() => _minAnticipacion = v))),
+          const SizedBox(width: 8),
+          Expanded(child: _numberField('Max anticipacion (dias)', _maxAnticipacion, (v) => setState(() => _maxAnticipacion = v))),
+        ]),
+        _numberField('Auto-liberacion (min)', _autoRelease, (v) => setState(() => _autoRelease = v)),
+        _numberField('Ventana confirmacion (hs)', _ventanaConfirmacion, (v) => setState(() => _ventanaConfirmacion = v)),
+        _numberField('Recordatorio antes (hs)', _recordatorio, (v) => setState(() => _recordatorio = v)),
+        _dropdownField('Dia cerrado', _diaCerrado, {
+          0: 'Ninguno', 1: 'Lunes', 2: 'Martes', 3: 'Miercoles',
+          4: 'Jueves', 5: 'Viernes', 6: 'Sabado', 7: 'Domingo',
+        }, (v) => setState(() => _diaCerrado = v!)),
+
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: _saving ? null : _save,
+          icon: _saving
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.save),
+          label: Text(_saving ? 'Guardando...' : 'Guardar Configuracion'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: widget.accent,
+            foregroundColor: AppConfig.colorFondoOscuro,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
         const SizedBox(height: 16),
-        _infoRow('Nombre', _tenant!.nombreSalon),
-        _infoRow('Subtitulo', _tenant!.subtitulo),
-        _infoRow('Slogan', _tenant!.slogan),
-        _infoRow('Direccion', _tenant!.direccion),
-        _infoRow('Ciudad', '${_tenant!.ciudad}, ${_tenant!.provincia}'),
-        _infoRow('Email', _tenant!.emailContacto),
-        _infoRow('Telefono', _tenant!.telefonoContacto),
-        _infoRow('WhatsApp', _tenant!.whatsappNumero),
-        const SizedBox(height: 16),
-        Text('Configuracion', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _primary)),
-        const SizedBox(height: 8),
-        _infoRow('Min anticipacion', '${_tenant!.minAnticipacionHoras} horas'),
-        _infoRow('Max anticipacion', '${_tenant!.maxAnticipacionDias} dias'),
-        _infoRow('Auto-liberacion', '${_tenant!.minutosAutoLiberacion} min'),
-        _infoRow('Ventana confirmacion', '${_tenant!.ventanaConfirmacionHoras} horas'),
-        _infoRow('Recordatorio', '${_tenant!.recordatorioHorasAntes} horas antes'),
-        const SizedBox(height: 16),
-        // WhatsApp support
         Center(
           child: TextButton.icon(
             onPressed: () => WhatsappService.openSupport(),
@@ -987,19 +1847,332 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
           ),
         ),
+        const SizedBox(height: 32),
       ],
     );
   }
 
-  Widget _infoRow(String label, String value) {
-    if (value.isEmpty) return const SizedBox.shrink();
+  Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+      padding: const EdgeInsets.only(bottom: 12, top: 4),
+      child: Text(title, style: TextStyle(color: widget.accent, fontSize: 16, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _textField(String label, TextEditingController ctrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: ctrl,
+        style: const TextStyle(color: AppConfig.colorTexto),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white.withAlpha(150)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.white.withAlpha(50)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: widget.accent),
+          ),
+          filled: true,
+          fillColor: Colors.white.withAlpha(13),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _imageUploadField(String label, String? currentUrl, String fileName, ValueChanged<String?> onChanged) {
+    final hasImage = currentUrl != null && currentUrl.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 140, child: Text(label, style: const TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: AppConfig.colorTexto))),
+          Text(label, style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 13)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                width: 80, height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withAlpha(50)),
+                ),
+                child: hasImage
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(currentUrl!, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white38)),
+                      )
+                    : const Icon(Icons.image_outlined, color: Colors.white24, size: 32),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _pickAndUploadImage(label, fileName, onChanged),
+                      icon: const Icon(Icons.upload, size: 18),
+                      label: Text(hasImage ? 'Cambiar imagen' : 'Subir imagen'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: widget.accent,
+                        foregroundColor: AppConfig.colorFondoOscuro,
+                        minimumSize: const Size(double.infinity, 40),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    if (hasImage) ...[
+                      const SizedBox(height: 4),
+                      TextButton.icon(
+                        onPressed: () => setState(() => onChanged(null)),
+                        icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                        label: const Text('Quitar', style: TextStyle(color: Colors.red, fontSize: 12)),
+                        style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _colorButton(String label, Color color, ValueChanged<Color> onPick) {
+    return GestureDetector(
+      onTap: () => _pickColor(label, color, onPick),
+      child: Column(
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withAlpha(80), width: 2),
+              boxShadow: [BoxShadow(color: color.withAlpha(80), blurRadius: 8)],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(color: Colors.white.withAlpha(150), fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  Widget _numberField(String label, int value, ValueChanged<int> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 13))),
+          SizedBox(
+            width: 80,
+            child: TextField(
+              controller: TextEditingController(text: '$value'),
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppConfig.colorTexto),
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.white.withAlpha(50)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: widget.accent),
+                ),
+                filled: true,
+                fillColor: Colors.white.withAlpha(13),
+              ),
+              onChanged: (v) {
+                final n = int.tryParse(v);
+                if (n != null) onChanged(n);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dropdownField(String label, int value, Map<int, String> options, ValueChanged<int?> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<int>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white.withAlpha(150)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.white.withAlpha(50)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: widget.accent),
+          ),
+          filled: true,
+          fillColor: Colors.white.withAlpha(13),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+        dropdownColor: AppConfig.colorFondoCard,
+        items: options.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, style: const TextStyle(color: AppConfig.colorTexto)))).toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+// ==== Reminders Bottom Sheet ====
+class _RemindersSheet extends StatefulWidget {
+  final List<Appointment> appointments;
+  final String fechaStr;
+  final String salonName;
+  final Tenant? tenant;
+  final Color primary;
+  final Color accent;
+  final SupabaseService svc;
+
+  const _RemindersSheet({
+    required this.appointments,
+    required this.fechaStr,
+    required this.salonName,
+    required this.tenant,
+    required this.primary,
+    required this.accent,
+    required this.svc,
+  });
+
+  @override
+  State<_RemindersSheet> createState() => _RemindersSheetState();
+}
+
+class _RemindersSheetState extends State<_RemindersSheet> {
+  late Set<String> _sentIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _sentIds = widget.appointments
+        .where((a) => a.recordatorioEnviado)
+        .map((a) => a.id)
+        .toSet();
+  }
+
+  Future<void> _sendReminder(Appointment a) async {
+    final tenant = widget.tenant;
+    if (tenant == null || tenant.whatsappNumero.isEmpty) return;
+
+    final message = WhatsappService.buildReminderMessage(
+      nombreCliente: a.nombreCliente,
+      servicio: a.servicioNombre ?? '',
+      profesional: a.professionalNombre ?? '',
+      fecha: widget.fechaStr,
+      hora: a.hora,
+      codigo: a.codigoConfirmacion,
+      salonName: widget.salonName,
+    );
+
+    await WhatsappService.sendMessage(
+      phoneNumber: a.telefono,
+      message: message,
+      countryCode: tenant.codigoPaisTelefono,
+    );
+
+    await widget.svc.markReminderSent(a.id);
+    if (mounted) {
+      setState(() => _sentIds.add(a.id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalPending = widget.appointments.where((a) => !_sentIds.contains(a.id)).length;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (_, scrollCtrl) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                Icon(Icons.notifications_active, color: widget.accent, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Recordatorios - ${widget.fechaStr}',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: widget.primary)),
+                      Text('$totalPending pendiente${totalPending == 1 ? '' : 's'} de ${widget.appointments.length} turno${widget.appointments.length == 1 ? '' : 's'}',
+                          style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: AppConfig.colorTextoSecundario),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Colors.white12),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollCtrl,
+              padding: const EdgeInsets.all(12),
+              itemCount: widget.appointments.length,
+              itemBuilder: (_, i) {
+                final a = widget.appointments[i];
+                final sent = _sentIds.contains(a.id);
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  color: sent ? AppConfig.colorFondoCard.withAlpha(150) : AppConfig.colorFondoCard,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: sent ? Colors.green.withAlpha(40) : widget.accent.withAlpha(30),
+                      child: Icon(
+                        sent ? Icons.check : Icons.person,
+                        color: sent ? Colors.green : widget.accent,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(a.nombreCliente,
+                        style: TextStyle(
+                          color: AppConfig.colorTexto,
+                          fontWeight: FontWeight.w600,
+                          decoration: sent ? TextDecoration.lineThrough : null,
+                        )),
+                    subtitle: Text(
+                      '${a.hora} - ${a.servicioNombre ?? ''}\n${a.telefono}',
+                      style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
+                    ),
+                    isThreeLine: true,
+                    trailing: sent
+                        ? const Icon(Icons.done, color: Colors.green)
+                        : IconButton(
+                            icon: const Icon(Icons.chat, color: Color(0xFF25D366), size: 28),
+                            tooltip: 'Enviar recordatorio por WhatsApp',
+                            onPressed: () => _sendReminder(a),
+                          ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );

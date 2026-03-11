@@ -147,7 +147,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final tenant = SupabaseService.instance.currentTenant;
     return Scaffold(
-      backgroundColor: AppConfig.colorFondoOscuro,
+      backgroundColor: const Color(0xFFFFF0F3),
+      floatingActionButton: _error != null
+          ? FloatingActionButton(
+              onPressed: () => WhatsappService.openChat(
+                phone: '3413363551',
+                countryCode: '54',
+                message: 'Hola! Quisiera informacion sobre el sistema de turnos.',
+              ),
+              backgroundColor: const Color(0xFF25D366),
+              child: const Icon(Icons.chat, color: Colors.white, size: 26),
+            )
+          : null,
       body: Center(
         child: FadeTransition(
           opacity: _fadeIn,
@@ -157,33 +168,33 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               if (tenant?.logoUrl != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: Image.network(tenant!.logoUrl!, width: 120, height: 120, fit: BoxFit.cover),
+                  child: Image.network(tenant!.logoUrl!, width: 100, height: 100, fit: BoxFit.cover),
                 )
               else
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
-                    color: AppConfig.colorPrimario.withAlpha(40),
+                    color: const Color(0xFFD4A0A0).withAlpha(30),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(Icons.spa, size: 60, color: AppConfig.colorPrimario),
+                  child: const Icon(Icons.spa, size: 44, color: Color(0xFFD4A0A0)),
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(
                 tenant?.nombreSalon ?? 'Bella Color',
                 style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppConfig.colorTexto,
-                  letterSpacing: 1.2,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF8B6B6B),
+                  letterSpacing: 1,
                 ),
               ),
               if (tenant?.subtitulo.isNotEmpty == true) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   tenant!.subtitulo,
-                  style: TextStyle(fontSize: 14, color: AppConfig.colorPrimario.withAlpha(180)),
+                  style: const TextStyle(fontSize: 13, color: Color(0xFFB89999)),
                 ),
               ],
               const SizedBox(height: 40),
@@ -238,41 +249,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ],
                   ),
                 )
-              // ERROR STATE
+              // ERROR STATE - solo Admin link
               else if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    children: [
-                      Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.redAccent, fontSize: 12),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                        ),
-                        onLongPress: _showSuperAdminAuth,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppConfig.colorPrimario.withAlpha(100)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.admin_panel_settings, size: 16, color: AppConfig.colorPrimario),
-                              const SizedBox(width: 8),
-                              Text('Admin', style: TextStyle(color: AppConfig.colorPrimario)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                   ),
+                  onLongPress: _showSuperAdminAuth,
+                  child: const Text('Admin', style: TextStyle(fontSize: 14, color: Color(0xFFB89999))),
                 )
               // LOADING STATE
               else
@@ -281,7 +265,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppConfig.colorPrimario.withAlpha(150),
+                    color: const Color(0xFFD4A0A0),
                   ),
                 ),
             ],

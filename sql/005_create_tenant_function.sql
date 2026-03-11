@@ -39,6 +39,12 @@ BEGIN
   )
   RETURNING row_to_json(tenants.*) INTO v_result;
 
+  -- Auto-confirmar email del usuario admin (solo durante creacion de salon)
+  UPDATE auth.users
+  SET email_confirmed_at = NOW()
+  WHERE id = p_admin_user_id
+    AND email_confirmed_at IS NULL;
+
   RETURN v_result;
 END;
 $$;
@@ -171,3 +177,30 @@ $$;
 
 GRANT EXECUTE ON FUNCTION get_tenant_validated TO anon;
 GRANT EXECUTE ON FUNCTION get_tenant_validated TO authenticated;
+
+-- ============================================================================
+-- Funcion para eliminar tenant y todos sus datos relacionados
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION delete_tenant(p_id TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM waitlist WHERE tenant_id = p_id;
+  DELETE FROM appointments WHERE tenant_id = p_id;
+  DELETE FROM blocks WHERE tenant_id = p_id;
+  DELETE FROM operating_hours WHERE tenant_id = p_id;
+  DELETE FROM portfolio_images WHERE tenant_id = p_id;
+  DELETE FROM professional_services WHERE tenant_id = p_id;
+  DELETE FROM services WHERE tenant_id = p_id;
+  DELETE FROM professionals WHERE tenant_id = p_id;
+  DELETE FROM tenants WHERE id = p_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION delete_tenant TO anon;
+GRANT EXECUTE ON FUNCTION delete_tenant TO authenticated;
+
