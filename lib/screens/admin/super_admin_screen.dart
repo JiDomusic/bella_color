@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/app_config.dart';
 import '../../models/tenant.dart';
 import '../../services/supabase_service.dart';
@@ -295,6 +296,30 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     );
   }
 
+  Future<void> _openLink(String link) async {
+    final uri = Uri.tryParse(link);
+    if (uri == null) return;
+    final ok = await canLaunchUrl(uri);
+    if (!ok) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir el link'), backgroundColor: Colors.redAccent),
+        );
+      }
+      return;
+    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _copyLink(String link) async {
+    await Clipboard.setData(ClipboardData(text: link));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Link copiado: $link'), backgroundColor: AppConfig.colorFondoCard),
+      );
+    }
+  }
+
   Future<void> _toggleBlock(Tenant t) async {
     if (t.isBlocked) {
       // Desbloquear
@@ -437,19 +462,33 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                           children: [
                             Text(t.id, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
                             const SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () async {
-                                await Clipboard.setData(ClipboardData(text: link));
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Link copiado: $link'), backgroundColor: AppConfig.colorFondoCard),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                link,
-                                style: TextStyle(color: AppConfig.colorPrimario.withAlpha(200), fontSize: 12, decoration: TextDecoration.underline),
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () => _openLink(link),
+                                    onLongPress: () => _copyLink(link),
+                                    child: Text(
+                                      link,
+                                      style: TextStyle(
+                                        color: AppConfig.colorPrimario.withAlpha(240),
+                                        fontSize: 12,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Abrir link',
+                                  icon: const Icon(Icons.open_in_new, size: 18, color: Colors.white70),
+                                  onPressed: () => _openLink(link),
+                                ),
+                                IconButton(
+                                  tooltip: 'Copiar link',
+                                  icon: const Icon(Icons.copy, size: 18, color: Colors.white70),
+                                  onPressed: () => _copyLink(link),
+                                ),
+                              ],
                             ),
                           ],
                         ),
