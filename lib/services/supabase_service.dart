@@ -388,46 +388,24 @@ class SupabaseService {
     required String tenantId,
     required String salonName,
   }) async {
-    // Intentar via RPC atomica (crea usuario + tenant en una transaccion)
-    try {
-      final res = await _client.rpc('create_auth_user_and_tenant', params: {
-        'p_email': email,
-        'p_password': password,
-        'p_tenant_id': tenantId,
-        'p_nombre_salon': salonName,
-      });
-      return Map<String, dynamic>.from(res as Map);
-    } catch (rpcError) {
-      // Fallback: signUp + esperar + create_tenant
-      try {
-        final authRes = await _client.auth.signUp(email: email, password: password);
-        final userId = authRes.user?.id;
-        if (userId == null) throw Exception('No se pudo crear el usuario');
+    // Paso 1: Crear usuario via signUp
+    final authRes = await _client.auth.signUp(email: email, password: password);
+    final userId = authRes.user?.id;
+    if (userId == null) throw Exception('No se pudo crear el usuario');
 
-        // signUp cambia la sesion -> volver a anon para que el RPC funcione
-        await _client.auth.signOut();
+    // signUp cambia la sesion -> volver a anon
+    await _client.auth.signOut();
 
-        // Esperar a que auth.users se sincronice completamente
-        await Future.delayed(const Duration(seconds: 3));
+    // Paso 2: Crear tenant via RPC (ya cacheado en PostgREST, FK eliminada)
+    await _client.rpc('create_tenant', params: {
+      'p_id': tenantId,
+      'p_nombre_salon': salonName,
+      'p_admin_user_id': userId,
+      'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
+      'p_trial_days': 15,
+    });
 
-        // Crear tenant (create_tenant es SECURITY DEFINER, funciona como anon)
-        await _client.rpc('create_tenant', params: {
-          'p_id': tenantId,
-          'p_nombre_salon': salonName,
-          'p_admin_user_id': userId,
-          'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
-          'p_trial_days': 15,
-        });
-
-        return {'user_id': userId, 'tenant_id': tenantId};
-      } catch (fallbackError) {
-        throw Exception(
-          'Error creando salon. '
-          'RPC: $rpcError | '
-          'Fallback: $fallbackError'
-        );
-      }
-    }
+    return {'user_id': userId, 'tenant_id': tenantId};
   }
 
   // ---- Storage ----

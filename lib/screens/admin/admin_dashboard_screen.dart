@@ -61,17 +61,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Future<void> _loadAll() async {
     try {
       _tenant = await _svc.loadTenant();
+    } catch (_) {}
+
+    // Si el onboarding no esta completo, no cargar el resto
+    if (_tenant != null && !_tenant!.onboardingCompleted) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
+    try {
       _professionals = await _svc.loadProfessionals();
       _services = await _svc.loadServices();
       _appointments = await _svc.loadAppointments(fecha: _selectedDate);
       _hours = await _svc.loadOperatingHours();
       _blocks = await _svc.loadBlocks();
       _waitlist = await _svc.loadWaitlist();
-    } catch (e) {
-      // ignore
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    } catch (_) {}
+
+    if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _refreshAppointments() async {
