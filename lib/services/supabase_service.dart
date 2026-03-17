@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../models/tenant.dart';
@@ -381,29 +383,68 @@ class SupabaseService {
     await _client.from('waitlist').delete().eq('id', id);
   }
 
+  // ---- Crear usuario auth via Admin API de Supabase ----
+  /// La service_role_key se pasa via --dart-define=SRK=... al compilar.
+  Future<String> createAuthUser(String email, String password) async {
+    const serviceKey = String.fromEnvironment('SRK');
+    if (serviceKey.isEmpty) {
+      throw Exception('Configuración de servicio no disponible. Contacte al administrador.');
+    }
+    const url = '${AppConfig.supabaseUrl}/auth/v1/admin/users';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': 'Bearer $serviceKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+        'email_confirm': true,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['msg'] ?? body['message'] ?? 'Error al crear usuario');
+    }
+
+    final body = jsonDecode(response.body);
+    final userId = body['id'] as String?;
+    if (userId == null) {
+      throw Exception('No se pudo obtener el ID del usuario creado');
+    }
+    return userId;
+  }
+
   // ---- Crear salon completo (usuario + tenant) ----
+  /// Si falla el INSERT, elimina el usuario auth para no dejar huérfanos.
   Future<Map<String, dynamic>> createSalonComplete({
     required String email,
     required String password,
     required String tenantId,
     required String salonName,
   }) async {
-    // Paso 1: Crear usuario via signUp
-    final authRes = await _client.auth.signUp(email: email, password: password);
-    final userId = authRes.user?.id;
-    if (userId == null) throw Exception('No se pudo crear el usuario');
+    // Paso 1: Crear usuario via Admin API (sin afectar sesión actual)
+    final userId = await createAuthUser(email, password);
 
-    // signUp cambia la sesion -> volver a anon
-    await _client.auth.signOut();
-
-    // Paso 2: Crear tenant via RPC (ya cacheado en PostgREST, FK eliminada)
-    await _client.rpc('create_tenant', params: {
-      'p_id': tenantId,
-      'p_nombre_salon': salonName,
-      'p_admin_user_id': userId,
-      'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
-      'p_trial_days': 15,
-    });
+    // Paso 2: Crear tenant en la base de datos
+    try {
+      await _client.from('tenants').insert({
+        'id': tenantId,
+        'nombre_salon': salonName,
+        'admin_user_id': userId,
+        'subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
+      });
+    } catch (e) {
+      // Limpiar usuario auth huérfano
+      try {
+        await _client.rpc('delete_auth_user', params: {'p_user_id': userId});
+      } catch (_) {}
+      rethrow;
+    }
 
     return {'user_id': userId, 'tenant_id': tenantId};
   }

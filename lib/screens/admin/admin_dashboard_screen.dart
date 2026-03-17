@@ -1312,9 +1312,63 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     final telefonoCtrl = TextEditingController(text: _tenant!.telefonoContacto);
     final whatsappCtrl = TextEditingController(text: _tenant!.whatsappNumero);
     final sloganCtrl = TextEditingController(text: _tenant!.slogan);
+    final anticipacionCtrl = TextEditingController(text: _tenant!.minAnticipacionHoras.toString());
+    final maxDiasCtrl = TextEditingController(text: _tenant!.maxAnticipacionDias.toString());
+    final autoReleaseCtrl = TextEditingController(text: _tenant!.minutosAutoLiberacion.toString());
+    final confirmacionCtrl = TextEditingController(text: _tenant!.ventanaConfirmacionHoras.toString());
+    final recordatorioCtrl = TextEditingController(text: _tenant!.recordatorioHorasAntes.toString());
     bool saving = false;
+
+    // Imágenes
     Uint8List? logoBytes;
     String? logoName;
+    Uint8List? logoBlancoBytes;
+    String? logoBlancoName;
+    Uint8List? fondoBytes;
+    String? fondoName;
+
+    // Colores
+    Color colorPrimario = AppConfig.hexToColor(_tenant!.colorPrimario);
+    Color colorSecundario = AppConfig.hexToColor(_tenant!.colorSecundario);
+    Color colorTerciario = AppConfig.hexToColor(_tenant!.colorTerciario);
+    Color colorAcento = AppConfig.hexToColor(_tenant!.colorAcento);
+
+    int diaCerrado = _tenant!.diaCerrado;
+
+    String _colorToHex(Color c) {
+      return '#${c.value.toRadixString(16).substring(2)}';
+    }
+
+    Future<void> _pickColor(BuildContext ctx, void Function(void Function()) setLocal, Color current, String label, void Function(Color) onPicked) async {
+      Color picked = current;
+      await showDialog(
+        context: ctx,
+        builder: (dCtx) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          title: Text(label, style: const TextStyle(color: AppConfig.colorTexto)),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              color: current,
+              onColorChanged: (c) => picked = c,
+              heading: Text('Elige un color', style: TextStyle(color: AppConfig.colorTextoSecundario)),
+              subheading: Text('Tono', style: TextStyle(color: AppConfig.colorTextoSecundario)),
+              pickersEnabled: const <ColorPickerType, bool>{
+                ColorPickerType.wheel: true,
+                ColorPickerType.accent: false,
+                ColorPickerType.primary: false,
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () { onPicked(picked); Navigator.pop(dCtx); },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppConfig.colorFondoOscuro,
@@ -1340,34 +1394,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: GestureDetector(
-                  onTap: () async {
-                    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 85);
-                    if (picked != null) {
-                      final bytes = await picked.readAsBytes();
-                      setLocalState(() { logoBytes = bytes; logoName = picked.name; });
-                    }
-                  },
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: _primary.withAlpha(30),
-                      borderRadius: BorderRadius.circular(20),
-                      image: logoBytes != null ? DecorationImage(image: MemoryImage(logoBytes!), fit: BoxFit.cover) : null,
-                    ),
-                    child: logoBytes == null
-                        ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            Icon(Icons.add_a_photo, size: 32, color: _primary.withAlpha(150)),
-                            const SizedBox(height: 4),
-                            Text('Logo', style: TextStyle(color: _primary, fontSize: 11)),
-                          ])
-                        : null,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              // === HEADER ===
               Center(
                 child: Text(
                   'Bienvenido a ${_tenant!.nombreSalon.isNotEmpty ? _tenant!.nombreSalon : "tu salon"}',
@@ -1384,19 +1411,145 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
               ),
               const SizedBox(height: 28),
+
+              // === SECCION 1: IMAGENES ===
+              _onboardingSection('IMAGENES DE TU SALON', Icons.image),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _imageUploadBox(
+                    label: 'Logo color',
+                    bytes: logoBytes,
+                    onTap: () async {
+                      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 85);
+                      if (picked != null) {
+                        final bytes = await picked.readAsBytes();
+                        setLocalState(() { logoBytes = bytes; logoName = picked.name; });
+                      }
+                    },
+                  ),
+                  _imageUploadBox(
+                    label: 'Logo blanco',
+                    bytes: logoBlancoBytes,
+                    onTap: () async {
+                      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800, imageQuality: 85);
+                      if (picked != null) {
+                        final bytes = await picked.readAsBytes();
+                        setLocalState(() { logoBlancoBytes = bytes; logoBlancoName = picked.name; });
+                      }
+                    },
+                  ),
+                  _imageUploadBox(
+                    label: 'Fondo',
+                    bytes: fondoBytes,
+                    onTap: () async {
+                      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+                      if (picked != null) {
+                        final bytes = await picked.readAsBytes();
+                        setLocalState(() { fondoBytes = bytes; fondoName = picked.name; });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Toca cada cuadro para subir una imagen. PNG para logos, JPG para fondo.',
+                  style: TextStyle(fontSize: 11, color: AppConfig.colorTextoSecundario),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // === SECCION 2: INFO BASICA ===
+              _onboardingSection('DATOS DEL SALON', Icons.store),
+              const SizedBox(height: 12),
               _editField(nombreCtrl, 'Nombre del salon *', Icons.store),
               _editField(subtituloCtrl, 'Subtitulo (ej: Peluqueria & Estetica)', Icons.short_text),
               _editField(sloganCtrl, 'Slogan', Icons.format_quote),
               _editField(direccionCtrl, 'Direccion', Icons.location_on),
-              _editField(ciudadCtrl, 'Ciudad', Icons.location_city),
-              _editField(provinciaCtrl, 'Provincia', Icons.map),
+              Row(
+                children: [
+                  Expanded(child: _editField(ciudadCtrl, 'Ciudad', Icons.location_city)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _editField(provinciaCtrl, 'Provincia', Icons.map)),
+                ],
+              ),
               _editField(emailCtrl, 'Email de contacto', Icons.email),
               _editField(telefonoCtrl, 'Telefono', Icons.phone),
               _editField(whatsappCtrl, 'WhatsApp (con codigo de pais)', Icons.chat),
               const SizedBox(height: 24),
+
+              // === SECCION 3: COLORES ===
+              _onboardingSection('COLORES DE TU MARCA', Icons.palette),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _onboardingColorButton(ctx, setLocalState, 'Primario', colorPrimario, (c) { colorPrimario = c; }),
+                  _onboardingColorButton(ctx, setLocalState, 'Secundario', colorSecundario, (c) { colorSecundario = c; }),
+                  _onboardingColorButton(ctx, setLocalState, 'Terciario', colorTerciario, (c) { colorTerciario = c; }),
+                  _onboardingColorButton(ctx, setLocalState, 'Acento', colorAcento, (c) { colorAcento = c; }),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // === SECCION 4: REGLAS OPERATIVAS ===
+              _onboardingSection('REGLAS DE TURNOS', Icons.settings),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _editField(anticipacionCtrl, 'Anticipacion min (hs)', Icons.timer, isNumber: true)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _editField(maxDiasCtrl, 'Dias maximo adelanto', Icons.date_range, isNumber: true)),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(child: _editField(autoReleaseCtrl, 'Auto-release (min)', Icons.timer_off, isNumber: true)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _editField(confirmacionCtrl, 'Confirmacion (hs)', Icons.check_circle, isNumber: true)),
+                ],
+              ),
+              _editField(recordatorioCtrl, 'Recordatorio antes (hs)', Icons.notifications, isNumber: true),
+              const SizedBox(height: 12),
+              // Día cerrado
+              Row(
+                children: [
+                  const Icon(Icons.event_busy, size: 18, color: AppConfig.colorTextoSecundario),
+                  const SizedBox(width: 10),
+                  const Text('Dia cerrado:', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 14)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButton<int>(
+                      value: diaCerrado,
+                      dropdownColor: AppConfig.colorFondoCard,
+                      isExpanded: true,
+                      style: const TextStyle(color: AppConfig.colorTexto),
+                      items: const [
+                        DropdownMenuItem(value: 0, child: Text('Ninguno')),
+                        DropdownMenuItem(value: 1, child: Text('Lunes')),
+                        DropdownMenuItem(value: 2, child: Text('Martes')),
+                        DropdownMenuItem(value: 3, child: Text('Miercoles')),
+                        DropdownMenuItem(value: 4, child: Text('Jueves')),
+                        DropdownMenuItem(value: 5, child: Text('Viernes')),
+                        DropdownMenuItem(value: 6, child: Text('Sabado')),
+                        DropdownMenuItem(value: 7, child: Text('Domingo')),
+                      ],
+                      onChanged: (v) => setLocalState(() => diaCerrado = v ?? 0),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // === BOTON GUARDAR ===
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 52,
                 child: ElevatedButton.icon(
                   onPressed: saving ? null : () async {
                     if (nombreCtrl.text.trim().isEmpty) {
@@ -1407,9 +1560,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     }
                     setLocalState(() => saving = true);
                     try {
+                      // Subir imágenes
                       String? logoUrl;
+                      String? logoBlancoUrl;
+                      String? fondoUrl;
+                      final ts = DateTime.now().millisecondsSinceEpoch;
                       if (logoBytes != null) {
-                        logoUrl = await _svc.uploadImage('logo_${DateTime.now().millisecondsSinceEpoch}_$logoName', logoBytes!);
+                        logoUrl = await _svc.uploadImage('logo_${ts}_$logoName', logoBytes!);
+                      }
+                      if (logoBlancoBytes != null) {
+                        logoBlancoUrl = await _svc.uploadImage('logo_blanco_${ts}_$logoBlancoName', logoBlancoBytes!);
+                      }
+                      if (fondoBytes != null) {
+                        fondoUrl = await _svc.uploadImage('fondo_${ts}_$fondoName', fondoBytes!);
                       }
                       await _svc.updateTenant({
                         'nombre_salon': nombreCtrl.text.trim(),
@@ -1422,6 +1585,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                         'telefono_contacto': telefonoCtrl.text.trim(),
                         'whatsapp_numero': whatsappCtrl.text.trim(),
                         if (logoUrl != null) 'logo_url': logoUrl,
+                        if (logoBlancoUrl != null) 'logo_blanco_url': logoBlancoUrl,
+                        if (fondoUrl != null) 'fondo_url': fondoUrl,
+                        'color_primario': _colorToHex(colorPrimario),
+                        'color_secundario': _colorToHex(colorSecundario),
+                        'color_terciario': _colorToHex(colorTerciario),
+                        'color_acento': _colorToHex(colorAcento),
+                        'min_anticipacion_horas': int.tryParse(anticipacionCtrl.text) ?? 2,
+                        'max_anticipacion_dias': int.tryParse(maxDiasCtrl.text) ?? 60,
+                        'minutos_auto_liberacion': int.tryParse(autoReleaseCtrl.text) ?? 15,
+                        'ventana_confirmacion_horas': int.tryParse(confirmacionCtrl.text) ?? 2,
+                        'recordatorio_horas_antes': int.tryParse(recordatorioCtrl.text) ?? 24,
+                        'dia_cerrado': diaCerrado,
                         'onboarding_completed': true,
                       });
                       setState(() => _loading = true);
@@ -1447,8 +1622,94 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Helpers del onboarding
+  Widget _onboardingSection(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppConfig.colorAcento),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppConfig.colorAcento, letterSpacing: 1)),
+      ],
+    );
+  }
+
+  Widget _imageUploadBox({required String label, Uint8List? bytes, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 90,
+        height: 90,
+        decoration: BoxDecoration(
+          color: _primary.withAlpha(20),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _primary.withAlpha(60)),
+          image: bytes != null ? DecorationImage(image: MemoryImage(bytes), fit: BoxFit.cover) : null,
+        ),
+        child: bytes == null
+            ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.add_a_photo, size: 24, color: _primary.withAlpha(150)),
+                const SizedBox(height: 4),
+                Text(label, style: TextStyle(color: _primary, fontSize: 10), textAlign: TextAlign.center),
+              ])
+            : null,
+      ),
+    );
+  }
+
+  Widget _onboardingColorButton(BuildContext ctx, void Function(void Function()) setLocal, String label, Color color, void Function(Color) onPicked) {
+    return GestureDetector(
+      onTap: () async {
+        Color picked = color;
+        await showDialog(
+          context: ctx,
+          builder: (dCtx) => AlertDialog(
+            backgroundColor: AppConfig.colorFondoCard,
+            title: Text(label, style: const TextStyle(color: AppConfig.colorTexto)),
+            content: SingleChildScrollView(
+              child: ColorPicker(
+                color: color,
+                onColorChanged: (c) => picked = c,
+                heading: Text('Elige un color', style: TextStyle(color: AppConfig.colorTextoSecundario)),
+                subheading: Text('Tono', style: TextStyle(color: AppConfig.colorTextoSecundario)),
+                pickersEnabled: const <ColorPickerType, bool>{
+                  ColorPickerType.wheel: true,
+                  ColorPickerType.accent: false,
+                  ColorPickerType.primary: false,
+                },
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('Cancelar')),
+              ElevatedButton(
+                onPressed: () { setLocal(() => onPicked(picked)); Navigator.pop(dCtx); },
+                child: const Text('Aceptar'),
+              ),
+            ],
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppConfig.colorFondoCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 20, height: 20, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 13)),
+          ],
         ),
       ),
     );
@@ -1471,12 +1732,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     );
   }
 
-  Widget _editField(TextEditingController ctrl, String label, IconData icon) {
+  Widget _editField(TextEditingController ctrl, String label, IconData icon, {bool isNumber = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: ctrl,
         style: const TextStyle(color: AppConfig.colorTexto),
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, size: 18),

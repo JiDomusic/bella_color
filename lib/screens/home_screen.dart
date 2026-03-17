@@ -7,6 +7,7 @@ import '../services/supabase_service.dart';
 import '../services/whatsapp_service.dart';
 import '../widgets/service_card.dart';
 import '../widgets/professional_card.dart';
+import '../widgets/welcome_overlay.dart';
 import 'booking/booking_flow_screen.dart';
 import 'admin/admin_login_screen.dart';
 import 'admin/super_admin_screen.dart';
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Service> _services = [];
   List<Professional> _professionals = [];
   bool _loading = true;
+  bool _showWelcomeOverlay = false;
 
   @override
   void initState() {
@@ -38,11 +40,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final tenant = _svc.currentTenant ?? await _svc.loadTenant();
       final services = await _svc.loadActiveServices();
       final professionals = await _svc.loadActiveProfessionals();
+      final tenantId = _svc.tenantId;
       if (mounted) {
         setState(() {
           _tenant = tenant;
           _services = services;
           _professionals = professionals;
+          _showWelcomeOverlay = (tenantId == 'demo' || tenantId.isEmpty);
           _loading = false;
         });
       }
@@ -58,6 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Color get _accent => _tenant != null
       ? AppConfig.hexToColor(_tenant!.colorAcento)
       : AppConfig.colorAcento;
+
+  // Colores para tema blanco
+  static const _bgWhite = Color(0xFFFAFAFA);
+  static const _textDark = Color(0xFF1A1A1A);
+  static const _textMuted = Color(0xFF666666);
 
   void _showSuperAdminAuth() {
     final pin = PinAuthService.instance;
@@ -75,22 +84,33 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppConfig.colorFondoCard,
-        title: const Text('Super Admin', style: TextStyle(color: AppConfig.colorTexto)),
+        backgroundColor: Colors.white,
+        title: const Text('Super Admin', style: TextStyle(color: _textDark)),
         content: TextField(
           controller: pinCtrl,
           obscureText: true,
           keyboardType: TextInputType.number,
           maxLength: 6,
-          style: const TextStyle(color: AppConfig.colorTexto, letterSpacing: 6, fontSize: 20),
+          style: const TextStyle(color: _textDark, letterSpacing: 6, fontSize: 20),
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(labelText: 'PIN'),
+          decoration: InputDecoration(
+            labelText: 'PIN',
+            labelStyle: const TextStyle(color: _textMuted),
+            filled: true,
+            fillColor: const Color(0xFFF5F5F5),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _primary.withAlpha(80)),
+            ),
+          ),
           onSubmitted: (_) => _handlePin(pinCtrl.text, ctx),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancelar', style: TextStyle(color: _textMuted))),
           ElevatedButton(
             onPressed: () => _handlePin(pinCtrl.text, ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: _primary),
             child: const Text('Entrar'),
           ),
         ],
@@ -123,44 +143,65 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
   }
 
+  void _openProgramacionJJWhatsApp() {
+    WhatsappService.openChat(
+      phone: '3413363551',
+      countryCode: '54',
+      message: 'Hola! Quiero probar Bella Color gratis por 15 dias. Me pasan el link?',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        backgroundColor: AppConfig.colorFondoOscuro,
+        backgroundColor: _bgWhite,
         body: Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppConfig.colorFondoOscuro,
-      body: CustomScrollView(
-        slivers: [
-          // Hero header
-          SliverToBoxAdapter(child: _buildHeader()),
-          // Services section
-          if (_services.isNotEmpty) ...[
-            SliverToBoxAdapter(child: _sectionTitle('Nuestros Servicios')),
-            SliverToBoxAdapter(child: _buildServicesGrid()),
-          ],
-          // Professionals section
-          if (_professionals.isNotEmpty) ...[
-            SliverToBoxAdapter(child: _sectionTitle('Nuestro Equipo')),
-            SliverToBoxAdapter(child: _buildProfessionalsList()),
-          ],
-          // CTA button
-          SliverToBoxAdapter(child: _buildCTA()),
-          // Footer
-          SliverToBoxAdapter(child: _buildFooter()),
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+      backgroundColor: _bgWhite,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: _buildHeader()),
+              if (_services.isNotEmpty) ...[
+                SliverToBoxAdapter(child: _sectionTitle('Nuestros Servicios')),
+                SliverToBoxAdapter(child: _buildServicesGrid()),
+              ],
+              if (_professionals.isNotEmpty) ...[
+                SliverToBoxAdapter(child: _sectionTitle('Nuestro Equipo')),
+                SliverToBoxAdapter(child: _buildProfessionalsList()),
+              ],
+              SliverToBoxAdapter(child: _buildCTA()),
+              SliverToBoxAdapter(child: _buildSubscribeButton()),
+              SliverToBoxAdapter(child: _buildFooter()),
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
+            ],
+          ),
+          // Welcome overlay — fijo, solo en tenant demo
+          if (_showWelcomeOverlay)
+            Positioned(
+              top: 70,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: WelcomeOverlay(
+                onSubscribe: _openProgramacionJJWhatsApp,
+              ),
+            ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openBooking(),
-        backgroundColor: _accent,
-        icon: const Icon(Icons.calendar_today),
-        label: const Text('Reservar Turno'),
-      ),
+      floatingActionButton: _showWelcomeOverlay
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _openBooking(),
+              backgroundColor: _accent,
+              icon: const Icon(Icons.calendar_today),
+              label: const Text('Reservar Turno'),
+            ),
     );
   }
 
@@ -171,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [_primary.withAlpha(60), AppConfig.colorFondoOscuro],
+          colors: [_primary.withAlpha(25), _bgWhite],
         ),
       ),
       child: SafeArea(
@@ -189,9 +230,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: _accent.withAlpha(50),
+                        color: _accent.withAlpha(20),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _accent.withAlpha(150)),
+                        border: Border.all(color: _accent.withAlpha(100)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -205,6 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
               // Logo
               if (_tenant?.logoUrl != null)
                 ClipRRect(
@@ -216,15 +258,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: _primary.withAlpha(40),
+                    color: _primary.withAlpha(25),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _primary.withAlpha(60)),
                   ),
                   child: Icon(Icons.spa, size: 50, color: _primary),
                 ),
               const SizedBox(height: 16),
               Text(
                 _tenant?.nombreSalon ?? 'Salon de Belleza',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppConfig.colorTexto),
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _textDark),
                 textAlign: TextAlign.center,
               ),
               if (_tenant?.slogan.isNotEmpty == true) ...[
@@ -240,12 +283,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.location_on, size: 14, color: AppConfig.colorTextoSecundario),
+                    Icon(Icons.location_on, size: 14, color: _textMuted),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         '${_tenant!.direccion}, ${_tenant!.ciudad}',
-                        style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario),
+                        style: const TextStyle(fontSize: 12, color: _textMuted),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -316,9 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [_primary.withAlpha(30), _accent.withAlpha(20)]),
+          gradient: LinearGradient(colors: [_primary.withAlpha(15), _accent.withAlpha(10)]),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _primary.withAlpha(60)),
+          border: Border.all(color: _primary.withAlpha(40)),
         ),
         child: Column(
           children: [
@@ -329,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             const Text(
               'Elige tu servicio, profesional y horario preferido',
-              style: TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario),
+              style: TextStyle(fontSize: 13, color: _textMuted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -339,7 +382,9 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('Reservar Turno'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _accent,
+                foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 12),
@@ -351,11 +396,56 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('Tengo un codigo de turno'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _primary,
-                side: BorderSide(color: _primary.withAlpha(100)),
+                side: BorderSide(color: _primary.withAlpha(80)),
                 minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubscribeButton() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      child: GestureDetector(
+        onTap: _openProgramacionJJWhatsApp,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE53935), Color(0xFFFF5722)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFE53935).withAlpha(60),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.spa_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Flexible(
+                child: Text(
+                  'Tenes un salon? Proba gratis 15 dias',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+            ],
+          ),
         ),
       ),
     );
@@ -366,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
       child: Column(
         children: [
-          Divider(color: _primary.withAlpha(40)),
+          Divider(color: _primary.withAlpha(30)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -374,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_tenant?.whatsappNumero.isNotEmpty == true)
                 IconButton(
                   icon: const Icon(Icons.chat, size: 20),
-                  color: AppConfig.colorTextoSecundario,
+                  color: _textMuted,
                   onPressed: () => WhatsappService.openChat(
                     phone: _tenant!.whatsappNumero,
                     countryCode: _tenant!.codigoPaisTelefono,
@@ -384,7 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_tenant?.telefonoContacto.isNotEmpty == true)
                 IconButton(
                   icon: const Icon(Icons.phone, size: 20),
-                  color: AppConfig.colorTextoSecundario,
+                  color: _textMuted,
                   onPressed: () {},
                 ),
             ],
@@ -395,7 +485,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onLongPress: _showSuperAdminAuth,
             child: Text(
               'Desarrollado por ${AppConfig.nombreEmpresa}',
-              style: TextStyle(fontSize: 11, color: _primary.withAlpha(100)),
+              style: TextStyle(fontSize: 11, color: _textMuted.withAlpha(150)),
             ),
           ),
         ],
