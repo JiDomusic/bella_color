@@ -430,13 +430,13 @@ class SupabaseService {
     // Paso 1: Crear usuario via Admin API (sin afectar sesión actual)
     final userId = await createAuthUser(email, password);
 
-    // Paso 2: Crear tenant en la base de datos
+    // Paso 2: Crear tenant via función SECURITY DEFINER (bypasea RLS)
     try {
-      await _client.from('tenants').insert({
-        'id': tenantId,
-        'nombre_salon': salonName,
-        'admin_user_id': userId,
-        'subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
+      await _client.rpc('create_tenant', params: {
+        'p_id': tenantId,
+        'p_nombre_salon': salonName,
+        'p_admin_user_id': userId,
+        'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
       });
     } catch (e) {
       // Limpiar usuario auth huérfano
