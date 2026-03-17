@@ -79,6 +79,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     } catch (e) {
       final msg = e.toString();
       if (mounted) {
+        // Si es tenant demo o vacío, ir al home con el welcome overlay
+        final tenantId = SupabaseService.instance.tenantId;
+        if (tenantId == 'demo' || tenantId.isEmpty) {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => const HomeScreen(),
+              transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child),
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+          return;
+        }
         setState(() {
           if (msg.contains('Salon no encontrado') || msg.contains('tenant')) {
             _error = 'Salon no configurado. Contacta al administrador.';

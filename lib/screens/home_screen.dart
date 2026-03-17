@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Service> _services = [];
   List<Professional> _professionals = [];
   bool _loading = true;
-  bool _showWelcomeOverlay = false;
+  bool _isLanding = false;
 
   @override
   void initState() {
@@ -46,12 +46,18 @@ class _HomeScreenState extends State<HomeScreen> {
           _tenant = tenant;
           _services = services;
           _professionals = professionals;
-          _showWelcomeOverlay = (tenantId == 'demo' || tenantId.isEmpty);
+          _isLanding = (tenantId == 'demo' || tenantId.isEmpty);
           _loading = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      // Si falla (tenant demo no existe), mostrar landing
+      if (mounted) {
+        setState(() {
+          _isLanding = true;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -63,7 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ? AppConfig.hexToColor(_tenant!.colorAcento)
       : AppConfig.colorAcento;
 
-  // Colores para tema blanco
   static const _bgWhite = Color(0xFFFAFAFA);
   static const _textDark = Color(0xFF1A1A1A);
   static const _textMuted = Color(0xFF666666);
@@ -160,29 +165,38 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: _bgWhite,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _buildHeader()),
-              if (_services.isNotEmpty) ...[
-                SliverToBoxAdapter(child: _sectionTitle('Nuestros Servicios')),
-                SliverToBoxAdapter(child: _buildServicesGrid()),
-              ],
-              if (_professionals.isNotEmpty) ...[
-                SliverToBoxAdapter(child: _sectionTitle('Nuestro Equipo')),
-                SliverToBoxAdapter(child: _buildProfessionalsList()),
-              ],
-              SliverToBoxAdapter(child: _buildCTA()),
-              SliverToBoxAdapter(child: _buildSubscribeButton()),
-              SliverToBoxAdapter(child: _buildFooter()),
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ],
-          ),
-          // Welcome overlay — fijo, solo en tenant demo
-          if (_showWelcomeOverlay)
+    // ─── Landing pública: solo overlay + super admin ───
+    if (_isLanding) {
+      return Scaffold(
+        backgroundColor: _bgWhite,
+        body: Stack(
+          children: [
+            // Super admin button (long press) arriba
+            Positioned(
+              top: 40,
+              right: 16,
+              child: GestureDetector(
+                onLongPress: _showSuperAdminAuth,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _accent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [BoxShadow(color: _accent.withAlpha(80), blurRadius: 8)],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.admin_panel_settings, color: Colors.white, size: 16),
+                      SizedBox(width: 6),
+                      Text('Admin', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Overlay fijo ocupa todo
             Positioned(
               top: 70,
               left: 0,
@@ -192,16 +206,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 onSubscribe: _openProgramacionJJWhatsApp,
               ),
             ),
+          ],
+        ),
+      );
+    }
+
+    // ─── Home normal del salón configurado ───
+    return Scaffold(
+      backgroundColor: _bgWhite,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildHeader()),
+          if (_services.isNotEmpty) ...[
+            SliverToBoxAdapter(child: _sectionTitle('Nuestros Servicios')),
+            SliverToBoxAdapter(child: _buildServicesGrid()),
+          ],
+          if (_professionals.isNotEmpty) ...[
+            SliverToBoxAdapter(child: _sectionTitle('Nuestro Equipo')),
+            SliverToBoxAdapter(child: _buildProfessionalsList()),
+          ],
+          SliverToBoxAdapter(child: _buildCTA()),
+          SliverToBoxAdapter(child: _buildFooter()),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
       ),
-      floatingActionButton: _showWelcomeOverlay
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _openBooking(),
-              backgroundColor: _accent,
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('Reservar Turno'),
-            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openBooking(),
+        backgroundColor: _accent,
+        icon: const Icon(Icons.calendar_today),
+        label: const Text('Reservar Turno'),
+      ),
     );
   }
 
@@ -247,7 +281,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Logo
               if (_tenant?.logoUrl != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
@@ -402,50 +435,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubscribeButton() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      child: GestureDetector(
-        onTap: _openProgramacionJJWhatsApp,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE53935), Color(0xFFFF5722)],
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFE53935).withAlpha(60),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.spa_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              const Flexible(
-                child: Text(
-                  'Tenes un salon? Proba gratis 15 dias',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-            ],
-          ),
         ),
       ),
     );

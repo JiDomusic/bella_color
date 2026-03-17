@@ -23,7 +23,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
   late Animation<double> _bounceAnimation;
   late Animation<double> _shimmerAnimation;
 
-  int _currentStep = 0;
+  int _currentStep = 0; // 0 = welcome, 1 = features, 2 = how it works, 3 = CTA
 
   @override
   void initState() {
@@ -68,10 +68,16 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
   }
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    if (_currentStep < 3) {
       setState(() => _currentStep++);
     } else {
       widget.onSubscribe();
+    }
+  }
+
+  void _prevStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
     }
   }
 
@@ -104,8 +110,8 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               );
             },
             child: Container(
-              margin: EdgeInsets.all(isMobile ? 20 : 40),
-              constraints: const BoxConstraints(maxWidth: 480, maxHeight: 620),
+              margin: EdgeInsets.all(isMobile ? 16 : 40),
+              constraints: const BoxConstraints(maxWidth: 480, maxHeight: 680),
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(28),
@@ -124,7 +130,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   children: [
                     ..._buildFloatingIcons(),
                     Padding(
-                      padding: EdgeInsets.all(isMobile ? 24 : 32),
+                      padding: EdgeInsets.all(isMobile ? 20 : 32),
                       child: Column(
                         children: [
                           const SizedBox(height: 8),
@@ -138,8 +144,8 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                           ),
                           const SizedBox(height: 12),
                           _buildStepIndicator(),
-                          const SizedBox(height: 16),
-                          _buildMainButton(isMobile),
+                          const SizedBox(height: 12),
+                          _buildButtons(isMobile),
                         ],
                       ),
                     ),
@@ -160,12 +166,15 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
       case 1:
         return _buildFeaturesStep(isMobile);
       case 2:
+        return _buildHowItWorksStep(isMobile);
+      case 3:
         return _buildCtaStep(isMobile);
       default:
         return const SizedBox.shrink();
     }
   }
 
+  // ─── Paso 0: Bienvenida ───
   Widget _buildWelcomeStep(bool isMobile) {
     const cardRed = Color(0xFFE53935);
     const cardYellow = Color(0xFFFFD600);
@@ -262,72 +271,185 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             height: 1.4,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Organiza tu negocio, gestiona tus clientes\ny hace crecer tu salon',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: isMobile ? 12 : 14,
+            color: textDark.withValues(alpha: 0.4),
+            height: 1.4,
+          ),
+        ),
       ],
     );
   }
 
+  // ─── Paso 1: Features — qué podes hacer ───
   Widget _buildFeaturesStep(bool isMobile) {
     const cardRed = Color(0xFFE53935);
     const cardYellow = Color(0xFFFFD600);
     const textDark = Color(0xFF1A1A1A);
 
-    return Column(
+    return SingleChildScrollView(
       key: const ValueKey('step_features'),
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Tu salon, tu estilo',
-          style: TextStyle(
-            fontSize: isMobile ? 22 : 26,
-            fontWeight: FontWeight.w700,
-            color: textDark,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Tu salon, tu estilo',
+            style: TextStyle(
+              fontSize: isMobile ? 22 : 26,
+              fontWeight: FontWeight.w700,
+              color: textDark,
+            ),
           ),
-        ),
-        SizedBox(height: isMobile ? 8 : 12),
-        Text(
-          'Es super facil de configurar',
-          style: TextStyle(
-            fontSize: isMobile ? 14 : 16,
-            color: textDark.withValues(alpha: 0.5),
-            fontStyle: FontStyle.italic,
+          SizedBox(height: isMobile ? 4 : 8),
+          Text(
+            'Todo lo que necesitas para tu negocio',
+            style: TextStyle(
+              fontSize: isMobile ? 13 : 15,
+              color: textDark.withValues(alpha: 0.5),
+              fontStyle: FontStyle.italic,
+            ),
           ),
-        ),
-        SizedBox(height: isMobile ? 24 : 32),
-        _buildFeatureItem(
-          icon: Icons.palette_rounded,
-          title: 'Colores y marca',
-          subtitle: 'Cambia colores, logo y fondo con un toque',
-          accentColor: cardRed,
-          isMobile: isMobile,
-        ),
-        SizedBox(height: isMobile ? 12 : 16),
-        _buildFeatureItem(
-          icon: Icons.spa_rounded,
-          title: 'Servicios y profesionales',
-          subtitle: 'Configura servicios, equipo y duraciones',
-          accentColor: cardYellow.withValues(alpha: 0.85),
-          isMobile: isMobile,
-        ),
-        SizedBox(height: isMobile ? 12 : 16),
-        _buildFeatureItem(
-          icon: Icons.chat_rounded,
-          title: 'WhatsApp integrado',
-          subtitle: 'Notificaciones automaticas a tus clientes',
-          accentColor: const Color(0xFF25D366),
-          isMobile: isMobile,
-        ),
-        SizedBox(height: isMobile ? 12 : 16),
-        _buildFeatureItem(
-          icon: Icons.bar_chart_rounded,
-          title: 'Reportes en vivo',
-          subtitle: 'Estadisticas, graficos y control total',
-          accentColor: cardRed,
-          isMobile: isMobile,
-        ),
-      ],
+          SizedBox(height: isMobile ? 16 : 24),
+          _buildFeatureItem(
+            icon: Icons.image_rounded,
+            title: 'Subi tu logo y fotos',
+            subtitle: 'Logo a color, logo blanco y fondo personalizado',
+            accentColor: cardRed,
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 10 : 14),
+          _buildFeatureItem(
+            icon: Icons.palette_rounded,
+            title: 'Colores de tu marca',
+            subtitle: 'Personaliza 4 colores para que tu salon se vea unico',
+            accentColor: cardYellow.withValues(alpha: 0.85),
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 10 : 14),
+          _buildFeatureItem(
+            icon: Icons.spa_rounded,
+            title: 'Servicios y precios',
+            subtitle: 'Carga cortes, color, manicura, pestanas y mas',
+            accentColor: const Color(0xFFAB47BC),
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 10 : 14),
+          _buildFeatureItem(
+            icon: Icons.people_rounded,
+            title: 'Profesionales',
+            subtitle: 'Agrega tu equipo con sus especialidades y horarios',
+            accentColor: const Color(0xFF26A69A),
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 10 : 14),
+          _buildFeatureItem(
+            icon: Icons.chat_rounded,
+            title: 'WhatsApp integrado',
+            subtitle: 'Confirmaciones y recordatorios automaticos',
+            accentColor: const Color(0xFF25D366),
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 10 : 14),
+          _buildFeatureItem(
+            icon: Icons.bar_chart_rounded,
+            title: 'Reportes en vivo',
+            subtitle: 'Estadisticas, graficos y control total de tu salon',
+            accentColor: cardRed,
+            isMobile: isMobile,
+          ),
+        ],
+      ),
     );
   }
 
+  // ─── Paso 2: Cómo funciona ───
+  Widget _buildHowItWorksStep(bool isMobile) {
+    const cardRed = Color(0xFFE53935);
+    const cardYellow = Color(0xFFFFD600);
+    const textDark = Color(0xFF1A1A1A);
+
+    return SingleChildScrollView(
+      key: const ValueKey('step_howitworks'),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Como funciona?',
+            style: TextStyle(
+              fontSize: isMobile ? 22 : 26,
+              fontWeight: FontWeight.w700,
+              color: textDark,
+            ),
+          ),
+          SizedBox(height: isMobile ? 4 : 8),
+          Text(
+            'En 3 simples pasos',
+            style: TextStyle(
+              fontSize: isMobile ? 13 : 15,
+              color: textDark.withValues(alpha: 0.5),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          SizedBox(height: isMobile ? 20 : 28),
+          _buildStepCard(
+            number: '1',
+            title: 'Contactanos por WhatsApp',
+            description: 'Te creamos tu salon en minutos y te damos tu link personalizado',
+            icon: Icons.chat_rounded,
+            color: const Color(0xFF25D366),
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 12 : 16),
+          _buildStepCard(
+            number: '2',
+            title: 'Configura tu salon',
+            description: 'Subi logos, elegí colores, carga tus servicios, profesionales y horarios',
+            icon: Icons.settings_rounded,
+            color: cardYellow,
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 12 : 16),
+          _buildStepCard(
+            number: '3',
+            title: 'Listo! Ya podes recibir turnos',
+            description: 'Tus clientes reservan online, vos gestionas todo desde el panel admin',
+            icon: Icons.rocket_launch_rounded,
+            color: cardRed,
+            isMobile: isMobile,
+          ),
+          SizedBox(height: isMobile ? 16 : 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: cardRed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.auto_awesome_rounded, color: cardRed, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'El sistema organiza los turnos por vos',
+                  style: TextStyle(
+                    fontSize: isMobile ? 12 : 13,
+                    color: cardRed,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Paso 3: CTA final ───
   Widget _buildCtaStep(bool isMobile) {
     const cardRed = Color(0xFFE53935);
     const cardYellow = Color(0xFFFFD600);
@@ -348,15 +470,13 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   child: Transform.rotate(
                     angle: -0.3,
                     child: Icon(Icons.brush_rounded,
-                        color: cardYellow.withValues(alpha: 0.7),
-                        size: 32),
+                        color: cardYellow.withValues(alpha: 0.7), size: 32),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Transform.translate(
                   offset: Offset(0, -_bounceAnimation.value.abs()),
-                  child: const Icon(Icons.content_cut_rounded,
-                      color: cardRed, size: 48),
+                  child: const Icon(Icons.content_cut_rounded, color: cardRed, size: 48),
                 ),
                 const SizedBox(width: 8),
                 Transform.translate(
@@ -364,8 +484,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   child: Transform.rotate(
                     angle: 0.3,
                     child: Icon(Icons.brush_rounded,
-                        color: cardYellow.withValues(alpha: 0.7),
-                        size: 32),
+                        color: cardYellow.withValues(alpha: 0.7), size: 32),
                   ),
                 ),
               ],
@@ -395,8 +514,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           ),
           child: Column(
             children: [
-              const Icon(Icons.card_giftcard_rounded,
-                  color: cardRed, size: 28),
+              const Icon(Icons.card_giftcard_rounded, color: cardRed, size: 28),
               const SizedBox(height: 8),
               Text(
                 'Gratis por 15 dias',
@@ -431,8 +549,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.chat_rounded,
-                color: Color(0xFF25D366), size: 16),
+            const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 16),
             const SizedBox(width: 6),
             Text(
               'Apreta aca y te pasamos el link!',
@@ -447,6 +564,8 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
       ],
     );
   }
+
+  // ─── Helpers ───
 
   Widget _buildFeatureItem({
     required IconData icon,
@@ -481,7 +600,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: isMobile ? 12 : 13,
+                  fontSize: isMobile ? 11 : 13,
                   color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
                 ),
               ),
@@ -492,11 +611,76 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
     );
   }
 
+  Widget _buildStepCard({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    required bool isMobile,
+  }) {
+    const textDark = Color(0xFF1A1A1A);
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 14 : 16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: isMobile ? 14 : 15,
+                    fontWeight: FontWeight.w600,
+                    color: textDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: isMobile ? 11 : 12,
+                    color: textDark.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStepIndicator() {
     const cardRed = Color(0xFFE53935);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (i) {
+      children: List.generate(4, (i) {
         final isActive = i == _currentStep;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
@@ -514,54 +698,70 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
     );
   }
 
-  Widget _buildMainButton(bool isMobile) {
+  Widget _buildButtons(bool isMobile) {
     const cardRed = Color(0xFFE53935);
     const cardYellow = Color(0xFFFFD600);
-    final isLastStep = _currentStep == 2;
+    final isLastStep = _currentStep == 3;
 
-    return GestureDetector(
-      onTap: _nextStep,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 18),
-        decoration: BoxDecoration(
-          gradient: isLastStep
-              ? const LinearGradient(colors: [cardRed, Color(0xFFFF5722)])
-              : null,
-          color: isLastStep ? null : cardYellow,
-          borderRadius: BorderRadius.circular(16),
-          border: isLastStep
-              ? null
-              : Border.all(color: cardRed.withValues(alpha: 0.3)),
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: _nextStep,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
+            decoration: BoxDecoration(
+              gradient: isLastStep
+                  ? const LinearGradient(colors: [cardRed, Color(0xFFFF5722)])
+                  : null,
+              color: isLastStep ? null : cardYellow,
+              borderRadius: BorderRadius.circular(16),
+              border: isLastStep
+                  ? null
+                  : Border.all(color: cardRed.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isLastStep)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 10),
+                    child: Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 20),
+                  ),
+                Text(
+                  isLastStep ? 'Empezar ahora' : 'Siguiente',
+                  style: TextStyle(
+                    fontSize: isMobile ? 16 : 17,
+                    fontWeight: isLastStep ? FontWeight.w700 : FontWeight.w600,
+                    color: isLastStep ? Colors.white : const Color(0xFF1A1A1A),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                if (!isLastStep)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(Icons.arrow_forward_rounded, color: Color(0xFF1A1A1A), size: 18),
+                  ),
+              ],
+            ),
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (isLastStep)
-              const Padding(
-                padding: EdgeInsets.only(right: 10),
-                child: Icon(Icons.rocket_launch_rounded,
-                    color: Colors.white, size: 20),
-              ),
-            Text(
-              isLastStep ? 'Empezar ahora' : 'Siguiente',
+        if (_currentStep > 0) ...[
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: _prevStep,
+            child: Text(
+              'Atras',
               style: TextStyle(
-                fontSize: isMobile ? 16 : 17,
-                fontWeight: isLastStep ? FontWeight.w700 : FontWeight.w600,
-                color: isLastStep ? Colors.white : const Color(0xFF1A1A1A),
-                letterSpacing: 0.5,
+                fontSize: 14,
+                color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+                fontWeight: FontWeight.w500,
               ),
             ),
-            if (!isLastStep)
-              const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: Icon(Icons.arrow_forward_rounded,
-                    color: Color(0xFF1A1A1A), size: 18),
-              ),
-          ],
-        ),
-      ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -578,7 +778,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
     return List.generate(icons.length, (i) {
       final random = math.Random(i * 42);
       final left = random.nextDouble() * 400;
-      final top = random.nextDouble() * 550;
+      final top = random.nextDouble() * 600;
       final size = 18.0 + random.nextDouble() * 14;
       final opacity = 0.03 + random.nextDouble() * 0.05;
       final rotationOffset = (i.isEven ? 1.0 : -1.0);
