@@ -123,9 +123,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handlePin(String input, BuildContext ctx) {
+  Future<void> _handlePin(String input, BuildContext ctx) async {
     final pin = PinAuthService.instance;
-    if (pin.verify(input)) {
+    final ok = await pin.verifyAsync(input);
+    if (!mounted) return;
+    if (ok) {
       Navigator.pop(ctx);
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SuperAdminScreen()));
     } else {

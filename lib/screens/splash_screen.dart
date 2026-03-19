@@ -66,7 +66,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         return;
       }
 
-      final isAdmin = svc.isLoggedIn;
+      // Verificar que el usuario logueado sea el admin de ESTE tenant
+      var isAdmin = false;
+      if (svc.isLoggedIn) {
+        final tenantForUser = await svc.getTenantIdForCurrentUser();
+        if (tenantForUser == svc.tenantId) {
+          isAdmin = true;
+        } else {
+          // Sesion de otro tenant, cerrar sesion
+          await svc.signOut();
+        }
+      }
       final destination = isAdmin ? const AdminDashboardScreen() : const HomeScreen();
 
       Navigator.of(context).pushReplacement(
@@ -112,8 +122,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       return;
     }
     final pinCtrl = TextEditingController();
-    void tryPin() {
-      if (auth.verify(pinCtrl.text)) {
+    Future<void> tryPin() async {
+      final ok = await auth.verifyAsync(pinCtrl.text);
+      if (!mounted) return;
+      if (ok) {
         Navigator.pop(context);
         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SuperAdminScreen()));
       } else {

@@ -1,5 +1,5 @@
 -- ============================================================================
--- 005_create_tenant_function.sql
+-- 005_create_tenant_function.sqlw
 -- Funcion SECURITY DEFINER para crear tenants desde la app
 -- Bypasea RLS porque corre con privilegios del owner (postgres)
 -- Ejecutar en Supabase SQL Editor

@@ -4,7 +4,7 @@ class AppConfig {
   // Supabase config (anon key para cliente; no uses service role en el front).
   static const String supabaseUrl = 'https://unbyowpsmgwdskadwgbi.supabase.co';
   static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuYnlvd3BzbWd3ZHNrYWR3Z2JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTc0NTAsImV4cCI6MjA4ODczMzQ1MH0.h5yPT6NkkzwOKUF1W03PRxx-1Uh7dtqJjEqv6rtekS0';
-  static const String superAdminPin = '987654';
+  // PIN se verifica server-side via verify_super_admin_pin (tabla app_secrets)
   static const String whatsappSoporte = '3413363551';
   static const String nombreEmpresa = 'Programacion JJ';
   static const String storageBucket = 'salon-images';
