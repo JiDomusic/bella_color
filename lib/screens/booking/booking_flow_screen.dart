@@ -250,10 +250,10 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           children: [
             Icon(Icons.error_outline, color: Colors.redAccent),
             const SizedBox(width: 8),
-            const Text('Error', style: TextStyle(color: Colors.grey[800])),
+            Text('Error', style: TextStyle(color: Colors.grey.shade800)),
           ],
         ),
-        content: Text(msg, style: const TextStyle(color: Colors.grey[800]Secundario)),
+        content: Text(msg, style: TextStyle(color: Colors.grey.shade800)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('OK', style: TextStyle(color: _primary))),
         ],
@@ -279,29 +279,29 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Todos los turnos estan ocupados. Dejanos tus datos y te avisaremos cuando haya disponibilidad.',
-              style: TextStyle(color: Colors.grey[800]Secundario, fontSize: 13),
+              style: const TextStyle(color: Color(0xFF424242), fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: nameCtrl,
               decoration: const InputDecoration(labelText: 'Nombre'),
-              style: const TextStyle(color: Colors.grey[800]),
+              style: TextStyle(color: Colors.grey.shade800),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneCtrl,
               decoration: const InputDecoration(labelText: 'Telefono'),
               keyboardType: TextInputType.phone,
-              style: const TextStyle(color: Colors.grey[800]),
+              style: TextStyle(color: Colors.grey.shade800),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar', style: TextStyle(color: Colors.grey[800]Secundario)),
+            child: Text('Cancelar', style: TextStyle(color: Colors.grey.shade800)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -410,7 +410,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       children: [
         Text('Elige tu profesional', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
         const SizedBox(height: 8),
-        Text('(opcional)', style: TextStyle(fontSize: 13, color: Colors.grey[800]Secundario)),
+        Text('(opcional)', style: TextStyle(fontSize: 13, color: Colors.grey.shade800)),
         const SizedBox(height: 16),
         // "Sin preferencia" option
         _selectionTile(
@@ -708,7 +708,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         TextField(
           controller: _nameController,
           decoration: const InputDecoration(labelText: 'Nombre completo *', prefixIcon: Icon(Icons.person_outline)),
-          style: const TextStyle(color: Colors.grey[800]),
+          style: TextStyle(color: Colors.grey.shade800),
           textCapitalization: TextCapitalization.words,
         ),
         const SizedBox(height: 12),
@@ -716,21 +716,21 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           controller: _phoneController,
           decoration: const InputDecoration(labelText: 'Telefono *', prefixIcon: Icon(Icons.phone)),
           keyboardType: TextInputType.phone,
-          style: const TextStyle(color: Colors.grey[800]),
+          style: TextStyle(color: Colors.grey.shade800),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'Email (opcional)', prefixIcon: Icon(Icons.email_outlined)),
           keyboardType: TextInputType.emailAddress,
-          style: const TextStyle(color: Colors.grey[800]),
+          style: TextStyle(color: Colors.grey.shade800),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _commentsController,
           decoration: const InputDecoration(labelText: 'Comentarios (opcional)', prefixIcon: Icon(Icons.comment_outlined)),
           maxLines: 3,
-          style: const TextStyle(color: Colors.grey[800]),
+          style: TextStyle(color: Colors.grey.shade800),
         ),
         const SizedBox(height: 24),
         Row(
@@ -766,7 +766,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         children: [
           Icon(icon, size: 16, color: _primary),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontSize: 13, color: Colors.grey[800])),
+          Text(text, style: TextStyle(fontSize: 13, color: Colors.grey.shade800)),
         ],
       ),
     );
@@ -817,7 +817,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                 children: [
                   Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
                   if (subtitle.isNotEmpty)
-                    Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey[800]Secundario)),
+                    Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                 ],
               ),
             ),
