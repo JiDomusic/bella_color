@@ -17,16 +17,25 @@ Future<void> main() async {
   runApp(const BellaColorApp());
 }
 
-/// Obtiene tenant_id: primero query param/fragment en web (?tenant=), luego TENANT_ID, luego 'demo'.
+/// Obtiene tenant_id: path (/jose), query param (?tenant=jose), fragment, o 'demo'.
 String _resolveTenantId() {
   String envTenant = const String.fromEnvironment('TENANT_ID', defaultValue: 'demo');
 
   if (kIsWeb) {
     try {
       final uri = Uri.base;
+
+      // 1. Query param ?tenant=xxx (retrocompatible)
       final fromQuery = uri.queryParameters['tenant'];
       if (fromQuery != null && fromQuery.isNotEmpty) return fromQuery;
 
+      // 2. Path limpio /jose (nuevo formato bonito)
+      final pathSegments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      if (pathSegments.length == 1 && !pathSegments[0].contains('.')) {
+        return pathSegments[0];
+      }
+
+      // 3. Fragment #jose
       final frag = uri.fragment;
       if (frag.isNotEmpty) {
         final path = frag.startsWith('/') ? frag.substring(1) : frag;

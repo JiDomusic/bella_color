@@ -56,7 +56,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     return buf.toString();
   }
 
-  String _bookingLink(String tenantId) => '${AppConfig.publicBaseUrl}?tenant=$tenantId';
+  String _bookingLink(String tenantId) => '${AppConfig.publicBaseUrl}/$tenantId';
 
   InputDecoration _inputDecor(String label, IconData icon) {
     return InputDecoration(

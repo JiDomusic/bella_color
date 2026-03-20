@@ -15,127 +15,197 @@ class ConfirmationScreen extends StatelessWidget {
     final tenant = SupabaseService.instance.currentTenant;
     final primary = tenant != null ? AppConfig.hexToColor(tenant.colorPrimario) : AppConfig.colorPrimario;
     final accent = tenant != null ? AppConfig.hexToColor(tenant.colorAcento) : AppConfig.colorAcento;
+    final salonName = tenant?.nombreSalon ?? 'Salon';
 
     return Scaffold(
-      backgroundColor: AppConfig.colorFondoOscuro,
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Success icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: accent.withAlpha(30),
-                    shape: BoxShape.circle,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 20),
+                  // Success animation
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [primary.withAlpha(40), accent.withAlpha(30)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.check_rounded, size: 48, color: primary),
                   ),
-                  child: Icon(Icons.check, size: 40, color: accent),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Turno Reservado!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Tu turno fue registrado correctamente',
-                  style: TextStyle(fontSize: 14, color: AppConfig.colorTextoSecundario),
-                ),
-                const SizedBox(height: 24),
-                // Details card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppConfig.colorFondoCard,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: primary.withAlpha(40)),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Listo, reservamos tu turno!',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.grey[800]),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Column(
-                    children: [
-                      _detailRow(Icons.spa, 'Servicio', appointment.servicioNombre ?? ''),
-                      if (appointment.professionalNombre != null)
-                        _detailRow(Icons.person, 'Profesional', appointment.professionalNombre!),
-                      _detailRow(Icons.calendar_today, 'Fecha', _formatDate(appointment.fecha)),
-                      _detailRow(Icons.access_time, 'Hora', appointment.hora),
-                      const Divider(height: 24, color: Colors.white12),
-                      // Confirmation code
-                      Text('Codigo de confirmacion', style: TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () {
-                          Clipboard.setData(ClipboardData(text: appointment.codigoConfirmacion));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: const Text('Codigo copiado!'), backgroundColor: primary),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: accent.withAlpha(20),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: accent.withAlpha(60)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                appointment.codigoConfirmacion,
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: accent, letterSpacing: 4),
+                  const SizedBox(height: 6),
+                  Text(
+                    salonName,
+                    style: TextStyle(fontSize: 14, color: primary, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Details card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 16, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _detailRow(Icons.spa_outlined, appointment.servicioNombre ?? '', primary),
+                        if (appointment.professionalNombre != null)
+                          _detailRow(Icons.person_outline, appointment.professionalNombre!, primary),
+                        _detailRow(Icons.calendar_today_outlined, _formatDate(appointment.fecha), primary),
+                        _detailRow(Icons.schedule_outlined, appointment.hora, primary),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Confirmation code card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: accent.withAlpha(40)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12, offset: const Offset(0, 2)),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Tu código de confirmación',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey[500]),
+                        ),
+                        const SizedBox(height: 10),
+                        GestureDetector(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: appointment.codigoConfirmacion));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Código copiado!'),
+                                backgroundColor: primary,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              const SizedBox(width: 8),
-                              Icon(Icons.copy, size: 18, color: accent.withAlpha(150)),
-                            ],
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: accent.withAlpha(15),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  appointment.codigoConfirmacion,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: accent,
+                                    letterSpacing: 5,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Icon(Icons.copy_rounded, size: 18, color: accent.withAlpha(120)),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Guarda este codigo para confirmar tu turno',
-                        style: TextStyle(fontSize: 12, color: primary.withAlpha(150)),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Actions
-                if (tenant?.whatsappNumero.isNotEmpty == true)
-                  ElevatedButton.icon(
-                    onPressed: () => WhatsappService.sendConfirmation(
-                      phone: tenant!.whatsappNumero,
-                      countryCode: tenant.codigoPaisTelefono,
-                      nombreCliente: appointment.nombreCliente,
-                      servicio: appointment.servicioNombre ?? '',
-                      profesional: appointment.professionalNombre ?? '',
-                      fecha: _formatDate(appointment.fecha),
-                      hora: appointment.hora,
-                      codigo: appointment.codigoConfirmacion,
-                      salonName: tenant.nombreSalon,
-                      direccion: tenant.direccion,
-                    ),
-                    icon: const Icon(Icons.chat),
-                    label: const Text('Confirmar por WhatsApp'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF25D366),
-                      minimumSize: const Size(double.infinity, 48),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tocá para copiar',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                        ),
+                      ],
                     ),
                   ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primary,
-                    side: BorderSide(color: primary),
-                    minimumSize: const Size(double.infinity, 48),
+                  const SizedBox(height: 24),
+
+                  // WhatsApp: enviarse a sí mismo
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _sendToMyWhatsApp(tenant, primary),
+                      icon: const Icon(Icons.chat_rounded, size: 20),
+                      label: const Text('Guardar en mi WhatsApp', style: TextStyle(fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
                   ),
-                  child: const Text('Volver al inicio'),
-                ),
-              ],
+
+                  // WhatsApp: enviar al salón
+                  if (tenant?.whatsappNumero.isNotEmpty == true) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => WhatsappService.sendConfirmation(
+                          phone: tenant!.whatsappNumero,
+                          countryCode: tenant.codigoPaisTelefono,
+                          nombreCliente: appointment.nombreCliente,
+                          servicio: appointment.servicioNombre ?? '',
+                          profesional: appointment.professionalNombre ?? '',
+                          fecha: _formatDate(appointment.fecha),
+                          hora: appointment.hora,
+                          codigo: appointment.codigoConfirmacion,
+                          salonName: tenant.nombreSalon,
+                          direccion: tenant.direccion,
+                        ),
+                        icon: Icon(Icons.storefront_outlined, size: 20, color: Colors.grey[600]),
+                        label: Text('Confirmar con el salón', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey[300]!),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+                      style: TextButton.styleFrom(
+                        foregroundColor: primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Volver al inicio', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -143,15 +213,50 @@ class ConfirmationScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(IconData icon, String label, String value) {
+  void _sendToMyWhatsApp(dynamic tenant, Color primary) {
+    final salonName = tenant?.nombreSalon ?? 'Salon';
+    final direccion = tenant?.direccion ?? '';
+    final countryCode = tenant?.codigoPaisTelefono ?? '54';
+
+    final message = WhatsappService.buildConfirmationMessage(
+      nombreCliente: appointment.nombreCliente,
+      servicio: appointment.servicioNombre ?? '',
+      profesional: appointment.professionalNombre ?? '',
+      fecha: _formatDate(appointment.fecha),
+      hora: appointment.hora,
+      codigo: appointment.codigoConfirmacion,
+      salonName: salonName,
+      direccion: direccion,
+    );
+
+    WhatsappService.openChat(
+      phone: appointment.telefono,
+      countryCode: countryCode,
+      message: message,
+    );
+  }
+
+  Widget _detailRow(IconData icon, String value, Color primary) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppConfig.colorTextoSecundario),
-          const SizedBox(width: 10),
-          Text('$label: ', style: const TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario)),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: AppConfig.colorTexto, fontWeight: FontWeight.w500))),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: primary.withAlpha(15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.grey[800]),
+            ),
+          ),
         ],
       ),
     );

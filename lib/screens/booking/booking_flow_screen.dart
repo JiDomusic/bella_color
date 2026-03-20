@@ -244,16 +244,16 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppConfig.colorFondoCard,
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.error_outline, color: Colors.redAccent),
             const SizedBox(width: 8),
-            const Text('Error', style: TextStyle(color: AppConfig.colorTexto)),
+            const Text('Error', style: TextStyle(color: Colors.grey[800])),
           ],
         ),
-        content: Text(msg, style: const TextStyle(color: AppConfig.colorTextoSecundario)),
+        content: Text(msg, style: const TextStyle(color: Colors.grey[800]Secundario)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('OK', style: TextStyle(color: _primary))),
         ],
@@ -267,7 +267,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppConfig.colorFondoCard,
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
@@ -281,27 +281,27 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           children: [
             const Text(
               'Todos los turnos estan ocupados. Dejanos tus datos y te avisaremos cuando haya disponibilidad.',
-              style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 13),
+              style: TextStyle(color: Colors.grey[800]Secundario, fontSize: 13),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: nameCtrl,
               decoration: const InputDecoration(labelText: 'Nombre'),
-              style: const TextStyle(color: AppConfig.colorTexto),
+              style: const TextStyle(color: Colors.grey[800]),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneCtrl,
               decoration: const InputDecoration(labelText: 'Telefono'),
               keyboardType: TextInputType.phone,
-              style: const TextStyle(color: AppConfig.colorTexto),
+              style: const TextStyle(color: Colors.grey[800]),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancelar', style: TextStyle(color: AppConfig.colorTextoSecundario)),
+            child: Text('Cancelar', style: TextStyle(color: Colors.grey[800]Secundario)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -345,21 +345,24 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        backgroundColor: AppConfig.colorFondoOscuro,
+        backgroundColor: const Color(0xFFFAFAFA),
         appBar: AppBar(title: const Text('Reservar Turno')),
         body: Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppConfig.colorFondoOscuro,
+      backgroundColor: const Color(0xFFFAFAFA),
       appBar: AppBar(
-        title: const Text('Reservar Turno'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.grey[800],
+        elevation: 0,
+        title: Text('Reservar Turno', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
             value: (_currentPage + 1) / 4,
-            backgroundColor: Colors.white.withAlpha(20),
+            backgroundColor: Colors.grey[200],
             valueColor: AlwaysStoppedAnimation(_primary),
           ),
         ),
@@ -407,7 +410,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       children: [
         Text('Elige tu profesional', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
         const SizedBox(height: 8),
-        Text('(opcional)', style: TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario)),
+        Text('(opcional)', style: TextStyle(fontSize: 13, color: Colors.grey[800]Secundario)),
         const SizedBox(height: 16),
         // "Sin preferencia" option
         _selectionTile(
@@ -436,78 +439,40 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           onPressed: () => _goToPage(0),
           icon: const Icon(Icons.arrow_back, size: 16),
           label: const Text('Volver'),
-          style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
+          style: TextButton.styleFrom(foregroundColor: Colors.grey[500]),
         ),
       ],
     );
   }
+
+  // Calendar state
+  late DateTime _calendarMonth = DateTime.now();
+
+  static const _dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   // Page 2: Select Date & Time
   Widget _buildDateTimePage() {
     final tenant = _svc.currentTenant;
     final maxDays = tenant?.maxAnticipacionDias ?? 60;
     final closedDay = tenant?.diaCerrado ?? 0;
+    final now = DateTime.now();
+    final lastDate = now.add(Duration(days: maxDays));
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Fecha y hora', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
-        const SizedBox(height: 16),
-        // Date picker
-        GestureDetector(
-          onTap: () async {
-            final picked = await showDatePicker(
-              context: context,
-              initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 1)),
-              firstDate: DateTime.now(),
-              lastDate: DateTime.now().add(Duration(days: maxDays)),
-              selectableDayPredicate: (d) => d.weekday % 7 != closedDay,
-              builder: (context, child) => Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: ColorScheme.dark(primary: _primary, secondary: _accent, surface: AppConfig.colorFondoCard),
-                ),
-                child: child!,
-              ),
-            );
-            if (picked != null) {
-              setState(() {
-                _selectedDate = picked;
-                _selectedTime = null;
-                _timeSlots = [];
-              });
-              await _loadTimeSlots();
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppConfig.colorFondoCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _primary.withAlpha(60)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today, color: _primary),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedDate != null
-                      ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                      : 'Seleccionar fecha',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _selectedDate != null ? AppConfig.colorTexto : AppConfig.colorTextoSecundario,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        Text('¿Cuándo te gustaría venir?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
+        const SizedBox(height: 6),
+        Text('Elegí el día y horario que más te guste', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+        const SizedBox(height: 20),
+        // Inline calendar
+        _buildInlineCalendar(now, lastDate, closedDay),
         // Time slots
         if (_timeSlots.isNotEmpty) ...[
           const SizedBox(height: 20),
           UrgencyBanner(available: _availableSlots, total: _totalSlots, primary: _primary),
           const SizedBox(height: 12),
-          Text('Horarios disponibles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppConfig.colorTextoSecundario)),
+          Text('Horarios disponibles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[600])),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -537,13 +502,19 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.red.withAlpha(20),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.red.withAlpha(60)),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: const Text(
-              'No hay horarios disponibles para esta fecha',
-              style: TextStyle(color: Colors.redAccent, fontSize: 14),
-              textAlign: TextAlign.center,
+            child: Row(
+              children: [
+                Icon(Icons.event_busy, color: Colors.redAccent, size: 20),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'No hay horarios disponibles para esta fecha',
+                    style: TextStyle(color: Colors.redAccent, fontSize: 13),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -554,18 +525,155 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               onPressed: () => _goToPage(1),
               icon: const Icon(Icons.arrow_back, size: 16),
               label: const Text('Volver'),
-              style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey[500]),
             ),
             const Spacer(),
             if (_selectedTime != null)
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: () => _goToPage(3),
-                style: ElevatedButton.styleFrom(backgroundColor: _primary),
-                child: const Text('Continuar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.arrow_forward, size: 18),
+                label: const Text('Continuar'),
               ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildInlineCalendar(DateTime now, DateTime lastDate, int closedDay) {
+    final firstOfMonth = DateTime(_calendarMonth.year, _calendarMonth.month, 1);
+    final daysInMonth = DateTime(_calendarMonth.year, _calendarMonth.month + 1, 0).day;
+    // Monday = 1 in Dart weekday, we want Monday as first column (index 0)
+    final startWeekday = firstOfMonth.weekday; // 1=Mon, 7=Sun
+    final blanks = startWeekday - 1;
+
+    final canGoPrev = DateTime(_calendarMonth.year, _calendarMonth.month).isAfter(DateTime(now.year, now.month));
+    final canGoNext = DateTime(_calendarMonth.year, _calendarMonth.month).isBefore(DateTime(lastDate.year, lastDate.month));
+
+    final monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: _primary.withAlpha(15), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Month navigation
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                onPressed: canGoPrev ? () {
+                  setState(() {
+                    _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month - 1);
+                  });
+                } : null,
+                icon: Icon(Icons.chevron_left, color: canGoPrev ? _primary : Colors.grey[300]),
+              ),
+              Text(
+                '${monthNames[_calendarMonth.month - 1]} ${_calendarMonth.year}',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.grey[800]),
+              ),
+              IconButton(
+                onPressed: canGoNext ? () {
+                  setState(() {
+                    _calendarMonth = DateTime(_calendarMonth.year, _calendarMonth.month + 1);
+                  });
+                } : null,
+                icon: Icon(Icons.chevron_right, color: canGoNext ? _primary : Colors.grey[300]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Day headers
+          Row(
+            children: _dayNames.map((d) => Expanded(
+              child: Center(
+                child: Text(d, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[400])),
+              ),
+            )).toList(),
+          ),
+          const SizedBox(height: 8),
+          // Day grid
+          ...List.generate(((blanks + daysInMonth) / 7).ceil(), (week) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: List.generate(7, (col) {
+                  final dayIndex = week * 7 + col - blanks + 1;
+                  if (dayIndex < 1 || dayIndex > daysInMonth) {
+                    return const Expanded(child: SizedBox(height: 42));
+                  }
+
+                  final date = DateTime(_calendarMonth.year, _calendarMonth.month, dayIndex);
+                  final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+                  final isPast = date.isBefore(DateTime(now.year, now.month, now.day));
+                  final isClosed = date.weekday % 7 == closedDay;
+                  final isAfterMax = date.isAfter(lastDate);
+                  final isDisabled = isPast || isClosed || isAfterMax;
+                  final isSelected = _selectedDate != null &&
+                      date.year == _selectedDate!.year &&
+                      date.month == _selectedDate!.month &&
+                      date.day == _selectedDate!.day;
+
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: isDisabled ? null : () async {
+                        setState(() {
+                          _selectedDate = date;
+                          _selectedTime = null;
+                          _timeSlots = [];
+                        });
+                        await _loadTimeSlots();
+                      },
+                      child: Container(
+                        height: 42,
+                        margin: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? _primary
+                              : isToday
+                                  ? _primary.withAlpha(20)
+                                  : null,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$dayIndex',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected || isToday ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : isDisabled
+                                      ? Colors.grey[300]
+                                      : isToday
+                                          ? _primary
+                                          : Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
@@ -600,7 +708,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         TextField(
           controller: _nameController,
           decoration: const InputDecoration(labelText: 'Nombre completo *', prefixIcon: Icon(Icons.person_outline)),
-          style: const TextStyle(color: AppConfig.colorTexto),
+          style: const TextStyle(color: Colors.grey[800]),
           textCapitalization: TextCapitalization.words,
         ),
         const SizedBox(height: 12),
@@ -608,21 +716,21 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           controller: _phoneController,
           decoration: const InputDecoration(labelText: 'Telefono *', prefixIcon: Icon(Icons.phone)),
           keyboardType: TextInputType.phone,
-          style: const TextStyle(color: AppConfig.colorTexto),
+          style: const TextStyle(color: Colors.grey[800]),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'Email (opcional)', prefixIcon: Icon(Icons.email_outlined)),
           keyboardType: TextInputType.emailAddress,
-          style: const TextStyle(color: AppConfig.colorTexto),
+          style: const TextStyle(color: Colors.grey[800]),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _commentsController,
           decoration: const InputDecoration(labelText: 'Comentarios (opcional)', prefixIcon: Icon(Icons.comment_outlined)),
           maxLines: 3,
-          style: const TextStyle(color: AppConfig.colorTexto),
+          style: const TextStyle(color: Colors.grey[800]),
         ),
         const SizedBox(height: 24),
         Row(
@@ -631,7 +739,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               onPressed: () => _goToPage(2),
               icon: const Icon(Icons.arrow_back, size: 16),
               label: const Text('Volver'),
-              style: TextButton.styleFrom(foregroundColor: AppConfig.colorTextoSecundario),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey[500]),
             ),
             const Spacer(),
             ElevatedButton.icon(
@@ -658,7 +766,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         children: [
           Icon(icon, size: 16, color: _primary),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontSize: 13, color: AppConfig.colorTexto)),
+          Text(text, style: const TextStyle(fontSize: 13, color: Colors.grey[800])),
         ],
       ),
     );
@@ -678,9 +786,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? _primary.withAlpha(25) : AppConfig.colorFondoCard,
+          color: selected ? _primary.withAlpha(20) : Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? _primary : Colors.white.withAlpha(20), width: selected ? 2 : 1),
+          border: Border.all(color: selected ? _primary : Colors.grey[200]!, width: selected ? 2 : 1),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 8, offset: const Offset(0, 2)),
+          ],
         ),
         child: Row(
           children: [
@@ -704,9 +815,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppConfig.colorTexto)),
+                  Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
                   if (subtitle.isNotEmpty)
-                    Text(subtitle, style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
+                    Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey[800]Secundario)),
                 ],
               ),
             ),

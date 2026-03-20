@@ -363,21 +363,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServicesGrid() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: _services.map((s) => SizedBox(
-          width: (MediaQuery.of(context).size.width - 44) / 2,
-          child: ServiceCard(
-            service: s,
-            primary: _primary,
-            accent: _accent,
-            onTap: () => _openBooking(service: s),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = width > 900 ? 4 : width > 600 ? 3 : 2;
+        final spacing = 12.0;
+        final padding = 16.0;
+        final totalSpacing = spacing * (columns - 1) + padding * 2;
+        final cardWidth = (width - totalSpacing) / columns;
+        final maxCard = 200.0;
+        final finalWidth = cardWidth > maxCard ? maxCard : cardWidth;
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: padding),
+          child: Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: _services.map((s) => SizedBox(
+              width: finalWidth,
+              child: ServiceCard(
+                service: s,
+                primary: _primary,
+                accent: _accent,
+                onTap: () => _openBooking(service: s),
+              ),
+            )).toList(),
           ),
-        )).toList(),
-      ),
+        );
+      },
     );
   }
 
