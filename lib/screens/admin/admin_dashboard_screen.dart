@@ -696,7 +696,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
@@ -710,7 +710,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   if (fotoUrl != null) 'foto_url': fotoUrl,
                 });
                 _professionals = await _svc.loadProfessionals();
-                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Crear'),
             ),
@@ -773,7 +774,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
@@ -787,7 +788,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'foto_url': fotoUrl,
                 });
                 _professionals = await _svc.loadProfessionals();
-                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Guardar'),
             ),
@@ -924,7 +926,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
@@ -940,7 +942,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   if (imagenUrl != null) 'imagen_url': imagenUrl,
                 });
                 _services = await _svc.loadServices();
-                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Crear'),
             ),
@@ -1020,7 +1023,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
@@ -1036,7 +1039,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'imagen_url': imagenUrl,
                 });
                 _services = await _svc.loadServices();
-                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Guardar'),
             ),
@@ -1120,7 +1124,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                 final hours = <Map<String, dynamic>>[];
@@ -1134,7 +1138,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 }
                 await _svc.setOperatingHours(hours);
                 _hours = await _svc.loadOperatingHours();
-                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Guardar'),
             ),
@@ -1235,7 +1240,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                 if (blockDate == null) return;
@@ -1247,7 +1252,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'motivo': motivoCtrl.text.trim(),
                 });
                 _blocks = await _svc.loadBlocks();
-                if (context.mounted) { Navigator.pop(context); setState(() {}); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) setState(() {});
               },
               child: const Text('Crear'),
             ),
