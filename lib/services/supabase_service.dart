@@ -420,45 +420,36 @@ class SupabaseService {
   }
 
   // ---- Crear salon completo (usuario + tenant) ----
-  /// Usa funcion SECURITY DEFINER que crea usuario + tenant en una transaccion.
-  /// No necesita SRK (service_role_key).
+  /// Crea usuario via Admin API (SRK) + tenant via RPC create_tenant.
+  /// Mismo patron que reserva_template (funciona con build_prod.sh).
+  /// Si falla el tenant, limpia el usuario auth huerfano.
   Future<Map<String, dynamic>> createSalonComplete({
     required String email,
     required String password,
     required String tenantId,
     required String salonName,
   }) async {
+    // Paso 1: Crear usuario via Admin API (requiere SRK)
+    final userId = await createAuthUser(email, password);
+
+    // Paso 2: Crear tenant via funcion SECURITY DEFINER
     try {
-      // Metodo principal: RPC server-side (no necesita SRK)
-      final res = await _client.rpc('create_auth_user_and_tenant', params: {
-        'p_email': email,
-        'p_password': password,
-        'p_tenant_id': tenantId,
+      await _client.rpc('create_tenant', params: {
+        'p_id': tenantId,
         'p_nombre_salon': salonName,
+        'p_admin_user_id': userId,
+        'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
         'p_trial_days': 15,
       });
-      if (res is Map) {
-        return Map<String, dynamic>.from(res);
-      }
-      return {'tenant_id': tenantId, 'email': email};
     } catch (e) {
-      // Fallback: Admin API (requiere SRK compilado con --dart-define=SRK=...)
-      final userId = await createAuthUser(email, password);
+      // Limpiar usuario auth huerfano
       try {
-        await _client.rpc('create_tenant', params: {
-          'p_id': tenantId,
-          'p_nombre_salon': salonName,
-          'p_admin_user_id': userId,
-          'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
-        });
-      } catch (e2) {
-        try {
-          await _client.rpc('delete_auth_user', params: {'p_user_id': userId});
-        } catch (_) {}
-        rethrow;
-      }
-      return {'user_id': userId, 'tenant_id': tenantId};
+        await _client.rpc('delete_auth_user', params: {'p_user_id': userId});
+      } catch (_) {}
+      rethrow;
     }
+
+    return {'user_id': userId, 'tenant_id': tenantId};
   }
 
   // ---- Storage ----
