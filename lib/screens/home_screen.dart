@@ -245,11 +245,23 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [_primary.withAlpha(25), _bgWhite],
-        ),
+        image: _tenant?.fondoUrl != null
+            ? DecorationImage(
+                image: NetworkImage(_tenant!.fondoUrl!),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.white.withAlpha(180),
+                  BlendMode.srcOver,
+                ),
+              )
+            : null,
+        gradient: _tenant?.fondoUrl == null
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_primary.withAlpha(25), _bgWhite],
+              )
+            : null,
       ),
       child: SafeArea(
         child: Padding(

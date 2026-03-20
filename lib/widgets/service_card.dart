@@ -20,64 +20,85 @@ class ServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppConfig.colorFondoCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: primary.withAlpha(40)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            if (service.imagenUrl != null)
-              SizedBox(
-                height: 100,
-                width: double.infinity,
-                child: Image.network(service.imagenUrl!, fit: BoxFit.cover),
-              )
-            else
-              Container(
-                height: 100,
-                width: double.infinity,
-                color: primary.withAlpha(20),
-                child: Icon(_categoryIcon(service.categoria), size: 36, color: primary.withAlpha(120)),
-              ),
-            // Info
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    service.nombre,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppConfig.colorTexto),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: primary.withAlpha(20), blurRadius: 8, offset: const Offset(0, 2)),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Imagen de fondo
+              if (service.imagenUrl != null)
+                Image.network(service.imagenUrl!, fit: BoxFit.cover)
+              else
+                Container(
+                  color: primary.withAlpha(15),
+                  child: Icon(_categoryIcon(service.categoria), size: 48, color: primary.withAlpha(80)),
+                ),
+              // Gradiente oscuro abajo
+              Positioned(
+                left: 0, right: 0, bottom: 0,
+                child: Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withAlpha(180)],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time, size: 12, color: AppConfig.colorTextoSecundario),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${service.duracionMinutos} min',
-                        style: const TextStyle(fontSize: 11, color: AppConfig.colorTextoSecundario),
-                      ),
-                      if (service.precio != null) ...[
-                        const Spacer(),
+                ),
+              ),
+              // Info sobre el gradiente
+              Positioned(
+                left: 10, right: 10, bottom: 10,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      service.nombre,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time, size: 11, color: Colors.white70),
+                        const SizedBox(width: 3),
                         Text(
-                          '\$${service.precio!.toStringAsFixed(0)}',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: accent),
+                          '${service.duracionMinutos} min',
+                          style: const TextStyle(fontSize: 11, color: Colors.white70),
                         ),
+                        if (service.precio != null) ...[
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '\$${service.precio!.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
