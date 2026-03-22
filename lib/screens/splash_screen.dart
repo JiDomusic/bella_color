@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   Future<void> _initApp() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 2500));
+      await Future.delayed(const Duration(milliseconds: 4500));
       final svc = SupabaseService.instance;
       final tenant = await svc.loadTenant();
 

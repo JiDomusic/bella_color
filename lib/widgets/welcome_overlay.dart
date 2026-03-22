@@ -342,8 +342,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           'El sistema de turnos mas completo\npara tu salon de belleza',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: isMobile ? 14 : 16,
-            color: _textDark.withValues(alpha: 0.6),
+            fontSize: isMobile ? 15 : 17,
+            color: _textDark.withValues(alpha: 0.85),
+            fontWeight: FontWeight.w600,
             height: 1.4,
           ),
         ),
@@ -352,8 +353,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           'Organiza tu negocio, gestiona tus clientes\ny hace crecer tu salon',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: isMobile ? 12 : 14,
-            color: _textDark.withValues(alpha: 0.4),
+            fontSize: isMobile ? 13 : 15,
+            color: _textDark.withValues(alpha: 0.65),
+            fontWeight: FontWeight.w500,
             height: 1.4,
           ),
         ),
@@ -381,7 +383,8 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             'Todo lo que necesitas para tu negocio',
             style: TextStyle(
               fontSize: isMobile ? 13 : 15,
-              color: _textDark.withValues(alpha: 0.5),
+              color: _textDark.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -458,7 +461,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             'En 3 simples pasos',
             style: TextStyle(
               fontSize: isMobile ? 13 : 15,
-              color: _textDark.withValues(alpha: 0.5),
+              color: _textDark.withValues(alpha: 0.75),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -604,7 +607,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           'Industria Nacional',
           style: TextStyle(
             fontSize: isMobile ? 11 : 12,
-            color: _textDark.withValues(alpha: 0.35),
+            color: _textDark.withValues(alpha: 0.6),
             letterSpacing: 2,
             fontWeight: FontWeight.w500,
           ),
@@ -665,7 +668,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                 subtitle,
                 style: TextStyle(
                   fontSize: isMobile ? 11 : 13,
-                  color: _textDark.withValues(alpha: 0.5),
+                  color: _textDark.withValues(alpha: 0.75),
                 ),
               ),
             ],
@@ -728,7 +731,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   description,
                   style: TextStyle(
                     fontSize: isMobile ? 11 : 12,
-                    color: _textDark.withValues(alpha: 0.5),
+                    color: _textDark.withValues(alpha: 0.75),
                   ),
                 ),
               ],
@@ -815,7 +818,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               'Atras',
               style: TextStyle(
                 fontSize: 14,
-                color: _textDark.withValues(alpha: 0.4),
+                color: _textDark.withValues(alpha: 0.65),
                 fontWeight: FontWeight.w500,
               ),
             ),

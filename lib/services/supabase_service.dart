@@ -113,12 +113,17 @@ class SupabaseService {
     _currentTenant = null;
   }
 
+  /// Elimina un salon y todos sus datos relacionados.
   Future<void> deleteTenant(String id) async {
-    try {
-      await _client.rpc('delete_tenant', params: {'p_id': id});
-    } catch (_) {
-      await _client.from('tenants').delete().eq('id', id);
-    }
+    await _client.from('appointments').delete().eq('tenant_id', id);
+    await _client.from('waitlist').delete().eq('tenant_id', id);
+    await _client.from('blocks').delete().eq('tenant_id', id);
+    await _client.from('portfolio_images').delete().eq('tenant_id', id);
+    await _client.from('professional_services').delete().eq('tenant_id', id);
+    await _client.from('operating_hours').delete().eq('tenant_id', id);
+    await _client.from('professionals').delete().eq('tenant_id', id);
+    await _client.from('services').delete().eq('tenant_id', id);
+    await _client.from('tenants').delete().eq('id', id);
   }
 
   Future<void> blockTenant(String id, String reason) async {
