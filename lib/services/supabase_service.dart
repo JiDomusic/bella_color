@@ -145,6 +145,29 @@ class SupabaseService {
     }
   }
 
+  // ---- Trial Bonus ----
+
+  /// Extiende el trial 5 días más por completar onboarding.
+  /// Solo se puede usar una vez.
+  Future<bool> extendTrialForOnboarding() async {
+    final row = await _client
+        .from('tenants')
+        .select('trial_end_date, trial_extended')
+        .eq('id', _tenantId)
+        .maybeSingle();
+    if (row == null) return false;
+    if (row['trial_extended'] == true) return false;
+
+    final currentEnd = DateTime.tryParse(row['trial_end_date'] ?? '') ?? DateTime.now();
+    final newEnd = currentEnd.add(const Duration(days: 5)).toIso8601String();
+
+    await _client.from('tenants').update({
+      'trial_end_date': newEnd,
+      'trial_extended': true,
+    }).eq('id', _tenantId);
+    return true;
+  }
+
   // ---- Professionals ----
   Future<List<Professional>> loadProfessionals() async {
     final res = await _client
@@ -433,14 +456,20 @@ class SupabaseService {
     final userId = await createAuthUser(email, password);
 
     // Paso 2: Crear tenant via funcion SECURITY DEFINER
+    final trialDays = 15;
+    final trialEndDate = DateTime.now().add(Duration(days: trialDays)).toIso8601String();
     try {
       await _client.rpc('create_tenant', params: {
         'p_id': tenantId,
         'p_nombre_salon': salonName,
         'p_admin_user_id': userId,
         'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
-        'p_trial_days': 15,
+        'p_trial_days': trialDays,
       });
+      // Setear trial_end_date
+      await _client.from('tenants').update({
+        'trial_end_date': trialEndDate,
+      }).eq('id', tenantId);
     } catch (e) {
       // Limpiar usuario auth huerfano
       try {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../../models/tenant.dart';
 import '../../services/supabase_service.dart';
@@ -445,92 +446,208 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _tenants.length,
-                  itemBuilder: (_, i) {
-                    final t = _tenants[i];
-                    final link = _bookingLink(t.id);
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppConfig.colorPrimario.withAlpha(30),
-                          child: const Icon(Icons.spa, color: AppConfig.colorPrimario),
-                        ),
-                        title: Text(
-                          t.nombreSalon.isEmpty ? t.id : t.nombreSalon,
-                          style: const TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(t.id, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () => _openLink(link),
-                                    onLongPress: () => _copyLink(link),
-                                    child: Text(
-                                      link,
-                                      style: TextStyle(
-                                        color: AppConfig.colorPrimario.withAlpha(240),
-                                        fontSize: 12,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  tooltip: 'Abrir link',
-                                  icon: const Icon(Icons.open_in_new, size: 18, color: Colors.white70),
-                                  onPressed: () => _openLink(link),
-                                ),
-                                IconButton(
-                                  tooltip: 'Copiar link',
-                                  icon: const Icon(Icons.copy, size: 18, color: Colors.white70),
-                                  onPressed: () => _copyLink(link),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Heart button: pink = blocked, green = active
-                            IconButton(
-                              icon: Icon(
-                                t.isBlocked ? Icons.heart_broken : Icons.favorite,
-                                color: t.isBlocked ? Colors.pink.shade300 : Colors.green,
-                                size: 22,
-                              ),
-                              onPressed: () => _toggleBlock(t),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: (t.isBlocked ? Colors.red : t.onboardingCompleted ? Colors.green : Colors.amber).withAlpha(25),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                t.isBlocked ? 'Bloqueado' : t.onboardingCompleted ? 'Activo' : 'Pendiente',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: t.isBlocked ? Colors.red : t.onboardingCompleted ? Colors.green : Colors.amber,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-                              onPressed: () => _deleteSalon(t),
-                            ),
-                          ],
+                  itemBuilder: (_, i) => _buildTenantCard(_tenants[i]),
+                ),
+    );
+  }
+
+  Widget _buildTenantCard(Tenant t) {
+    final link = _bookingLink(t.id);
+    final trialEnd = t.trialEndDate;
+    final trialDays = trialEnd != null ? trialEnd.difference(DateTime.now()).inDays : t.trialDays;
+    final trialExpired = trialDays < 0;
+
+    return Card(
+      color: AppConfig.colorFondoCard,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.spa, color: Color(0xFFD97FC2), size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.nombreSalon.isEmpty ? t.id : t.nombreSalon,
+                        style: const TextStyle(color: AppConfig.colorTexto, fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(t.id, style: TextStyle(color: Colors.white.withAlpha(128), fontSize: 13, fontFamily: 'monospace')),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (t.isBlocked ? Colors.red : t.onboardingCompleted ? Colors.green : Colors.amber).withAlpha(40),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        t.isBlocked ? 'Bloqueado' : t.onboardingCompleted ? 'Activo' : 'Pendiente',
+                        style: TextStyle(
+                          color: t.isBlocked ? Colors.red : t.onboardingCompleted ? Colors.green : Colors.amber,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 6),
+                    // Trial days badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: trialExpired
+                            ? Colors.red.withAlpha(40)
+                            : trialDays <= 3
+                                ? Colors.orange.withAlpha(40)
+                                : const Color(0xFFD97FC2).withAlpha(30),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            trialExpired ? Icons.timer_off : Icons.timer_outlined,
+                            size: 12,
+                            color: trialExpired ? Colors.red : trialDays <= 3 ? Colors.orange : const Color(0xFFD97FC2),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            trialExpired
+                                ? 'Expirado${t.trialExtended ? " (ext)" : ""}'
+                                : '$trialDays dias${t.trialExtended ? " (ext)" : ""}',
+                            style: TextStyle(
+                              color: trialExpired ? Colors.red : trialDays <= 3 ? Colors.orange : const Color(0xFFD97FC2),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Link copiable
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(13),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(link,
+                        style: const TextStyle(color: Color(0xFFD97FC2), fontSize: 11, fontFamily: 'monospace'),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, color: Colors.white54, size: 18),
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => _copyLink(link),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Action buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    t.isBlocked ? Icons.heart_broken : Icons.favorite,
+                    color: t.isBlocked ? Colors.pink.shade300 : Colors.green,
+                    size: 20,
+                  ),
+                  onPressed: () => _toggleBlock(t),
+                ),
+                TextButton.icon(
+                  onPressed: () => _showCredentials(t.id, t.nombreSalon.isEmpty ? t.id : t.nombreSalon),
+                  icon: Icon(Icons.key, color: Colors.white.withAlpha(153), size: 18),
+                  label: Text('Credenciales', style: TextStyle(color: Colors.white.withAlpha(153), fontSize: 13)),
+                ),
+                TextButton.icon(
+                  onPressed: () => _deleteSalon(t),
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                  label: const Text('Eliminar', style: TextStyle(color: Colors.redAccent, fontSize: 13)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCredentials(String tenantId, String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('sa_cred_email_$tenantId') ?? 'No guardado';
+    final savedPass = prefs.getString('sa_cred_pass_$tenantId') ?? 'No guardado';
+    final link = _bookingLink(tenantId);
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppConfig.colorFondoCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(name, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 18)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _credRow('Email', savedEmail),
+            const SizedBox(height: 12),
+            _credRow('Password', savedPass),
+            const SizedBox(height: 12),
+            _credRow('Link', link),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
+        ],
+      ),
+    );
+  }
+
+  Widget _credRow(String label, String value) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 70,
+          child: Text(label, style: TextStyle(color: Colors.white.withAlpha(128), fontSize: 12)),
+        ),
+        Expanded(
+          child: Text(value, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 13, fontFamily: 'monospace')),
+        ),
+        IconButton(
+          icon: const Icon(Icons.copy, size: 16, color: Colors.white54),
+          constraints: const BoxConstraints(),
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: value));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$label copiado'), duration: const Duration(seconds: 1)),
+            );
+          },
+        ),
+      ],
     );
   }
 }

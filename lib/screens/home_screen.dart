@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _tenant = tenant;
           _services = services;
           _professionals = professionals;
-          _isLanding = (tenantId == 'demo' || tenantId.isEmpty);
+          _isLanding = (tenantId == 'demo' || tenantId.isEmpty || !tenant.onboardingCompleted);
           _loading = false;
         });
       }
@@ -206,6 +206,10 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: 0,
               child: WelcomeOverlay(
                 onSubscribe: _openProgramacionJJWhatsApp,
+                mostrarAvisoPendiente: _svc.tenantId != 'demo' &&
+                    _svc.tenantId.isNotEmpty &&
+                    _tenant != null &&
+                    !_tenant!.onboardingCompleted,
               ),
             ),
           ],
@@ -216,20 +220,29 @@ class _HomeScreenState extends State<HomeScreen> {
     // ─── Home normal del salón configurado ───
     return Scaffold(
       backgroundColor: _bgWhite,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _buildHeader()),
-          if (_services.isNotEmpty) ...[
-            SliverToBoxAdapter(child: _sectionTitle('Nuestros Servicios')),
-            SliverToBoxAdapter(child: _buildServicesGrid()),
-          ],
-          if (_professionals.isNotEmpty) ...[
-            SliverToBoxAdapter(child: _sectionTitle('Nuestro Equipo')),
-            SliverToBoxAdapter(child: _buildProfessionalsList()),
-          ],
-          SliverToBoxAdapter(child: _buildCTA()),
-          SliverToBoxAdapter(child: _buildFooter()),
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  if (_services.isNotEmpty) ...[
+                    _sectionTitle('Nuestros Servicios'),
+                    Expanded(flex: 3, child: _buildServicesGrid()),
+                  ],
+                  if (_professionals.isNotEmpty) ...[
+                    _sectionTitle('Nuestro Equipo'),
+                    Expanded(flex: 2, child: _buildProfessionalsList()),
+                  ],
+                  _buildCTA(),
+                  _buildFooter(),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -265,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
           child: Column(
             children: [
               Row(
@@ -351,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Row(
         children: [
           Container(width: 3, height: 20, decoration: BoxDecoration(color: _accent, borderRadius: BorderRadius.circular(2))),
@@ -415,9 +428,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCTA() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [_primary.withAlpha(15), _accent.withAlpha(10)]),
           borderRadius: BorderRadius.circular(16),
@@ -469,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFooter() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
       child: Column(
         children: [
           Divider(color: _primary.withAlpha(30)),

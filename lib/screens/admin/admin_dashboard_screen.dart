@@ -86,6 +86,63 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     if (mounted) setState(() => _appointments = appts);
   }
 
+  void _showTrialGiftDialog(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (dlg) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFD97FC2).withAlpha(30),
+              ),
+              child: const Icon(Icons.card_giftcard, color: Color(0xFFD97FC2), size: 48),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Te ganaste 5 dias mas!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 22, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Por completar tu configuracion, Programacion JJ te regala 5 dias extra de prueba.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF666666), fontSize: 15, height: 1.5),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'En total tenes 20 dias para probar el sistema.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFFD97FC2), fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(dlg),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD97FC2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Genial, gracias!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -1605,6 +1662,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                         'dia_cerrado': diaCerrado,
                         'onboarding_completed': true,
                       });
+
+                      // Bonus: +5 días de prueba por completar onboarding
+                      final wasFirst = !(_tenant?.trialExtended ?? false);
+                      if (wasFirst) {
+                        final extended = await SupabaseService.instance.extendTrialForOnboarding();
+                        if (extended && ctx.mounted) {
+                          _showTrialGiftDialog(ctx);
+                        }
+                      }
+
                       setState(() => _loading = true);
                       await _loadAll();
                     } catch (e) {
@@ -1994,6 +2061,63 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     }
   }
 
+  void _showTrialGiftDialog(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (dlg) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFD97FC2).withAlpha(30),
+              ),
+              child: const Icon(Icons.card_giftcard, color: Color(0xFFD97FC2), size: 48),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Te ganaste 5 dias mas!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 22, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Por completar tu configuracion, Programacion JJ te regala 5 dias extra de prueba.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF666666), fontSize: 15, height: 1.5),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'En total tenes 20 dias para probar el sistema.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFFD97FC2), fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(dlg),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD97FC2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Genial, gracias!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
@@ -2024,8 +2148,15 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'dia_cerrado': _diaCerrado,
         'onboarding_completed': true,
       });
+
+      // Bonus: +5 días de prueba por completar onboarding
+      final extended = await SupabaseService.instance.extendTrialForOnboarding();
+
       widget.onSaved();
       if (mounted) {
+        if (extended) {
+          _showTrialGiftDialog(context);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: const Text('Configuracion guardada'), backgroundColor: widget.accent),
         );

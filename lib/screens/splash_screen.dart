@@ -189,7 +189,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (tenant?.logoUrl != null)
+              if (tenant != null && tenant!.onboardingCompleted && tenant!.logoUrl != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: Image.network(tenant!.logoUrl!, width: 100, height: 100, fit: BoxFit.cover),
@@ -206,7 +206,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 ),
               const SizedBox(height: 20),
               Text(
-                tenant?.nombreSalon ?? 'Bella Color',
+                (tenant != null && tenant!.onboardingCompleted)
+                    ? tenant!.nombreSalon
+                    : 'Bella Color',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
@@ -214,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   letterSpacing: 1,
                 ),
               ),
-              if (tenant?.subtitulo.isNotEmpty == true) ...[
+              if (tenant != null && tenant!.onboardingCompleted && tenant!.subtitulo.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
                   tenant!.subtitulo,

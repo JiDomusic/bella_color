@@ -36,6 +36,8 @@ class Tenant {
   final DateTime? blockedAt;
   final String blockReason;
   final int trialDays;
+  final DateTime? trialEndDate;
+  final bool trialExtended;
 
   Tenant({
     required this.id,
@@ -75,6 +77,8 @@ class Tenant {
     this.blockedAt,
     this.blockReason = '',
     this.trialDays = 15,
+    this.trialEndDate,
+    this.trialExtended = false,
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -134,6 +138,8 @@ class Tenant {
       blockedAt: json['blocked_at'] != null ? DateTime.tryParse(json['blocked_at']) : null,
       blockReason: json['block_reason'] ?? '',
       trialDays: json['trial_days'] ?? 15,
+      trialEndDate: json['trial_end_date'] != null ? DateTime.tryParse(json['trial_end_date']) : null,
+      trialExtended: json['trial_extended'] ?? false,
     );
   }
 
@@ -174,6 +180,8 @@ class Tenant {
     'is_blocked': isBlocked,
     'block_reason': blockReason,
     'trial_days': trialDays,
+    'trial_end_date': trialEndDate?.toIso8601String(),
+    'trial_extended': trialExtended,
   };
 
   Tenant copyWith({
