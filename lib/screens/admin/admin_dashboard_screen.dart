@@ -35,6 +35,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   List<OperatingHours> _hours = [];
   List<Block> _blocks = [];
   List<WaitlistEntry> _waitlist = [];
+  Set<String> _frequentPhones = {};
   bool _loading = true;
   bool _changingPassword = false;
 
@@ -76,6 +77,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       _hours = await _svc.loadOperatingHours();
       _blocks = await _svc.loadBlocks();
       _waitlist = await _svc.loadWaitlist();
+      _frequentPhones = await _svc.loadFrequentClientPhones();
     } catch (_) {}
 
     if (mounted) setState(() => _loading = false);
@@ -163,6 +165,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         title: Text(_tenant?.nombreSalon ?? 'Admin'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.help_outline, color: Color(0xFFD97FC2)),
+            tooltip: 'Guia de uso',
+            onPressed: _showHelp,
+          ),
+          IconButton(
             icon: Icon(Icons.home, color: _accent),
             tooltip: 'Ir al inicio',
             onPressed: () {
@@ -211,14 +218,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           labelColor: _accent,
           unselectedLabelColor: AppConfig.colorTextoSecundario,
           tabs: const [
-            Tab(text: 'Turnos'),
-            Tab(text: 'Profesionales'),
-            Tab(text: 'Servicios'),
-            Tab(text: 'Horarios'),
-            Tab(text: 'Bloqueos'),
-            Tab(text: 'Espera'),
-            Tab(text: 'Reportes'),
-            Tab(text: 'Salon'),
+            Tab(icon: Icon(Icons.calendar_today, size: 16), text: 'Turnos'),
+            Tab(icon: Icon(Icons.people, size: 16), text: 'Equipo'),
+            Tab(icon: Icon(Icons.spa, size: 16), text: 'Servicios'),
+            Tab(icon: Icon(Icons.schedule, size: 16), text: 'Horarios'),
+            Tab(icon: Icon(Icons.event_busy, size: 16), text: 'Cerrar dias'),
+            Tab(icon: Icon(Icons.hourglass_top, size: 16), text: 'Espera'),
+            Tab(icon: Icon(Icons.bar_chart, size: 16), text: 'Reportes'),
+            Tab(icon: Icon(Icons.store, size: 16), text: 'Mi Salon'),
           ],
         ),
       ),
@@ -442,10 +449,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     );
   }
 
+  Widget _tabHint(String emoji, String text) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD97FC2).withAlpha(15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD97FC2).withAlpha(40)),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: const TextStyle(color: Color(0xFFE8C4D8), fontSize: 12, height: 1.4))),
+        ],
+      ),
+    );
+  }
+
   // ==== TAB 0: TURNOS ====
   Widget _buildAppointmentsTab() {
     return Column(
       children: [
+        _tabHint('📅', 'Aca ves los turnos del dia. Podes confirmar, atender, completar o cancelar cada turno.'),
         // Date selector
         Padding(
           padding: const EdgeInsets.all(12),
@@ -542,9 +569,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               ],
             ),
             const SizedBox(height: 8),
-            Text(a.nombreCliente, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppConfig.colorTexto)),
+            Row(
+              children: [
+                Flexible(child: Text(a.nombreCliente, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppConfig.colorTexto), overflow: TextOverflow.ellipsis)),
+                if (_frequentPhones.contains(a.telefono)) ...[
+                  const SizedBox(width: 6),
+                  Tooltip(message: 'Clienta frecuente', child: Icon(Icons.favorite, size: 14, color: Colors.pink.shade300)),
+                ],
+              ],
+            ),
             Text('${a.servicioNombre ?? ''} ${a.professionalNombre != null ? '- ${a.professionalNombre}' : ''}',
-                style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
+                style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario), overflow: TextOverflow.ellipsis),
             Text(a.telefono, style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
             const SizedBox(height: 8),
             // Action buttons
@@ -653,12 +688,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Widget _buildProfessionalsTab() {
     return Column(
       children: [
+        _tabHint('💇‍♀️', 'Agrega a las personas que atienden en tu salon. Podes subir foto, nombre y especialidad. Usa el switch para activar o desactivar.'),
         Padding(
           padding: const EdgeInsets.all(12),
           child: ElevatedButton.icon(
             onPressed: _addProfessionalDialog,
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.person_add),
             label: const Text('Agregar Profesional'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97FC2),
+              foregroundColor: Colors.white,
+            ),
           ),
         ),
         Expanded(
@@ -860,12 +900,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Widget _buildServicesTab() {
     return Column(
       children: [
+        _tabHint('💅', 'Agrega los servicios que ofrece tu salon: corte, color, manicura, etc. Pone el nombre, cuanto dura, el precio y una foto linda.'),
         Padding(
           padding: const EdgeInsets.all(12),
           child: ElevatedButton.icon(
             onPressed: _addServiceDialog,
             icon: const Icon(Icons.add),
             label: const Text('Agregar Servicio'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97FC2),
+              foregroundColor: Colors.white,
+            ),
           ),
         ),
         Expanded(
@@ -1112,6 +1157,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
+        _tabHint('🕐', 'Configura los dias y horarios que tu salon esta abierto. Pone hora de inicio, fin y cada cuantos minutos queres los turnos.'),
         for (int day = 1; day <= 6; day++) ...[
           _hoursDayRow(day),
         ],
@@ -1210,12 +1256,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Widget _buildBlocksTab() {
     return Column(
       children: [
+        _tabHint('🚫', 'Necesitas cerrar un dia por feriado o vacaciones? O cerrar una hora especifica? Agrega un bloqueo y tus clientas no podran sacar turno en ese momento.'),
         Padding(
           padding: const EdgeInsets.all(12),
           child: ElevatedButton.icon(
             onPressed: _addBlockDialog,
-            icon: const Icon(Icons.block),
-            label: const Text('Agregar Bloqueo'),
+            icon: const Icon(Icons.event_busy),
+            label: const Text('Cerrar un dia u hora'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withAlpha(180),
+              foregroundColor: Colors.white,
+            ),
           ),
         ),
         Expanded(
@@ -1322,8 +1373,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
   // ==== TAB 5: LISTA DE ESPERA ====
   Widget _buildWaitlistTab() {
-    return _waitlist.isEmpty
-        ? const Center(child: Text('Lista de espera vacia', style: TextStyle(color: AppConfig.colorTextoSecundario)))
+    return Column(
+      children: [
+        _tabHint('⏳', 'Cuando no hay turnos disponibles, tus clientas se pueden anotar en la lista de espera. Vos les podes avisar por WhatsApp cuando se libere un lugar.'),
+        Expanded(child: _waitlist.isEmpty
+        ? const Center(child: Text('Todavia nadie se anoto en la lista de espera', style: TextStyle(color: AppConfig.colorTextoSecundario)))
         : ListView.builder(
             padding: const EdgeInsets.all(12),
             itemCount: _waitlist.length,
@@ -1361,7 +1415,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
               );
             },
-          );
+          ),
+        ),
+      ],
+    );
   }
 
   // ==== ONBOARDING SCREEN ====
@@ -1941,6 +1998,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   late TextEditingController _whatsappCtrl;
   late TextEditingController _codigoPaisCtrl;
   late TextEditingController _mapsQueryCtrl;
+  late TextEditingController _bannerCtrl;
 
   String? _logoUrl;
   String? _logoBlancoUrl;
@@ -1972,6 +2030,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _whatsappCtrl = TextEditingController(text: t.whatsappNumero);
     _codigoPaisCtrl = TextEditingController(text: t.codigoPaisTelefono);
     _mapsQueryCtrl = TextEditingController(text: t.googleMapsQuery);
+    _bannerCtrl = TextEditingController(text: t.bannerTexto);
     _logoUrl = t.logoUrl;
     _logoBlancoUrl = t.logoBlancoUrl;
     _fondoUrl = t.fondoUrl;
@@ -2000,6 +2059,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _whatsappCtrl.dispose();
     _codigoPaisCtrl.dispose();
     _mapsQueryCtrl.dispose();
+    _bannerCtrl.dispose();
     super.dispose();
   }
 
@@ -2133,6 +2193,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'whatsapp_numero': _whatsappCtrl.text.trim(),
         'codigo_pais_telefono': _codigoPaisCtrl.text.trim(),
         'google_maps_query': _mapsQueryCtrl.text.trim(),
+        'banner_texto': _bannerCtrl.text.trim(),
         'logo_url': _logoUrl,
         'logo_blanco_url': _logoBlancoUrl,
         'fondo_url': _fondoUrl,
@@ -2195,6 +2256,33 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         _textField('WhatsApp', _whatsappCtrl),
         _textField('Email', _emailCtrl),
         _textField('Google Maps query', _mapsQueryCtrl),
+
+        const SizedBox(height: 24),
+        _sectionTitle('Aviso en tu pagina'),
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFD97FC2).withAlpha(10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFD97FC2).withAlpha(30)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Escribi un mensaje y tus clientas lo van a ver en la pagina principal de tu salon. Por ejemplo: "Este mes 20% off en coloracion!" o "Nuevos horarios de atencion".',
+                style: TextStyle(color: Color(0xFFE8C4D8), fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Si lo dejas vacio, no se muestra nada.',
+                style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        _textField('Mensaje para tus clientas', _bannerCtrl),
 
         const SizedBox(height: 24),
         _sectionTitle('Imagenes'),

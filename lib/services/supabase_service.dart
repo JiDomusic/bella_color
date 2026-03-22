@@ -299,6 +299,22 @@ class SupabaseService {
     }
   }
 
+  /// Devuelve los telefonos de clientas con 3+ turnos completados (frecuentes).
+  /// Solo cuenta turnos del tenant actual, no expone datos entre tenants.
+  Future<Set<String>> loadFrequentClientPhones() async {
+    final res = await _client
+        .from('appointments')
+        .select('telefono')
+        .eq('tenant_id', _tenantId)
+        .eq('estado', 'completada');
+    final counts = <String, int>{};
+    for (final row in res) {
+      final tel = row['telefono'] as String? ?? '';
+      if (tel.isNotEmpty) counts[tel] = (counts[tel] ?? 0) + 1;
+    }
+    return counts.entries.where((e) => e.value >= 3).map((e) => e.key).toSet();
+  }
+
   // ---- Appointments ----
   Future<List<Appointment>> loadAppointments({String? fecha, String? estado}) async {
     var query = _client.from('appointments').select().eq('tenant_id', _tenantId);

@@ -38,6 +38,7 @@ class Tenant {
   final int trialDays;
   final DateTime? trialEndDate;
   final bool trialExtended;
+  final String bannerTexto;
 
   Tenant({
     required this.id,
@@ -79,6 +80,7 @@ class Tenant {
     this.trialDays = 15,
     this.trialEndDate,
     this.trialExtended = false,
+    this.bannerTexto = '',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -140,6 +142,7 @@ class Tenant {
       trialDays: json['trial_days'] ?? 15,
       trialEndDate: json['trial_end_date'] != null ? DateTime.tryParse(json['trial_end_date']) : null,
       trialExtended: json['trial_extended'] ?? false,
+      bannerTexto: json['banner_texto'] ?? '',
     );
   }
 
@@ -182,6 +185,7 @@ class Tenant {
     'trial_days': trialDays,
     'trial_end_date': trialEndDate?.toIso8601String(),
     'trial_extended': trialExtended,
+    'banner_texto': bannerTexto,
   };
 
   Tenant copyWith({

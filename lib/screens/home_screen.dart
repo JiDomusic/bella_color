@@ -223,6 +223,32 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           _buildHeader(),
+          // Banner promocional del salon
+          if (_tenant?.bannerTexto.isNotEmpty == true)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_primary.withAlpha(30), _accent.withAlpha(20)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _primary.withAlpha(60)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: _accent, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _tenant!.bannerTexto,
+                      style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
