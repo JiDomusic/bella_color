@@ -230,7 +230,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => ConfirmationScreen(appointment: appointment)),
+          MaterialPageRoute(builder: (_) => ConfirmationScreen(
+            appointment: appointment,
+            precioServicio: _selectedService!.precio,
+            requiereSena: _selectedService!.requiereSena,
+          )),
         );
       }
     } catch (e) {

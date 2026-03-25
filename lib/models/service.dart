@@ -11,6 +11,7 @@ class Service {
   final bool activo;
   final int maxTurnosDia;
   final int orden;
+  final bool requiereSena;
 
   Service({
     required this.id,
@@ -25,6 +26,7 @@ class Service {
     this.activo = true,
     this.maxTurnosDia = 8,
     this.orden = 0,
+    this.requiereSena = false,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) => Service(
@@ -40,6 +42,7 @@ class Service {
     activo: json['activo'] ?? true,
     maxTurnosDia: json['max_turnos_dia'] ?? 8,
     orden: json['orden'] ?? 0,
+    requiereSena: json['requiere_sena'] ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -55,6 +58,7 @@ class Service {
     'activo': activo,
     'max_turnos_dia': maxTurnosDia,
     'orden': orden,
+    'requiere_sena': requiereSena,
   };
 
   static const categorias = [

@@ -61,6 +61,10 @@ class WhatsappService {
     required String codigo,
     required String salonName,
     String? direccion,
+    double? montoSena,
+    String? senaCbu,
+    String? senaAlias,
+    String? senaTitular,
   }) async {
     final message = buildConfirmationMessage(
       nombreCliente: nombreCliente,
@@ -71,6 +75,10 @@ class WhatsappService {
       codigo: codigo,
       salonName: salonName,
       direccion: direccion,
+      montoSena: montoSena,
+      senaCbu: senaCbu,
+      senaAlias: senaAlias,
+      senaTitular: senaTitular,
     );
     final url = _generateWhatsAppUrl(phone, message, countryCode: countryCode);
     await _openUrl(url);
@@ -110,6 +118,10 @@ class WhatsappService {
     required String codigo,
     required String salonName,
     String? direccion,
+    double? montoSena,
+    String? senaCbu,
+    String? senaAlias,
+    String? senaTitular,
   }) {
     String message = '''*${salonName.toUpperCase()}*
 
@@ -121,6 +133,23 @@ Profesional: $profesional
 Fecha: $fecha
 Hora: $hora
 Codigo: *$codigo*''';
+
+    if (montoSena != null && montoSena > 0) {
+      message += '''
+
+*SEÑA REQUERIDA:*
+Monto: \$${montoSena.toStringAsFixed(2)}''';
+      if (senaCbu != null && senaCbu.isNotEmpty) {
+        message += '\nCBU: $senaCbu';
+      }
+      if (senaAlias != null && senaAlias.isNotEmpty) {
+        message += '\nAlias: $senaAlias';
+      }
+      if (senaTitular != null && senaTitular.isNotEmpty) {
+        message += '\nTitular: $senaTitular';
+      }
+      message += '\n\nEnvia el comprobante de transferencia en este chat para confirmar tu turno.';
+    }
 
     if (direccion != null && direccion.isNotEmpty) {
       message += '''

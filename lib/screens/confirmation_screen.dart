@@ -7,8 +7,15 @@ import '../services/whatsapp_service.dart';
 
 class ConfirmationScreen extends StatelessWidget {
   final Appointment appointment;
+  final double? precioServicio;
+  final bool requiereSena;
 
-  const ConfirmationScreen({super.key, required this.appointment});
+  const ConfirmationScreen({
+    super.key,
+    required this.appointment,
+    this.precioServicio,
+    this.requiereSena = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +23,16 @@ class ConfirmationScreen extends StatelessWidget {
     final primary = tenant != null ? AppConfig.hexToColor(tenant.colorPrimario) : AppConfig.colorPrimario;
     final accent = tenant != null ? AppConfig.hexToColor(tenant.colorAcento) : AppConfig.colorAcento;
     final salonName = tenant?.nombreSalon ?? 'Salon';
+
+    // Calcular seña
+    final precio = precioServicio ?? 0;
+    final mostrarSena = tenant != null &&
+        tenant.senaHabilitada &&
+        requiereSena &&
+        precio > 0 &&
+        tenant.senaPorcentaje > 0;
+    final montoSena = mostrarSena ? precio * tenant!.senaPorcentaje / 100 : 0.0;
+    final esPagoTotal = tenant?.senaPorcentaje == 100;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
@@ -77,6 +94,107 @@ class ConfirmationScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  // Seña card
+                  if (mostrarSena) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFF9800).withAlpha(60)),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12, offset: const Offset(0, 2)),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF9800).withAlpha(25),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.account_balance_outlined, size: 18, color: Color(0xFFFF9800)),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                esPagoTotal ? 'Pago anticipado requerido' : 'Seña requerida',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFFE65100)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF9800).withAlpha(15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  '\$${montoSena.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFFE65100)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  esPagoTotal
+                                      ? '100% del servicio'
+                                      : '${tenant.senaPorcentaje}% del servicio (\$${precio.toStringAsFixed(2)})',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (tenant.senaCbu.isNotEmpty)
+                            _copiableRow(context, 'CBU', tenant.senaCbu, primary),
+                          if (tenant.senaAlias.isNotEmpty)
+                            _copiableRow(context, 'Alias', tenant.senaAlias, primary),
+                          if (tenant.senaTitular.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Text('Titular: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600])),
+                                  Expanded(child: Text(tenant.senaTitular, style: TextStyle(fontSize: 13, color: Colors.grey[800]))),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF3E0),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Envia el comprobante por WhatsApp para confirmar tu turno',
+                                    style: TextStyle(fontSize: 12, color: Colors.orange[800], height: 1.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 16),
 
                   // Confirmation code card
@@ -149,7 +267,7 @@ class ConfirmationScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () => _sendToMyWhatsApp(tenant, primary),
+                      onPressed: () => _sendToMyWhatsApp(tenant, primary, mostrarSena ? montoSena : null),
                       icon: const Icon(Icons.chat_rounded, size: 20),
                       label: const Text('Guardar en mi WhatsApp', style: TextStyle(fontWeight: FontWeight.w600)),
                       style: ElevatedButton.styleFrom(
@@ -161,32 +279,33 @@ class ConfirmationScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // WhatsApp: enviar al salón
+                  // WhatsApp: enviar al salón (con seña si aplica)
                   if (tenant?.whatsappNumero.isNotEmpty == true) ...[
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
                       height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: () => WhatsappService.sendConfirmation(
-                          phone: tenant!.whatsappNumero,
-                          countryCode: tenant.codigoPaisTelefono,
-                          nombreCliente: appointment.nombreCliente,
-                          servicio: appointment.servicioNombre ?? '',
-                          profesional: appointment.professionalNombre ?? '',
-                          fecha: _formatDate(appointment.fecha),
-                          hora: appointment.hora,
-                          codigo: appointment.codigoConfirmacion,
-                          salonName: tenant.nombreSalon,
-                          direccion: tenant.direccion,
-                        ),
-                        icon: Icon(Icons.storefront_outlined, size: 20, color: Colors.grey[600]),
-                        label: Text('Confirmar con el salón', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700])),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey[300]!),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
+                      child: mostrarSena
+                          ? ElevatedButton.icon(
+                              onPressed: () => _sendToSalon(tenant, mostrarSena ? montoSena : null),
+                              icon: const Icon(Icons.account_balance_outlined, size: 20),
+                              label: const Text('Enviar comprobante al salon', style: TextStyle(fontWeight: FontWeight.w600)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF9800),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                            )
+                          : OutlinedButton.icon(
+                              onPressed: () => _sendToSalon(tenant!, null),
+                              icon: Icon(Icons.storefront_outlined, size: 20, color: Colors.grey[600]),
+                              label: Text('Confirmar con el salón', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: Colors.grey[300]!),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                            ),
                     ),
                   ],
 
@@ -213,7 +332,26 @@ class ConfirmationScreen extends StatelessWidget {
     );
   }
 
-  void _sendToMyWhatsApp(dynamic tenant, Color primary) {
+  void _sendToSalon(dynamic tenant, double? montoSena) {
+    WhatsappService.sendConfirmation(
+      phone: tenant.whatsappNumero,
+      countryCode: tenant.codigoPaisTelefono,
+      nombreCliente: appointment.nombreCliente,
+      servicio: appointment.servicioNombre ?? '',
+      profesional: appointment.professionalNombre ?? '',
+      fecha: _formatDate(appointment.fecha),
+      hora: appointment.hora,
+      codigo: appointment.codigoConfirmacion,
+      salonName: tenant.nombreSalon,
+      direccion: tenant.direccion,
+      montoSena: montoSena,
+      senaCbu: tenant.senaCbu,
+      senaAlias: tenant.senaAlias,
+      senaTitular: tenant.senaTitular,
+    );
+  }
+
+  void _sendToMyWhatsApp(dynamic tenant, Color primary, double? montoSena) {
     final salonName = tenant?.nombreSalon ?? 'Salon';
     final direccion = tenant?.direccion ?? '';
     final countryCode = tenant?.codigoPaisTelefono ?? '54';
@@ -227,12 +365,44 @@ class ConfirmationScreen extends StatelessWidget {
       codigo: appointment.codigoConfirmacion,
       salonName: salonName,
       direccion: direccion,
+      montoSena: montoSena,
+      senaCbu: tenant?.senaCbu,
+      senaAlias: tenant?.senaAlias,
+      senaTitular: tenant?.senaTitular,
     );
 
     WhatsappService.openChat(
       phone: appointment.telefono,
       countryCode: countryCode,
       message: message,
+    );
+  }
+
+  Widget _copiableRow(BuildContext context, String label, String value, Color primary) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Text('$label: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600])),
+          Expanded(
+            child: Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          ),
+          GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: value));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$label copiado!'),
+                  backgroundColor: primary,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            child: Icon(Icons.copy_rounded, size: 16, color: Colors.grey[400]),
+          ),
+        ],
+      ),
     );
   }
 

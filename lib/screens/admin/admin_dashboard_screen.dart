@@ -973,6 +973,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     String selectedCat = 'otro';
     Uint8List? imageBytes;
     String? imageName;
+    bool requiereSena = false;
 
     showDialog(
       context: context,
@@ -1024,6 +1025,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duracion (min)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
                 const SizedBox(height: 8),
                 TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Precio (opcional)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
+                if (_tenant?.senaHabilitada == true) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    value: requiereSena,
+                    onChanged: (v) => setDState(() => requiereSena = v),
+                    title: const Text('Requiere seña', style: TextStyle(color: AppConfig.colorTexto, fontSize: 14)),
+                    subtitle: Text('${_tenant!.senaPorcentaje}% del precio', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+                    activeColor: _accent,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                ],
               ],
             ),
           ),
@@ -1042,6 +1055,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'duracion_minutos': int.tryParse(durCtrl.text) ?? 60,
                   'precio': priceCtrl.text.isNotEmpty ? double.tryParse(priceCtrl.text) : null,
                   if (imagenUrl != null) 'imagen_url': imagenUrl,
+                  'requiere_sena': requiereSena,
                 });
                 _services = await _svc.loadServices();
                 if (ctx.mounted) Navigator.pop(ctx);
@@ -1063,6 +1077,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     Uint8List? imageBytes;
     String? imageName;
     String? currentImageUrl = s.imagenUrl;
+    bool requiereSena = s.requiereSena;
 
     showDialog(
       context: context,
@@ -1121,6 +1136,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duracion (min)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
                 const SizedBox(height: 8),
                 TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Precio (opcional)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
+                if (_tenant?.senaHabilitada == true) ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    value: requiereSena,
+                    onChanged: (v) => setDState(() => requiereSena = v),
+                    title: const Text('Requiere seña', style: TextStyle(color: AppConfig.colorTexto, fontSize: 14)),
+                    subtitle: Text('${_tenant!.senaPorcentaje}% del precio', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+                    activeColor: _accent,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                ],
               ],
             ),
           ),
@@ -1139,6 +1166,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'duracion_minutos': int.tryParse(durCtrl.text) ?? 60,
                   'precio': priceCtrl.text.isNotEmpty ? double.tryParse(priceCtrl.text) : null,
                   'imagen_url': imagenUrl,
+                  'requiere_sena': requiereSena,
                 });
                 _services = await _svc.loadServices();
                 if (ctx.mounted) Navigator.pop(ctx);
@@ -2013,6 +2041,11 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   late int _ventanaConfirmacion;
   late int _recordatorio;
   late int _diaCerrado;
+  late bool _senaHabilitada;
+  late int _senaPorcentaje;
+  late TextEditingController _senaCbuCtrl;
+  late TextEditingController _senaAliasCtrl;
+  late TextEditingController _senaTitularCtrl;
   bool _saving = false;
 
   @override
@@ -2044,6 +2077,11 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _ventanaConfirmacion = t.ventanaConfirmacionHoras;
     _recordatorio = t.recordatorioHorasAntes;
     _diaCerrado = t.diaCerrado;
+    _senaHabilitada = t.senaHabilitada;
+    _senaPorcentaje = t.senaPorcentaje > 0 ? t.senaPorcentaje : 30;
+    _senaCbuCtrl = TextEditingController(text: t.senaCbu);
+    _senaAliasCtrl = TextEditingController(text: t.senaAlias);
+    _senaTitularCtrl = TextEditingController(text: t.senaTitular);
   }
 
   @override
@@ -2060,6 +2098,9 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _codigoPaisCtrl.dispose();
     _mapsQueryCtrl.dispose();
     _bannerCtrl.dispose();
+    _senaCbuCtrl.dispose();
+    _senaAliasCtrl.dispose();
+    _senaTitularCtrl.dispose();
     super.dispose();
   }
 
@@ -2207,6 +2248,11 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'ventana_confirmacion_horas': _ventanaConfirmacion,
         'recordatorio_horas_antes': _recordatorio,
         'dia_cerrado': _diaCerrado,
+        'sena_habilitada': _senaHabilitada,
+        'sena_porcentaje': _senaHabilitada ? _senaPorcentaje : 0,
+        'sena_cbu': _senaCbuCtrl.text.trim(),
+        'sena_alias': _senaAliasCtrl.text.trim(),
+        'sena_titular': _senaTitularCtrl.text.trim(),
         'onboarding_completed': true,
       });
 
@@ -2317,6 +2363,41 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
           0: 'Ninguno', 1: 'Lunes', 2: 'Martes', 3: 'Miercoles',
           4: 'Jueves', 5: 'Viernes', 6: 'Sabado', 7: 'Domingo',
         }, (v) => setState(() => _diaCerrado = v!)),
+
+        const SizedBox(height: 24),
+        _sectionTitle('Seña / Pago Anticipado'),
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF9800).withAlpha(10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFF9800).withAlpha(30)),
+          ),
+          child: const Text(
+            'Pedi una seña o pago anticipado a tus clientas antes de confirmar el turno. Ellas veran los datos bancarios y podran enviarte el comprobante por WhatsApp.',
+            style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 12, height: 1.4),
+          ),
+        ),
+        SwitchListTile(
+          value: _senaHabilitada,
+          onChanged: (v) => setState(() => _senaHabilitada = v),
+          title: const Text('Pedir seña para reservar', style: TextStyle(color: AppConfig.colorTexto, fontSize: 14)),
+          subtitle: Text(
+            _senaHabilitada ? 'Activa la seña en cada servicio desde la pestaña Servicios' : 'Desactivado',
+            style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
+          ),
+          activeColor: widget.accent,
+          contentPadding: EdgeInsets.zero,
+        ),
+        if (_senaHabilitada) ...[
+          _numberField('Porcentaje (%)', _senaPorcentaje, (v) {
+            if (v >= 1 && v <= 100) setState(() => _senaPorcentaje = v);
+          }),
+          _textField('CBU', _senaCbuCtrl),
+          _textField('Alias', _senaAliasCtrl),
+          _textField('Titular de la cuenta', _senaTitularCtrl),
+        ],
 
         const SizedBox(height: 32),
         ElevatedButton.icon(

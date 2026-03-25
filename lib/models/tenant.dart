@@ -39,6 +39,11 @@ class Tenant {
   final DateTime? trialEndDate;
   final bool trialExtended;
   final String bannerTexto;
+  final bool senaHabilitada;
+  final int senaPorcentaje;
+  final String senaCbu;
+  final String senaAlias;
+  final String senaTitular;
 
   Tenant({
     required this.id,
@@ -81,6 +86,11 @@ class Tenant {
     this.trialEndDate,
     this.trialExtended = false,
     this.bannerTexto = '',
+    this.senaHabilitada = false,
+    this.senaPorcentaje = 0,
+    this.senaCbu = '',
+    this.senaAlias = '',
+    this.senaTitular = '',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -143,6 +153,11 @@ class Tenant {
       trialEndDate: json['trial_end_date'] != null ? DateTime.tryParse(json['trial_end_date']) : null,
       trialExtended: json['trial_extended'] ?? false,
       bannerTexto: json['banner_texto'] ?? '',
+      senaHabilitada: json['sena_habilitada'] ?? false,
+      senaPorcentaje: json['sena_porcentaje'] ?? 0,
+      senaCbu: json['sena_cbu'] ?? '',
+      senaAlias: json['sena_alias'] ?? '',
+      senaTitular: json['sena_titular'] ?? '',
     );
   }
 
@@ -186,6 +201,11 @@ class Tenant {
     'trial_end_date': trialEndDate?.toIso8601String(),
     'trial_extended': trialExtended,
     'banner_texto': bannerTexto,
+    'sena_habilitada': senaHabilitada,
+    'sena_porcentaje': senaPorcentaje,
+    'sena_cbu': senaCbu,
+    'sena_alias': senaAlias,
+    'sena_titular': senaTitular,
   };
 
   Tenant copyWith({
