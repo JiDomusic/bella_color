@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
 import '../models/tenant.dart';
 import '../models/service.dart';
@@ -38,10 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _load() async {
     try {
-      final tenant = _svc.currentTenant ?? await _svc.loadTenant();
+      final tenant = await _svc.loadTenant();
       final services = await _svc.loadActiveServices();
       final professionals = await _svc.loadActiveProfessionals();
       final tenantId = _svc.tenantId;
+      debugPrint('[HOME] tenantId=$tenantId, onboarding=${tenant.onboardingCompleted}, nombre=${tenant.nombreSalon}');
       if (mounted) {
         setState(() {
           _tenant = tenant;
@@ -52,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
+      debugPrint('[HOME] Error loading tenant: $e');
       // Si falla (tenant demo no existe), mostrar landing
       if (mounted) {
         setState(() {
@@ -151,6 +154,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
   }
 
+  void _openMaps() {
+    final query = _tenant?.googleMapsQuery.isNotEmpty == true
+        ? _tenant!.googleMapsQuery
+        : '${_tenant!.direccion}, ${_tenant!.ciudad}';
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}');
+    launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
   void _openProgramacionJJWhatsApp() {
     WhatsappService.openChat(
       phone: '3413363551',
@@ -227,54 +238,54 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.transparent,
       body: PageBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              // Banner promocional del salon
-              if (_tenant?.bannerTexto.isNotEmpty == true)
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(200),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _primary.withAlpha(60)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.auto_awesome, color: _accent, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _tenant!.bannerTexto,
-                          style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildHeader(),
+                // Banner promocional del salon
+                if (_tenant?.mostrarBanner == true && _tenant?.bannerTexto.isNotEmpty == true)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(200),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _primary.withAlpha(60)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_awesome, color: _accent, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _tenant!.bannerTexto,
+                            style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              Expanded(
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     children: [
                       if (_services.isNotEmpty) ...[
                         _sectionTitle('Nuestros Servicios'),
-                        Expanded(flex: 3, child: _buildServicesGrid()),
+                        _buildServicesGrid(),
                       ],
                       if (_professionals.isNotEmpty) ...[
                         _sectionTitle('Nuestro Equipo'),
-                        Expanded(flex: 2, child: _buildProfessionalsList()),
+                        _buildProfessionalsList(),
                       ],
                       _buildCTA(),
                       _buildFooter(),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -321,76 +332,96 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           if (_tenant?.logoUrl != null)
             Container(
+              constraints: const BoxConstraints(maxWidth: 200, maxHeight: 200),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 12, offset: const Offset(0, 4))],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(_tenant!.logoUrl!, width: 100, height: 100, fit: BoxFit.cover),
+                borderRadius: BorderRadius.circular(24),
+                child: Image.network(
+                  _tenant!.logoUrl!,
+                  fit: BoxFit.contain,
+                ),
               ),
             )
           else
             Container(
-              width: 100,
-              height: 100,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 color: Colors.white.withAlpha(200),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: _primary.withAlpha(60)),
               ),
-              child: Icon(Icons.spa, size: 50, color: _primary),
+              child: Icon(Icons.spa, size: 60, color: _primary),
             ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(180),
-              borderRadius: BorderRadius.circular(12),
+          // Nombre, slogan y dirección sobre el fondo
+          if (_tenant?.mostrarNombreSalon != false)
+            Text(
+              _tenant?.nombreSalon ?? 'Salon de Belleza',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: _textDark,
+                shadows: [Shadow(color: Colors.white.withAlpha(200), blurRadius: 10)],
+              ),
+              textAlign: TextAlign.center,
             ),
-            child: Column(
-              children: [
-                Text(
-                  _tenant?.nombreSalon ?? 'Salon de Belleza',
-                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _textDark),
-                  textAlign: TextAlign.center,
+          if (_tenant?.slogan.isNotEmpty == true) ...[
+            const SizedBox(height: 4),
+            Text(
+              _tenant!.slogan,
+              style: TextStyle(
+                fontSize: 13,
+                color: _primary,
+                fontStyle: FontStyle.italic,
+                shadows: [Shadow(color: Colors.white.withAlpha(200), blurRadius: 8)],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (_tenant?.direccion.isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _openMaps(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(160),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                if (_tenant?.slogan.isNotEmpty == true) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _tenant!.slogan,
-                    style: TextStyle(fontSize: 14, color: _primary, fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                if (_tenant?.direccion.isNotEmpty == true) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.location_on, size: 14, color: _textMuted),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${_tenant!.direccion}, ${_tenant!.ciudad}',
-                          style: const TextStyle(fontSize: 12, color: _textMuted),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on, size: 14, color: _primary),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        '${_tenant!.direccion}, ${_tenant!.ciudad}',
+                        style: TextStyle(fontSize: 12, color: _textDark),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                ],
-              ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 
   Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(180),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
           Container(width: 3, height: 20, decoration: BoxDecoration(color: _accent, borderRadius: BorderRadius.circular(2))),

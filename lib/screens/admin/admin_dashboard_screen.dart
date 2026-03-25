@@ -2031,6 +2031,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   String? _logoUrl;
   String? _logoBlancoUrl;
   String? _fondoUrl;
+  late bool _mostrarNombreSalon;
+  late bool _mostrarBanner;
   late Color _primaryColor;
   late Color _secondaryColor;
   late Color _tertiaryColor;
@@ -2046,7 +2048,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   late TextEditingController _senaCbuCtrl;
   late TextEditingController _senaAliasCtrl;
   late TextEditingController _senaTitularCtrl;
-  String? _fondoPaginaUrl;
+  // _fondoPaginaUrl eliminado - se usa _fondoUrl para todo
   Color? _colorFondoPagina;
   bool _saving = false;
 
@@ -2069,6 +2071,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _logoUrl = t.logoUrl;
     _logoBlancoUrl = t.logoBlancoUrl;
     _fondoUrl = t.fondoUrl;
+    _mostrarNombreSalon = t.mostrarNombreSalon;
+    _mostrarBanner = t.mostrarBanner;
     _primaryColor = AppConfig.hexToColor(t.colorPrimario);
     _secondaryColor = AppConfig.hexToColor(t.colorSecundario);
     _tertiaryColor = AppConfig.hexToColor(t.colorTerciario);
@@ -2084,7 +2088,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _senaCbuCtrl = TextEditingController(text: t.senaCbu);
     _senaAliasCtrl = TextEditingController(text: t.senaAlias);
     _senaTitularCtrl = TextEditingController(text: t.senaTitular);
-    _fondoPaginaUrl = t.fondoPaginaUrl.isNotEmpty ? t.fondoPaginaUrl : null;
+    // fondoPaginaUrl eliminado - se usa fondoUrl para todo
     _colorFondoPagina = t.colorFondoPagina.isNotEmpty ? AppConfig.hexToColor(t.colorFondoPagina) : null;
   }
 
@@ -2238,10 +2242,12 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'whatsapp_numero': _whatsappCtrl.text.trim(),
         'codigo_pais_telefono': _codigoPaisCtrl.text.trim(),
         'google_maps_query': _mapsQueryCtrl.text.trim(),
-        'banner_texto': _bannerCtrl.text.trim(),
+        'banner_texto': _mostrarBanner ? _bannerCtrl.text.trim() : '',
+        'mostrar_banner': _mostrarBanner,
         'logo_url': _logoUrl,
         'logo_blanco_url': _logoBlancoUrl,
         'fondo_url': _fondoUrl,
+        'mostrar_nombre_salon': _mostrarNombreSalon,
         'color_primario': _colorToHex(_primaryColor),
         'color_secundario': _colorToHex(_secondaryColor),
         'color_terciario': _colorToHex(_tertiaryColor),
@@ -2257,7 +2263,6 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'sena_cbu': _senaCbuCtrl.text.trim(),
         'sena_alias': _senaAliasCtrl.text.trim(),
         'sena_titular': _senaTitularCtrl.text.trim(),
-        'fondo_pagina_url': _fondoPaginaUrl ?? '',
         'color_fondo_pagina': _colorFondoPagina != null ? _colorToHex(_colorFondoPagina!) : '',
         'onboarding_completed': true,
       });
@@ -2334,14 +2339,28 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             ],
           ),
         ),
-        _textField('Mensaje para tus clientas', _bannerCtrl),
+        SwitchListTile(
+          title: const Text('Mostrar aviso en el home', style: TextStyle(color: Colors.white, fontSize: 14)),
+          subtitle: const Text('Activa esto para mostrar un cartel con un mensaje en tu pagina (ej: descuentos, promos, avisos)', style: TextStyle(color: Color(0xFF999999), fontSize: 12)),
+          value: _mostrarBanner,
+          onChanged: (v) => setState(() => _mostrarBanner = v),
+          activeColor: widget.primary,
+        ),
+        if (_mostrarBanner)
+          _textField('Texto del aviso (ej: "20% OFF en alisados este mes!")', _bannerCtrl),
 
         const SizedBox(height: 24),
         _sectionTitle('Imagenes'),
         _imageUploadField('Logo color', _logoUrl, 'logo_color.png', (url) => _logoUrl = url),
         _imageUploadField('Logo blanco', _logoBlancoUrl, 'logo_blanco.png', (url) => _logoBlancoUrl = url),
-        _imageUploadField('Foto de fondo', _fondoUrl, 'fondo.jpg', (url) => _fondoUrl = url),
-
+        const SizedBox(height: 12),
+        SwitchListTile(
+          title: const Text('Mostrar nombre del salon debajo del logo', style: TextStyle(color: Colors.white, fontSize: 14)),
+          subtitle: const Text('Desactivalo si tu logo ya incluye el nombre', style: TextStyle(color: Color(0xFF999999), fontSize: 12)),
+          value: _mostrarNombreSalon,
+          onChanged: (v) => setState(() => _mostrarNombreSalon = v),
+          activeColor: widget.primary,
+        ),
         const SizedBox(height: 24),
         _sectionTitle('Fondo de tu Pagina'),
         Container(
@@ -2353,17 +2372,17 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             border: Border.all(color: widget.accent.withAlpha(30)),
           ),
           child: const Text(
-            'Elegí como se ve el fondo de tu pagina publica. Podes subir una foto o elegir un color. Si no elegis nada, se usa un degradado suave con tus colores de marca.',
+            'Elegí como se ve el fondo de toda tu pagina publica.\nPodes subir una foto o elegir un color.\nSi no elegis nada, se usa un degradado suave con tus colores de marca.',
             style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 12, height: 1.4),
           ),
         ),
         _imageUploadField(
-          'Foto de fondo de pagina',
-          _fondoPaginaUrl,
-          'fondo_pagina.jpg',
-          (url) => _fondoPaginaUrl = url,
+          'Foto de fondo',
+          _fondoUrl,
+          'fondo.jpg',
+          (url) => _fondoUrl = url,
         ),
-        if (_fondoPaginaUrl == null || _fondoPaginaUrl!.isEmpty) ...[
+        if (_fondoUrl == null || _fondoUrl!.isEmpty) ...[
           const SizedBox(height: 8),
           Row(
             children: [
