@@ -44,6 +44,8 @@ class Tenant {
   final String senaCbu;
   final String senaAlias;
   final String senaTitular;
+  final String fondoPaginaUrl;
+  final String colorFondoPagina;
 
   Tenant({
     required this.id,
@@ -91,6 +93,8 @@ class Tenant {
     this.senaCbu = '',
     this.senaAlias = '',
     this.senaTitular = '',
+    this.fondoPaginaUrl = '',
+    this.colorFondoPagina = '',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -158,6 +162,8 @@ class Tenant {
       senaCbu: json['sena_cbu'] ?? '',
       senaAlias: json['sena_alias'] ?? '',
       senaTitular: json['sena_titular'] ?? '',
+      fondoPaginaUrl: json['fondo_pagina_url'] ?? '',
+      colorFondoPagina: json['color_fondo_pagina'] ?? '',
     );
   }
 
@@ -206,6 +212,8 @@ class Tenant {
     'sena_cbu': senaCbu,
     'sena_alias': senaAlias,
     'sena_titular': senaTitular,
+    'fondo_pagina_url': fondoPaginaUrl,
+    'color_fondo_pagina': colorFondoPagina,
   };
 
   Tenant copyWith({

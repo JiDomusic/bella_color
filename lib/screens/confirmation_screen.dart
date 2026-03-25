@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../models/appointment.dart';
 import '../services/supabase_service.dart';
 import '../services/whatsapp_service.dart';
+import '../widgets/page_background.dart';
 
 class ConfirmationScreen extends StatelessWidget {
   final Appointment appointment;
@@ -35,8 +36,8 @@ class ConfirmationScreen extends StatelessWidget {
     final esPagoTotal = tenant?.senaPorcentaje == 100;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: PageBackground(child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -328,7 +329,7 @@ class ConfirmationScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 

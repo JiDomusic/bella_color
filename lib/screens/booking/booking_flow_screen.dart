@@ -9,6 +9,7 @@ import '../../services/supabase_service.dart';
 import '../../services/confirmation_code_service.dart';
 import '../../widgets/time_slot_widget.dart';
 import '../../widgets/urgency_banner.dart';
+import '../../widgets/page_background.dart';
 import '../confirmation_screen.dart';
 
 class BookingFlowScreen extends StatefulWidget {
@@ -356,9 +357,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.white.withAlpha(220),
         foregroundColor: Colors.grey[800],
         elevation: 0,
         title: Text('Reservar Turno', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
@@ -371,7 +372,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           ),
         ),
       ),
-      body: PageView(
+      body: PageBackground(child: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (i) => setState(() => _currentPage = i),
@@ -381,7 +382,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           _buildDateTimePage(),
           _buildDataPage(),
         ],
-      ),
+      )),
     );
   }
 
@@ -470,26 +471,48 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         Text('Elegí el día y horario que más te guste', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
         const SizedBox(height: 20),
         // Inline calendar
-        _buildInlineCalendar(now, lastDate, closedDay),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: _buildInlineCalendar(now, lastDate, closedDay),
+          ),
+        ),
         // Time slots
         if (_timeSlots.isNotEmpty) ...[
           const SizedBox(height: 20),
           UrgencyBanner(available: _availableSlots, total: _totalSlots, primary: _primary),
           const SizedBox(height: 12),
-          Text('Horarios disponibles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[600])),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _timeSlots.map((slot) => TimeSlotWidget(
-              time: slot,
-              isSelected: _selectedTime == slot,
-              isAvailable: _slotAvailability[slot] ?? false,
-              primary: _primary,
-              onTap: () {
-                setState(() => _selectedTime = slot);
-              },
-            )).toList(),
+          Text(
+            _availableSlots > 0 ? 'Horarios disponibles' : 'Todos los horarios estan ocupados',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: _availableSlots > 0 ? Colors.grey[700] : Colors.redAccent,
+            ),
+          ),
+          if (_availableSlots == 0) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Proba con otra fecha',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Center(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: _timeSlots.map((slot) => TimeSlotWidget(
+                time: slot,
+                isSelected: _selectedTime == slot,
+                isAvailable: _slotAvailability[slot] ?? false,
+                primary: _primary,
+                onTap: () {
+                  setState(() => _selectedTime = slot);
+                },
+              )).toList(),
+            ),
           ),
           if (_availableSlots == 0) ...[
             const SizedBox(height: 16),
@@ -510,12 +533,22 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.event_busy, color: Colors.redAccent, size: 20),
+                const Icon(Icons.event_busy, color: Colors.redAccent, size: 20),
                 const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'No hay horarios disponibles para esta fecha',
-                    style: TextStyle(color: Colors.redAccent, fontSize: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'No hay horarios disponibles para esta fecha',
+                        style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Proba con otra fecha',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -709,33 +742,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         const SizedBox(height: 8),
         UrgencyBanner(available: _availableSlots, total: _totalSlots, primary: _primary),
         const SizedBox(height: 16),
-        TextField(
-          controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Nombre completo *', prefixIcon: Icon(Icons.person_outline)),
-          style: TextStyle(color: Colors.grey.shade800),
-          textCapitalization: TextCapitalization.words,
-        ),
+        _bookingField(_nameController, 'Nombre completo *', Icons.person_outline, textCapitalization: TextCapitalization.words),
         const SizedBox(height: 12),
-        TextField(
-          controller: _phoneController,
-          decoration: const InputDecoration(labelText: 'Telefono *', prefixIcon: Icon(Icons.phone)),
-          keyboardType: TextInputType.phone,
-          style: TextStyle(color: Colors.grey.shade800),
-        ),
+        _bookingField(_phoneController, 'Telefono *', Icons.phone, keyboardType: TextInputType.phone),
         const SizedBox(height: 12),
-        TextField(
-          controller: _emailController,
-          decoration: const InputDecoration(labelText: 'Email (opcional)', prefixIcon: Icon(Icons.email_outlined)),
-          keyboardType: TextInputType.emailAddress,
-          style: TextStyle(color: Colors.grey.shade800),
-        ),
+        _bookingField(_emailController, 'Email (opcional)', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
         const SizedBox(height: 12),
-        TextField(
-          controller: _commentsController,
-          decoration: const InputDecoration(labelText: 'Comentarios (opcional)', prefixIcon: Icon(Icons.comment_outlined)),
-          maxLines: 3,
-          style: TextStyle(color: Colors.grey.shade800),
-        ),
+        _bookingField(_commentsController, 'Comentarios (opcional)', Icons.comment_outlined, maxLines: 3),
         const SizedBox(height: 24),
         Row(
           children: [
@@ -772,6 +785,36 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           const SizedBox(width: 8),
           Text(text, style: TextStyle(fontSize: 13, color: Colors.grey.shade800)),
         ],
+      ),
+    );
+  }
+
+  Widget _bookingField(TextEditingController ctrl, String label, IconData icon, {
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      maxLines: maxLines,
+      style: TextStyle(color: Colors.grey[800], fontSize: 15),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey[500]),
+        prefixIcon: Icon(icon, color: _primary.withAlpha(150)),
+        filled: true,
+        fillColor: Colors.white,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }

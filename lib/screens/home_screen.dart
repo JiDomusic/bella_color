@@ -8,6 +8,7 @@ import '../services/whatsapp_service.dart';
 import '../widgets/service_card.dart';
 import '../widgets/professional_card.dart';
 import '../widgets/welcome_overlay.dart';
+import '../widgets/page_background.dart';
 import 'booking/booking_flow_screen.dart';
 import 'admin/admin_login_screen.dart';
 import 'admin/super_admin_screen.dart';
@@ -178,6 +179,10 @@ class _HomeScreenState extends State<HomeScreen> {
               top: 40,
               right: 16,
               child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                ),
                 onLongPress: _showSuperAdminAuth,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -219,57 +224,59 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // ─── Home normal del salón configurado ───
     return Scaffold(
-      backgroundColor: _bgWhite,
-      body: Column(
-        children: [
-          _buildHeader(),
-          // Banner promocional del salon
-          if (_tenant?.bannerTexto.isNotEmpty == true)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [_primary.withAlpha(30), _accent.withAlpha(20)],
-                ),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _primary.withAlpha(60)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.auto_awesome, color: _accent, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _tenant!.bannerTexto,
-                      style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
-                    ),
+      backgroundColor: Colors.transparent,
+      body: PageBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              // Banner promocional del salon
+              if (_tenant?.bannerTexto.isNotEmpty == true)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(200),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _primary.withAlpha(60)),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_awesome, color: _accent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _tenant!.bannerTexto,
+                          style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      if (_services.isNotEmpty) ...[
+                        _sectionTitle('Nuestros Servicios'),
+                        Expanded(flex: 3, child: _buildServicesGrid()),
+                      ],
+                      if (_professionals.isNotEmpty) ...[
+                        _sectionTitle('Nuestro Equipo'),
+                        Expanded(flex: 2, child: _buildProfessionalsList()),
+                      ],
+                      _buildCTA(),
+                      _buildFooter(),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  if (_services.isNotEmpty) ...[
-                    _sectionTitle('Nuestros Servicios'),
-                    Expanded(flex: 3, child: _buildServicesGrid()),
-                  ],
-                  if (_professionals.isNotEmpty) ...[
-                    _sectionTitle('Nuestro Equipo'),
-                    Expanded(flex: 2, child: _buildProfessionalsList()),
-                  ],
-                  _buildCTA(),
-                  _buildFooter(),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openBooking(),
@@ -281,109 +288,102 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        image: _tenant?.fondoUrl != null
-            ? DecorationImage(
-                image: NetworkImage(_tenant!.fondoUrl!),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.white.withAlpha(180),
-                  BlendMode.srcOver,
-                ),
-              )
-            : null,
-        gradient: _tenant?.fondoUrl == null
-            ? LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [_primary.withAlpha(25), _bgWhite],
-              )
-            : null,
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-          child: Column(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _accent.withAlpha(20),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _accent.withAlpha(100)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.admin_panel_settings, color: _accent, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Admin', style: TextStyle(color: _accent, fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (_tenant?.logoUrl != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.network(_tenant!.logoUrl!, width: 100, height: 100, fit: BoxFit.cover),
-                )
-              else
-                Container(
-                  width: 100,
-                  height: 100,
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: _primary.withAlpha(25),
+                    color: Colors.white.withAlpha(180),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _primary.withAlpha(60)),
+                    border: Border.all(color: _accent.withAlpha(100)),
                   ),
-                  child: Icon(Icons.spa, size: 50, color: _primary),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.admin_panel_settings, color: _accent, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Admin', style: TextStyle(color: _accent, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
                 ),
-              const SizedBox(height: 16),
-              Text(
-                _tenant?.nombreSalon ?? 'Salon de Belleza',
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _textDark),
-                textAlign: TextAlign.center,
               ),
-              if (_tenant?.slogan.isNotEmpty == true) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _tenant!.slogan,
-                  style: TextStyle(fontSize: 14, color: _primary, fontStyle: FontStyle.italic),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (_tenant?.direccion.isNotEmpty == true) ...[
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: _textMuted),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '${_tenant!.direccion}, ${_tenant!.ciudad}',
-                        style: const TextStyle(fontSize: 12, color: _textMuted),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          if (_tenant?.logoUrl != null)
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(_tenant!.logoUrl!, width: 100, height: 100, fit: BoxFit.cover),
+              ),
+            )
+          else
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(200),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _primary.withAlpha(60)),
+              ),
+              child: Icon(Icons.spa, size: 50, color: _primary),
+            ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(180),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  _tenant?.nombreSalon ?? 'Salon de Belleza',
+                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _textDark),
+                  textAlign: TextAlign.center,
+                ),
+                if (_tenant?.slogan.isNotEmpty == true) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _tenant!.slogan,
+                    style: TextStyle(fontSize: 14, color: _primary, fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (_tenant?.direccion.isNotEmpty == true) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.location_on, size: 14, color: _textMuted),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '${_tenant!.direccion}, ${_tenant!.ciudad}',
+                          style: const TextStyle(fontSize: 12, color: _textMuted),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -458,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [_primary.withAlpha(15), _accent.withAlpha(10)]),
+          color: Colors.white.withAlpha(210),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: _primary.withAlpha(40)),
         ),

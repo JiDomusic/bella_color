@@ -2046,6 +2046,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   late TextEditingController _senaCbuCtrl;
   late TextEditingController _senaAliasCtrl;
   late TextEditingController _senaTitularCtrl;
+  String? _fondoPaginaUrl;
+  Color? _colorFondoPagina;
   bool _saving = false;
 
   @override
@@ -2082,6 +2084,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _senaCbuCtrl = TextEditingController(text: t.senaCbu);
     _senaAliasCtrl = TextEditingController(text: t.senaAlias);
     _senaTitularCtrl = TextEditingController(text: t.senaTitular);
+    _fondoPaginaUrl = t.fondoPaginaUrl.isNotEmpty ? t.fondoPaginaUrl : null;
+    _colorFondoPagina = t.colorFondoPagina.isNotEmpty ? AppConfig.hexToColor(t.colorFondoPagina) : null;
   }
 
   @override
@@ -2253,6 +2257,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'sena_cbu': _senaCbuCtrl.text.trim(),
         'sena_alias': _senaAliasCtrl.text.trim(),
         'sena_titular': _senaTitularCtrl.text.trim(),
+        'fondo_pagina_url': _fondoPaginaUrl ?? '',
+        'color_fondo_pagina': _colorFondoPagina != null ? _colorToHex(_colorFondoPagina!) : '',
         'onboarding_completed': true,
       });
 
@@ -2335,6 +2341,63 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         _imageUploadField('Logo color', _logoUrl, 'logo_color.png', (url) => _logoUrl = url),
         _imageUploadField('Logo blanco', _logoBlancoUrl, 'logo_blanco.png', (url) => _logoBlancoUrl = url),
         _imageUploadField('Foto de fondo', _fondoUrl, 'fondo.jpg', (url) => _fondoUrl = url),
+
+        const SizedBox(height: 24),
+        _sectionTitle('Fondo de tu Pagina'),
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: widget.accent.withAlpha(10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: widget.accent.withAlpha(30)),
+          ),
+          child: const Text(
+            'Elegí como se ve el fondo de tu pagina publica. Podes subir una foto o elegir un color. Si no elegis nada, se usa un degradado suave con tus colores de marca.',
+            style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 12, height: 1.4),
+          ),
+        ),
+        _imageUploadField(
+          'Foto de fondo de pagina',
+          _fondoPaginaUrl,
+          'fondo_pagina.jpg',
+          (url) => _fondoPaginaUrl = url,
+        ),
+        if (_fondoPaginaUrl == null || _fondoPaginaUrl!.isEmpty) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text('O elegí un color de fondo: ', style: TextStyle(color: Colors.white.withAlpha(150), fontSize: 13)),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _pickColor(
+                  'Color de fondo',
+                  _colorFondoPagina ?? Colors.white,
+                  (c) => setState(() => _colorFondoPagina = c),
+                ),
+                child: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: _colorFondoPagina ?? Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withAlpha(80), width: 2),
+                  ),
+                  child: _colorFondoPagina == null
+                      ? Icon(Icons.add, color: Colors.grey[400], size: 20)
+                      : null,
+                ),
+              ),
+              if (_colorFondoPagina != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => setState(() => _colorFondoPagina = null),
+                  icon: const Icon(Icons.close, size: 18, color: Colors.redAccent),
+                  tooltip: 'Quitar color',
+                ),
+              ],
+            ],
+          ),
+        ],
 
         const SizedBox(height: 24),
         _sectionTitle('Colores de Marca'),

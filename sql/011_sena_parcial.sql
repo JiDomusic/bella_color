@@ -10,3 +10,7 @@ ALTER TABLE tenants ADD COLUMN IF NOT EXISTS sena_titular TEXT DEFAULT '';
 
 -- Toggle por servicio: el admin elige cuáles piden seña
 ALTER TABLE services ADD COLUMN IF NOT EXISTS requiere_sena BOOLEAN DEFAULT false;
+
+-- Fondo personalizado para toda la página pública
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS fondo_pagina_url TEXT DEFAULT '';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS color_fondo_pagina TEXT DEFAULT '';
