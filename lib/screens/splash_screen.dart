@@ -55,9 +55,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   Future<void> _initApp() async {
     try {
-      await Future.delayed(const Duration(milliseconds: 4500));
       final svc = SupabaseService.instance;
       final tenant = await svc.loadTenant();
+      if (mounted) setState(() {}); // rebuild con tenant cargado
+      // Si ya completó onboarding, ir rápido. Si no, esperar para que lea el banner.
+      if (tenant.onboardingCompleted) {
+        await Future.delayed(const Duration(milliseconds: 1500));
+      } else {
+        await Future.delayed(const Duration(milliseconds: 4500));
+      }
 
       if (!mounted) return;
 

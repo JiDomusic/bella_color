@@ -39,17 +39,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _load() async {
     try {
+      final tenantId = _svc.tenantId;
+      debugPrint('[HOME] Cargando tenantId=$tenantId');
       final tenant = await _svc.loadTenant();
+      debugPrint('[HOME] Tenant cargado: nombre=${tenant.nombreSalon}, onboarding=${tenant.onboardingCompleted}, blocked=${tenant.isBlocked}');
       final services = await _svc.loadActiveServices();
       final professionals = await _svc.loadActiveProfessionals();
-      final tenantId = _svc.tenantId;
-      debugPrint('[HOME] tenantId=$tenantId, onboarding=${tenant.onboardingCompleted}, nombre=${tenant.nombreSalon}');
+      debugPrint('[HOME] Servicios=${services.length}, Profesionales=${professionals.length}');
       if (mounted) {
         setState(() {
           _tenant = tenant;
           _services = services;
           _professionals = professionals;
           _isLanding = (tenantId == 'demo' || tenantId.isEmpty || !tenant.onboardingCompleted);
+          debugPrint('[HOME] _isLanding=$_isLanding (demo=${tenantId == 'demo'}, empty=${tenantId.isEmpty}, noOnboard=${!tenant.onboardingCompleted})');
           _loading = false;
         });
       }
@@ -466,10 +469,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProfessionalsList() {
     return SizedBox(
-      height: 200,
+      height: 240,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         itemCount: _professionals.length,
         itemBuilder: (_, i) => Padding(
           padding: const EdgeInsets.only(right: 12),
