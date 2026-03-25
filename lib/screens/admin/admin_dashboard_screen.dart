@@ -2151,7 +2151,9 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
       }
 
       final bytes = await picked.readAsBytes();
-      final url = await widget.svc.uploadImage(fileName, Uint8List.fromList(bytes));
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final uniqueName = '${ts}_$fileName';
+      final url = await widget.svc.uploadImage(uniqueName, Uint8List.fromList(bytes));
 
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
