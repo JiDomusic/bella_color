@@ -402,16 +402,32 @@ class StockTabState extends State<StockTab> {
             ElevatedButton(
               onPressed: () async {
                 if (nameCtrl.text.trim().isEmpty) return;
-                await _svc.createProducto({
-                  'nombre': nameCtrl.text.trim(),
-                  'marca': marcaCtrl.text.trim(),
-                  'codigo_barras': barcodeCtrl.text.trim(),
-                  'cantidad': int.tryParse(cantCtrl.text) ?? 1,
-                  'categoria': selectedCat,
-                  'min_stock_alerta': int.tryParse(alertCtrl.text) ?? 5,
-                });
-                await _load();
-                if (ctx.mounted) Navigator.pop(ctx);
+                try {
+                  await _svc.createProducto({
+                    'nombre': nameCtrl.text.trim(),
+                    'marca': marcaCtrl.text.trim(),
+                    'codigo_barras': barcodeCtrl.text.trim(),
+                    'cantidad': int.tryParse(cantCtrl.text) ?? 1,
+                    'categoria': selectedCat,
+                    'min_stock_alerta': int.tryParse(alertCtrl.text) ?? 5,
+                  });
+                  await _load();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Producto "${nameCtrl.text.trim()}" creado'),
+                        backgroundColor: Colors.green),
+                    );
+                  }
+                } catch (e) {
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error al crear producto: $e'),
+                        backgroundColor: Colors.red),
+                    );
+                  }
+                }
               },
               child: const Text('Crear'),
             ),
