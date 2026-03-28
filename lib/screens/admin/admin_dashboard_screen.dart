@@ -13,8 +13,11 @@ import '../../models/waitlist_entry.dart';
 import '../../services/supabase_service.dart';
 import '../../services/subscription_service.dart';
 import '../../services/whatsapp_service.dart';
+import '../../services/notification_service.dart';
 import 'admin_login_screen.dart';
 import 'reports_tab.dart';
+import 'clientes_tab.dart';
+import 'stock_tab.dart';
 import '../home_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -38,13 +41,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Set<String> _frequentPhones = {};
   bool _loading = true;
   bool _changingPassword = false;
+  NotificationService? _notifService;
 
   String _selectedDate = '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 10, vsync: this);
     final now = DateTime.now();
     _selectedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     _loadAll();
@@ -53,6 +57,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   @override
   void dispose() {
     _tabController.dispose();
+    _notifService?.dispose();
     super.dispose();
   }
 
@@ -79,6 +84,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       _waitlist = await _svc.loadWaitlist();
       _frequentPhones = await _svc.loadFrequentClientPhones();
     } catch (_) {}
+
+    // Inicializar notificaciones de cierre y stock bajo
+    if (_hours.isNotEmpty && mounted) {
+      _notifService?.dispose();
+      _notifService = NotificationService(
+        onNotification: (title, message) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(message, style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
+                duration: const Duration(minutes: 10),
+                backgroundColor: _accent,
+                action: SnackBarAction(label: 'OK', textColor: Colors.white, onPressed: () {}),
+              ),
+            );
+          }
+        },
+        onLowStock: (productos) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Stock bajo en: ${productos.map((p) => '${p.nombre} (${p.cantidad})').join(', ')}'),
+                duration: const Duration(seconds: 10),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
+        },
+      );
+      _notifService!.scheduleClosingAlerts(_hours);
+      // Chequear stock bajo al cargar
+      try {
+        final bajoStock = await _svc.loadProductosBajoStock();
+        _notifService!.checkLowStock(bajoStock);
+      } catch (_) {}
+    }
 
     if (mounted) setState(() => _loading = false);
   }
@@ -224,6 +272,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             Tab(icon: Icon(Icons.schedule, size: 16), text: 'Horarios'),
             Tab(icon: Icon(Icons.event_busy, size: 16), text: 'Cerrar dias'),
             Tab(icon: Icon(Icons.hourglass_top, size: 16), text: 'Espera'),
+            Tab(icon: Icon(Icons.people_alt, size: 16), text: 'Clientes'),
+            Tab(icon: Icon(Icons.inventory_2, size: 16), text: 'Stock'),
             Tab(icon: Icon(Icons.bar_chart, size: 16), text: 'Reportes'),
             Tab(icon: Icon(Icons.store, size: 16), text: 'Mi Salon'),
           ],
@@ -243,6 +293,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 _buildHoursTab(),
                 _buildBlocksTab(),
                 _buildWaitlistTab(),
+                ClientesTab(primary: _primary, accent: _accent),
+                StockTab(primary: _primary, accent: _accent),
                 ReportsTab(primary: _primary, accent: _accent),
                 _buildSalonTab(),
               ],
@@ -621,6 +673,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
   Future<void> _changeState(String id, String estado) async {
     await _svc.updateAppointmentStatus(id, estado);
+    // Auto-crear cliente al completar un turno
+    if (estado == 'completada') {
+      try {
+        final appt = _appointments.firstWhere((a) => a.id == id);
+        await _svc.getOrCreateCliente(
+          appt.nombreCliente,
+          appt.telefono,
+          email: appt.email,
+        );
+      } catch (_) {}
+    }
     _refreshAppointments();
   }
 
@@ -720,6 +783,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        icon: Icon(Icons.history, color: _accent, size: 20),
+                        tooltip: 'Historial',
+                        onPressed: () => _showProfessionalHistory(p),
+                      ),
                       Switch(
                         value: p.activo,
                         activeColor: _primary,
@@ -744,6 +812,103 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             },
           ),
         ),
+      ],
+    );
+  }
+
+  void _showProfessionalHistory(Professional p) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (ctx, scrollCtrl) => FutureBuilder<List<Appointment>>(
+          future: _svc.loadAppointments().then((all) =>
+            all.where((a) => a.professionalId == p.id).toList()
+              ..sort((a, b) => '${b.fecha}${b.hora}'.compareTo('${a.fecha}${a.hora}'))
+          ),
+          builder: (ctx, snap) {
+            final turnos = snap.data ?? [];
+            final completados = turnos.where((t) => t.estado == 'completada').toList();
+            return ListView(
+              controller: scrollCtrl,
+              padding: const EdgeInsets.all(16),
+              children: [
+                Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16), decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2)))),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: _primary.withAlpha(40),
+                      backgroundImage: p.fotoUrl != null ? NetworkImage(p.fotoUrl!) : null,
+                      child: p.fotoUrl == null ? Text(p.nombre[0], style: TextStyle(color: _primary, fontWeight: FontWeight.bold, fontSize: 20)) : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(p.especialidad, style: const TextStyle(color: Color(0xFF999999), fontSize: 13)),
+                      ],
+                    )),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Resumen
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _statBadge('Total', '${turnos.length}', _primary),
+                      _statBadge('Completados', '${completados.length}', Colors.green),
+                      _statBadge('No show', '${turnos.where((t) => t.estado == 'no_show').length}', Colors.orange),
+                      _statBadge('Cancelados', '${turnos.where((t) => t.estado == 'cancelada').length}', Colors.redAccent),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Historial de trabajos (${completados.length})', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                if (!snap.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (completados.isEmpty)
+                  const Text('No hay turnos completados aun.', style: TextStyle(color: Color(0xFF888888)))
+                else
+                  ...completados.take(50).map((t) => Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(10)),
+                    child: Row(
+                      children: [
+                        Text(t.fecha, style: const TextStyle(color: Color(0xFF999999), fontSize: 12)),
+                        const SizedBox(width: 6),
+                        Text(t.hora, style: const TextStyle(color: Color(0xFF999999), fontSize: 12)),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(t.servicioNombre ?? '-', style: const TextStyle(color: Colors.white, fontSize: 13))),
+                        Text(t.nombreCliente, style: TextStyle(color: _accent, fontSize: 12)),
+                      ],
+                    ),
+                  )),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _statBadge(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Color(0xFF999999), fontSize: 10)),
       ],
     );
   }
@@ -969,7 +1134,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   void _addServiceDialog() {
     final nameCtrl = TextEditingController();
     final durCtrl = TextEditingController(text: '60');
-    final priceCtrl = TextEditingController();
+    final priceEfectivoCtrl = TextEditingController();
+    final priceTarjetaCtrl = TextEditingController();
+    final descEfectivoCtrl = TextEditingController();
+    final descTarjetaCtrl = TextEditingController();
     String selectedCat = 'otro';
     Uint8List? imageBytes;
     String? imageName;
@@ -1023,8 +1191,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
                 const SizedBox(height: 8),
                 TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duracion (min)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
-                const SizedBox(height: 8),
-                TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Precio (opcional)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 12),
+                const Text('Precios', style: TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Expanded(child: TextField(controller: priceEfectivoCtrl, decoration: const InputDecoration(labelText: 'Efectivo \$', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                  const SizedBox(width: 8),
+                  Expanded(child: TextField(controller: priceTarjetaCtrl, decoration: const InputDecoration(labelText: 'Tarjeta \$', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                ]),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Expanded(child: TextField(controller: descEfectivoCtrl, decoration: const InputDecoration(labelText: 'Desc. efectivo %', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                  const SizedBox(width: 8),
+                  Expanded(child: TextField(controller: descTarjetaCtrl, decoration: const InputDecoration(labelText: 'Desc. tarjeta %', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                ]),
                 if (_tenant?.senaHabilitada == true) ...[
                   const SizedBox(height: 8),
                   SwitchListTile(
@@ -1049,11 +1229,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 if (imageBytes != null) {
                   imagenUrl = await _svc.uploadImage('services/${DateTime.now().millisecondsSinceEpoch}_$imageName', imageBytes!);
                 }
+                final precioEf = priceEfectivoCtrl.text.isNotEmpty ? double.tryParse(priceEfectivoCtrl.text) : null;
                 await _svc.createService({
                   'nombre': nameCtrl.text.trim(),
                   'categoria': selectedCat,
                   'duracion_minutos': int.tryParse(durCtrl.text) ?? 60,
-                  'precio': priceCtrl.text.isNotEmpty ? double.tryParse(priceCtrl.text) : null,
+                  'precio': precioEf,
+                  'precio_efectivo': precioEf,
+                  'precio_tarjeta': priceTarjetaCtrl.text.isNotEmpty ? double.tryParse(priceTarjetaCtrl.text) : null,
+                  'descuento_efectivo_pct': int.tryParse(descEfectivoCtrl.text) ?? 0,
+                  'descuento_tarjeta_pct': int.tryParse(descTarjetaCtrl.text) ?? 0,
                   if (imagenUrl != null) 'imagen_url': imagenUrl,
                   'requiere_sena': requiereSena,
                 });
@@ -1072,7 +1257,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   void _editServiceDialog(Service s) {
     final nameCtrl = TextEditingController(text: s.nombre);
     final durCtrl = TextEditingController(text: s.duracionMinutos.toString());
-    final priceCtrl = TextEditingController(text: s.precio?.toStringAsFixed(0) ?? '');
+    final priceEfectivoCtrl = TextEditingController(text: s.precioEfectivoFinal?.toStringAsFixed(0) ?? '');
+    final priceTarjetaCtrl = TextEditingController(text: s.precioTarjetaFinal?.toStringAsFixed(0) ?? '');
+    final descEfectivoCtrl = TextEditingController(text: s.descuentoEfectivoPct > 0 ? s.descuentoEfectivoPct.toString() : '');
+    final descTarjetaCtrl = TextEditingController(text: s.descuentoTarjetaPct > 0 ? s.descuentoTarjetaPct.toString() : '');
     String selectedCat = s.categoria;
     Uint8List? imageBytes;
     String? imageName;
@@ -1134,8 +1322,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
                 const SizedBox(height: 8),
                 TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duracion (min)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
-                const SizedBox(height: 8),
-                TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Precio (opcional)'), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 12),
+                const Text('Precios', style: TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Expanded(child: TextField(controller: priceEfectivoCtrl, decoration: const InputDecoration(labelText: 'Efectivo \$', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                  const SizedBox(width: 8),
+                  Expanded(child: TextField(controller: priceTarjetaCtrl, decoration: const InputDecoration(labelText: 'Tarjeta \$', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                ]),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Expanded(child: TextField(controller: descEfectivoCtrl, decoration: const InputDecoration(labelText: 'Desc. efectivo %', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                  const SizedBox(width: 8),
+                  Expanded(child: TextField(controller: descTarjetaCtrl, decoration: const InputDecoration(labelText: 'Desc. tarjeta %', labelStyle: TextStyle(fontSize: 12)), keyboardType: TextInputType.number, style: const TextStyle(color: AppConfig.colorTexto))),
+                ]),
                 if (_tenant?.senaHabilitada == true) ...[
                   const SizedBox(height: 8),
                   SwitchListTile(
@@ -1160,11 +1360,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 if (imageBytes != null) {
                   imagenUrl = await _svc.uploadImage('services/${DateTime.now().millisecondsSinceEpoch}_$imageName', imageBytes!);
                 }
+                final precioEf = priceEfectivoCtrl.text.isNotEmpty ? double.tryParse(priceEfectivoCtrl.text) : null;
                 await _svc.updateService(s.id, {
                   'nombre': nameCtrl.text.trim(),
                   'categoria': selectedCat,
                   'duracion_minutos': int.tryParse(durCtrl.text) ?? 60,
-                  'precio': priceCtrl.text.isNotEmpty ? double.tryParse(priceCtrl.text) : null,
+                  'precio': precioEf,
+                  'precio_efectivo': precioEf,
+                  'precio_tarjeta': priceTarjetaCtrl.text.isNotEmpty ? double.tryParse(priceTarjetaCtrl.text) : null,
+                  'descuento_efectivo_pct': int.tryParse(descEfectivoCtrl.text) ?? 0,
+                  'descuento_tarjeta_pct': int.tryParse(descTarjetaCtrl.text) ?? 0,
                   'imagen_url': imagenUrl,
                   'requiere_sena': requiereSena,
                 });
@@ -2033,6 +2238,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   String? _fondoUrl;
   late bool _mostrarNombreSalon;
   late bool _mostrarBanner;
+  late String _bannerTipo;
+  String _bannerVideoUrl = '';
   late Color _primaryColor;
   late Color _secondaryColor;
   late Color _tertiaryColor;
@@ -2073,6 +2280,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _fondoUrl = t.fondoUrl;
     _mostrarNombreSalon = t.mostrarNombreSalon;
     _mostrarBanner = t.mostrarBanner;
+    _bannerTipo = t.bannerTipo;
+    _bannerVideoUrl = t.bannerVideoUrl;
     _primaryColor = AppConfig.hexToColor(t.colorPrimario);
     _secondaryColor = AppConfig.hexToColor(t.colorSecundario);
     _tertiaryColor = AppConfig.hexToColor(t.colorTerciario);
@@ -2172,6 +2381,43 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     }
   }
 
+  Future<void> _uploadBannerVideo() async {
+    try {
+      final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      // Limite 30MB
+      if (bytes.length > 30 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('El video es muy grande. Maximo 30MB.'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Subiendo video...'), duration: Duration(seconds: 30)),
+        );
+      }
+      final url = await widget.svc.uploadVideo('banner_video.mp4', Uint8List.fromList(bytes));
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        setState(() => _bannerVideoUrl = url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Video subido!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   void _showTrialGiftDialog(BuildContext ctx) {
     showDialog(
       context: ctx,
@@ -2246,6 +2492,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'google_maps_query': _mapsQueryCtrl.text.trim(),
         'banner_texto': _mostrarBanner ? _bannerCtrl.text.trim() : '',
         'mostrar_banner': _mostrarBanner,
+        'banner_tipo': _bannerTipo,
+        'banner_video_url': _bannerVideoUrl,
         'logo_url': _logoUrl,
         'logo_blanco_url': _logoBlancoUrl,
         'fondo_url': _fondoUrl,
@@ -2348,8 +2596,55 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
           onChanged: (v) => setState(() => _mostrarBanner = v),
           activeColor: widget.primary,
         ),
-        if (_mostrarBanner)
-          _textField('Texto del aviso (ej: "20% OFF en alisados este mes!")', _bannerCtrl),
+        if (_mostrarBanner) ...[
+          const SizedBox(height: 8),
+          const Text('Tipo de aviso', style: TextStyle(color: Colors.white, fontSize: 13)),
+          const SizedBox(height: 6),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'texto', label: Text('Texto', style: TextStyle(fontSize: 12))),
+              ButtonSegment(value: 'video', label: Text('Video', style: TextStyle(fontSize: 12))),
+              ButtonSegment(value: 'ambos', label: Text('Ambos', style: TextStyle(fontSize: 12))),
+            ],
+            selected: {_bannerTipo},
+            onSelectionChanged: (v) => setState(() => _bannerTipo = v.first),
+          ),
+          const SizedBox(height: 8),
+          if (_bannerTipo == 'texto' || _bannerTipo == 'ambos')
+            _textField('Texto del aviso (ej: "20% OFF en alisados este mes!")', _bannerCtrl),
+          if (_bannerTipo == 'video' || _bannerTipo == 'ambos') ...[
+            const SizedBox(height: 8),
+            if (_bannerVideoUrl.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A2A2A),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.videocam, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(child: Text('Video cargado', style: TextStyle(color: Colors.white, fontSize: 13))),
+                    TextButton(
+                      onPressed: () => setState(() => _bannerVideoUrl = ''),
+                      child: const Text('Quitar', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ),
+            if (_bannerVideoUrl.isEmpty)
+              ElevatedButton.icon(
+                onPressed: _uploadBannerVideo,
+                icon: const Icon(Icons.video_library, size: 18),
+                label: const Text('Subir video MP4 (max 30MB)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.primary,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+          ],
+        ],
 
         const SizedBox(height: 24),
         _sectionTitle('Imagenes'),

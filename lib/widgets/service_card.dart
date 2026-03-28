@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../config/app_config.dart';
 import '../models/service.dart';
 
 class ServiceCard extends StatelessWidget {
@@ -78,19 +77,47 @@ class ServiceCard extends StatelessWidget {
                           '${service.duracionMinutos} min',
                           style: const TextStyle(fontSize: 11, color: Colors.white70),
                         ),
-                        if (service.precio != null) ...[
+                        if (service.precioEfectivoFinal != null || service.precioTarjetaFinal != null) ...[
                           const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: accent,
-                              borderRadius: BorderRadius.circular(10),
+                          if (service.precioEfectivoFinal != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              margin: const EdgeInsets.only(right: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E7D32),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.payments_outlined, size: 10, color: Colors.white70),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '\$${service.precioEfectivoFinal!.toStringAsFixed(0)}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Text(
-                              '\$${service.precio!.toStringAsFixed(0)}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                          if (service.precioTarjetaFinal != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1565C0),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.credit_card, size: 10, color: Colors.white70),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '\$${service.precioTarjetaFinal!.toStringAsFixed(0)}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ],
                     ),

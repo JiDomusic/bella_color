@@ -6,6 +6,10 @@ class Service {
   final String categoria;
   final int duracionMinutos;
   final double? precio;
+  final double? precioEfectivo;
+  final double? precioTarjeta;
+  final int descuentoEfectivoPct;
+  final int descuentoTarjetaPct;
   final String moneda;
   final String? imagenUrl;
   final bool activo;
@@ -21,6 +25,10 @@ class Service {
     this.categoria = 'otro',
     this.duracionMinutos = 60,
     this.precio,
+    this.precioEfectivo,
+    this.precioTarjeta,
+    this.descuentoEfectivoPct = 0,
+    this.descuentoTarjetaPct = 0,
     this.moneda = 'ARS',
     this.imagenUrl,
     this.activo = true,
@@ -28,6 +36,12 @@ class Service {
     this.orden = 0,
     this.requiereSena = false,
   });
+
+  /// Precio efectivo con fallback al precio general
+  double? get precioEfectivoFinal => precioEfectivo ?? precio;
+
+  /// Precio tarjeta (sin fallback, puede ser null)
+  double? get precioTarjetaFinal => precioTarjeta;
 
   factory Service.fromJson(Map<String, dynamic> json) => Service(
     id: json['id'] as String,
@@ -37,6 +51,10 @@ class Service {
     categoria: json['categoria'] ?? 'otro',
     duracionMinutos: json['duracion_minutos'] ?? 60,
     precio: json['precio'] != null ? double.tryParse(json['precio'].toString()) : null,
+    precioEfectivo: json['precio_efectivo'] != null ? double.tryParse(json['precio_efectivo'].toString()) : null,
+    precioTarjeta: json['precio_tarjeta'] != null ? double.tryParse(json['precio_tarjeta'].toString()) : null,
+    descuentoEfectivoPct: json['descuento_efectivo_pct'] ?? 0,
+    descuentoTarjetaPct: json['descuento_tarjeta_pct'] ?? 0,
     moneda: json['moneda'] ?? 'ARS',
     imagenUrl: json['imagen_url'],
     activo: json['activo'] ?? true,
@@ -53,6 +71,10 @@ class Service {
     'categoria': categoria,
     'duracion_minutos': duracionMinutos,
     'precio': precio,
+    'precio_efectivo': precioEfectivo,
+    'precio_tarjeta': precioTarjeta,
+    'descuento_efectivo_pct': descuentoEfectivoPct,
+    'descuento_tarjeta_pct': descuentoTarjetaPct,
     'moneda': moneda,
     'imagen_url': imagenUrl,
     'activo': activo,

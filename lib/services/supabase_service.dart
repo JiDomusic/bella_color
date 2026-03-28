@@ -10,6 +10,10 @@ import '../models/appointment.dart';
 import '../models/operating_hours.dart';
 import '../models/block.dart';
 import '../models/waitlist_entry.dart';
+import '../models/cliente.dart';
+import '../models/cliente_observacion.dart';
+import '../models/producto.dart';
+import '../models/movimiento_stock.dart';
 
 class SupabaseService {
   static final SupabaseService instance = SupabaseService._();
@@ -508,5 +512,182 @@ class SupabaseService {
   Future<void> deleteImage(String path) async {
     final scopedPath = path.startsWith('$_tenantId/') ? path : '$_tenantId/$path';
     await _client.storage.from(AppConfig.storageBucket).remove([scopedPath]);
+  }
+
+  Future<String> uploadVideo(String path, Uint8List bytes) async {
+    final scopedPath = path.startsWith('$_tenantId/') ? path : '$_tenantId/$path';
+    await _client.storage.from(AppConfig.storageBucket).uploadBinary(
+      scopedPath,
+      bytes,
+      fileOptions: const FileOptions(contentType: 'video/mp4', upsert: true),
+    );
+    return _client.storage.from(AppConfig.storageBucket).getPublicUrl(scopedPath);
+  }
+
+  // ---- Clientes ----
+  Future<List<Cliente>> loadClientes({String? busqueda}) async {
+    var query = _client.from('clientes').select().eq('tenant_id', _tenantId);
+    if (busqueda != null && busqueda.isNotEmpty) {
+      query = query.ilike('nombre', '%$busqueda%');
+    }
+    final res = await query.order('nombre');
+    return res.map<Cliente>((e) => Cliente.fromJson(e)).toList();
+  }
+
+  Future<Cliente> createCliente(Map<String, dynamic> data) async {
+    data['tenant_id'] = _tenantId;
+    // Normalizar telefono: solo digitos
+    if (data['telefono'] != null) {
+      data['telefono'] = (data['telefono'] as String).replaceAll(RegExp(r'[^\d+]'), '');
+    }
+    final res = await _client.from('clientes').insert(data).select().single();
+    return Cliente.fromJson(res);
+  }
+
+  Future<void> updateCliente(String id, Map<String, dynamic> data) async {
+    data['updated_at'] = DateTime.now().toIso8601String();
+    await _client.from('clientes').update(data).eq('id', id);
+  }
+
+  Future<void> deleteCliente(String id) async {
+    await _client.from('clientes').delete().eq('id', id);
+  }
+
+  /// Busca o crea un cliente por telefono (normalizado) dentro del tenant actual.
+  Future<Cliente> getOrCreateCliente(String nombre, String telefono, {String? email}) async {
+    final tel = telefono.replaceAll(RegExp(r'[^\d+]'), '');
+    final existing = await _client
+        .from('clientes')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('telefono', tel)
+        .maybeSingle();
+    if (existing != null) return Cliente.fromJson(existing);
+    return createCliente({
+      'nombre': nombre,
+      'telefono': tel,
+      'email': email ?? '',
+    });
+  }
+
+  // ---- Cliente Observaciones (Historia Clinica) ----
+  Future<List<ClienteObservacion>> loadObservaciones(String clienteId) async {
+    final res = await _client
+        .from('cliente_observaciones')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('cliente_id', clienteId)
+        .order('fecha', ascending: false);
+    return res.map<ClienteObservacion>((e) => ClienteObservacion.fromJson(e)).toList();
+  }
+
+  Future<ClienteObservacion> createObservacion(Map<String, dynamic> data) async {
+    data['tenant_id'] = _tenantId;
+    final res = await _client.from('cliente_observaciones').insert(data).select().single();
+    return ClienteObservacion.fromJson(res);
+  }
+
+  Future<void> updateObservacion(String id, Map<String, dynamic> data) async {
+    data['updated_at'] = DateTime.now().toIso8601String();
+    await _client.from('cliente_observaciones').update(data).eq('id', id);
+  }
+
+  Future<void> deleteObservacion(String id) async {
+    await _client.from('cliente_observaciones').delete().eq('id', id);
+  }
+
+  /// Turnos completados de un cliente (por telefono)
+  Future<List<Appointment>> loadAppointmentsForClient(String telefono) async {
+    final tel = telefono.replaceAll(RegExp(r'[^\d+]'), '');
+    final res = await _client
+        .from('appointments')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('telefono', tel)
+        .order('fecha', ascending: false);
+    return res.map<Appointment>((e) => Appointment.fromJson(e)).toList();
+  }
+
+  // ---- Productos (Stock) ----
+  Future<List<Producto>> loadProductos({String? categoria}) async {
+    var query = _client.from('productos').select().eq('tenant_id', _tenantId);
+    if (categoria != null && categoria.isNotEmpty && categoria != 'todos') {
+      query = query.eq('categoria', categoria);
+    }
+    final res = await query.order('nombre');
+    return res.map<Producto>((e) => Producto.fromJson(e)).toList();
+  }
+
+  Future<Producto> createProducto(Map<String, dynamic> data) async {
+    data['tenant_id'] = _tenantId;
+    final res = await _client.from('productos').insert(data).select().single();
+    return Producto.fromJson(res);
+  }
+
+  Future<void> updateProducto(String id, Map<String, dynamic> data) async {
+    data['updated_at'] = DateTime.now().toIso8601String();
+    await _client.from('productos').update(data).eq('id', id);
+  }
+
+  Future<void> deleteProducto(String id) async {
+    await _client.from('productos').delete().eq('id', id);
+  }
+
+  /// Busca producto por codigo de barras dentro del tenant
+  Future<Producto?> findProductoByBarcode(String barcode) async {
+    if (barcode.isEmpty) return null;
+    final res = await _client
+        .from('productos')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('codigo_barras', barcode)
+        .maybeSingle();
+    return res != null ? Producto.fromJson(res) : null;
+  }
+
+  /// Ajusta stock y registra movimiento. Retorna el producto actualizado.
+  Future<Producto> adjustStock(String productoId, int delta, {String tipo = 'ajuste', String motivo = ''}) async {
+    // Registrar movimiento
+    await _client.from('movimientos_stock').insert({
+      'tenant_id': _tenantId,
+      'producto_id': productoId,
+      'cantidad': delta,
+      'tipo': tipo,
+      'motivo': motivo,
+    });
+    // Obtener cantidad actual y actualizar
+    final row = await _client.from('productos').select('cantidad').eq('id', productoId).single();
+    final nuevaCantidad = (row['cantidad'] as int) + delta;
+    await _client.from('productos').update({
+      'cantidad': nuevaCantidad < 0 ? 0 : nuevaCantidad,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', productoId);
+    // Retornar actualizado
+    final updated = await _client.from('productos').select().eq('id', productoId).single();
+    return Producto.fromJson(updated);
+  }
+
+  /// Productos con stock bajo su minimo de alerta
+  Future<List<Producto>> loadProductosBajoStock() async {
+    final all = await _client
+        .from('productos')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('activo', true);
+    return all
+        .map<Producto>((e) => Producto.fromJson(e))
+        .where((p) => p.stockBajo)
+        .toList();
+  }
+
+  /// Historial de movimientos de un producto
+  Future<List<MovimientoStock>> loadMovimientosStock(String productoId) async {
+    final res = await _client
+        .from('movimientos_stock')
+        .select()
+        .eq('tenant_id', _tenantId)
+        .eq('producto_id', productoId)
+        .order('created_at', ascending: false);
+    return res.map<MovimientoStock>((e) => MovimientoStock.fromJson(e)).toList();
   }
 }

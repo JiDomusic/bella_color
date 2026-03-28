@@ -10,6 +10,7 @@ import '../widgets/service_card.dart';
 import '../widgets/professional_card.dart';
 import '../widgets/welcome_overlay.dart';
 import '../widgets/page_background.dart';
+import '../widgets/video_banner.dart';
 import 'booking/booking_flow_screen.dart';
 import 'admin/admin_login_screen.dart';
 import 'admin/super_admin_screen.dart';
@@ -245,30 +246,36 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: [
                 _buildHeader(),
-                // Banner promocional del salon
-                if (_tenant?.mostrarBanner == true && _tenant?.bannerTexto.isNotEmpty == true)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(200),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _primary.withAlpha(60)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.auto_awesome, color: _accent, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _tenant!.bannerTexto,
-                            style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+                // Banner promocional del salon (texto, video o ambos)
+                if (_tenant?.mostrarBanner == true) ...[
+                  // Video banner
+                  if ((_tenant!.bannerTipo == 'video' || _tenant!.bannerTipo == 'ambos') && _tenant!.bannerVideoUrl.isNotEmpty)
+                    VideoBanner(videoUrl: _tenant!.bannerVideoUrl, borderColor: _primary),
+                  // Texto banner
+                  if ((_tenant!.bannerTipo == 'texto' || _tenant!.bannerTipo == 'ambos') && _tenant!.bannerTexto.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(200),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _primary.withAlpha(60)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: _accent, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _tenant!.bannerTexto,
+                              style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                ],
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(

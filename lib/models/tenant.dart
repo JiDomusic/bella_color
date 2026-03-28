@@ -48,6 +48,8 @@ class Tenant {
   final String colorFondoPagina;
   final bool mostrarNombreSalon;
   final bool mostrarBanner;
+  final String bannerVideoUrl;
+  final String bannerTipo;
 
   Tenant({
     required this.id,
@@ -99,6 +101,8 @@ class Tenant {
     this.colorFondoPagina = '',
     this.mostrarNombreSalon = true,
     this.mostrarBanner = false,
+    this.bannerVideoUrl = '',
+    this.bannerTipo = 'texto',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -170,6 +174,8 @@ class Tenant {
       colorFondoPagina: json['color_fondo_pagina'] ?? '',
       mostrarNombreSalon: json['mostrar_nombre_salon'] ?? true,
       mostrarBanner: json['mostrar_banner'] ?? false,
+      bannerVideoUrl: json['banner_video_url'] ?? '',
+      bannerTipo: json['banner_tipo'] ?? 'texto',
     );
   }
 
@@ -222,6 +228,8 @@ class Tenant {
     'color_fondo_pagina': colorFondoPagina,
     'mostrar_nombre_salon': mostrarNombreSalon,
     'mostrar_banner': mostrarBanner,
+    'banner_video_url': bannerVideoUrl,
+    'banner_tipo': bannerTipo,
   };
 
   Tenant copyWith({
