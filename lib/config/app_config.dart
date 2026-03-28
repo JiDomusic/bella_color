@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppConfig {
   // Supabase config (anon key para cliente; no uses service role en el front).
@@ -10,15 +11,22 @@ class AppConfig {
   static const String storageBucket = 'salon-images';
   static const String publicBaseUrl = 'https://bella-color.web.app'; // dominio de Firebase Hosting
 
-  // Colors
-  static const Color colorPrimario = Color(0xFFD4A0A0);
-  static const Color colorSecundario = Color(0xFFC48B8B);
-  static const Color colorTerciario = Color(0xFFE8C4C4);
-  static const Color colorAcento = Color(0xFFD4AF37);
-  static const Color colorFondoOscuro = Color(0xFF0A0E14);
-  static const Color colorFondoCard = Color(0xFF1A1E24);
-  static const Color colorTexto = Color(0xFFF5F5F5);
-  static const Color colorTextoSecundario = Color(0xFFAAAAAA);
+  // Colors — Paleta premium salon de belleza 2026
+  static const Color colorPrimario = Color(0xFFE8A0BF);     // Rosa dorado
+  static const Color colorSecundario = Color(0xFFB8A9C9);   // Lavanda suave
+  static const Color colorTerciario = Color(0xFFE8C4D8);    // Rosa claro
+  static const Color colorAcento = Color(0xFFD4AF37);       // Dorado
+  static const Color colorFondoOscuro = Color(0xFF0D0B0E);  // Negro cálido
+  static const Color colorFondoCard = Color(0xFF1A1720);    // Plum oscuro
+  static const Color colorSurfaceVariant = Color(0xFF2A2530); // Mauve gris
+  static const Color colorTexto = Color(0xFFF0ECF4);        // Blanco cálido
+  static const Color colorTextoSecundario = Color(0xFF9890A8); // Lavanda muted
+
+  // Status colors
+  static const Color colorConfirmado = Color(0xFF7FB685);
+  static const Color colorPendiente = Color(0xFFF0C674);
+  static const Color colorCancelado = Color(0xFFE06C75);
+  static const Color colorEnAtencion = Color(0xFFB8A9C9);
 
   static Color hexToColor(String hex) {
     hex = hex.replaceAll('#', '');
@@ -33,6 +41,7 @@ class AppConfig {
   }) {
     final primary = primario ?? colorPrimario;
     final accent = acento ?? colorAcento;
+    final textTheme = GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme);
 
     return ThemeData(
       brightness: Brightness.dark,
@@ -42,6 +51,7 @@ class AppConfig {
         primary: primary,
         secondary: accent,
         surface: colorFondoCard,
+        surfaceContainerHighest: colorSurfaceVariant,
         onPrimary: Colors.white,
         onSecondary: Colors.black,
         onSurface: colorTexto,
@@ -50,11 +60,20 @@ class AppConfig {
         backgroundColor: colorFondoOscuro,
         foregroundColor: colorTexto,
         elevation: 0,
+        titleTextStyle: GoogleFonts.dmSans(
+          color: colorTexto,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       cardTheme: CardThemeData(
         color: colorFondoCard,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colorSurfaceVariant.withAlpha(80)),
+        ),
+        margin: const EdgeInsets.only(bottom: 12),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -62,43 +81,70 @@ class AppConfig {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primary,
-          side: BorderSide(color: primary),
+          side: BorderSide(color: primary.withAlpha(120)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorFondoCard,
+        fillColor: colorSurfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary.withAlpha(80)),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary.withAlpha(80)),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary, width: 2),
+          borderSide: BorderSide(color: primary, width: 1.5),
         ),
-        labelStyle: TextStyle(color: colorTextoSecundario),
+        labelStyle: const TextStyle(color: colorTextoSecundario),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(color: colorTexto, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(color: colorTexto, fontWeight: FontWeight.w600),
-        bodyLarge: TextStyle(color: colorTexto),
-        bodyMedium: TextStyle(color: colorTextoSecundario),
+      textTheme: textTheme.copyWith(
+        headlineLarge: GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.bold, fontSize: 24),
+        headlineMedium: GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 18),
+        titleLarge: GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w600, fontSize: 16),
+        bodyLarge: GoogleFonts.dmSans(color: colorTexto, fontSize: 14),
+        bodyMedium: GoogleFonts.dmSans(color: colorTextoSecundario, fontSize: 14),
+        bodySmall: GoogleFonts.dmSans(color: colorTextoSecundario, fontSize: 12),
+        labelLarge: GoogleFonts.dmSans(color: colorTexto, fontWeight: FontWeight.w500, fontSize: 14),
       ),
-      dividerColor: primary.withAlpha(40),
+      dividerColor: colorSurfaceVariant.withAlpha(80),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accent,
         foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorFondoCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: colorSurfaceVariant,
+        contentTextStyle: GoogleFonts.dmSans(color: colorTexto, fontSize: 13),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        behavior: SnackBarBehavior.floating,
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: primary,
+        unselectedLabelColor: colorTextoSecundario,
+        indicatorColor: primary,
+        labelStyle: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 12),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: colorFondoCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       ),
     );
   }

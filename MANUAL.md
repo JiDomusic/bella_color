@@ -58,7 +58,7 @@ A partir de ahora entras con tu nueva contrasena.
 
 ---
 
-## CONFIGURAR TU SALON (8 pestanas)
+## CONFIGURAR TU SALON (10 pestanas)
 
 ### Pestana TURNOS
 Aca se ven los turnos del dia.
@@ -104,6 +104,10 @@ Las personas que atienden en tu salon.
 
 - Toca el nombre de un profesional para **editarlo** (cambiar nombre, especialidad o foto)
 - El switch al lado de cada nombre lo activa/desactiva (sin borrarlo)
+- Toca **"Ver historial"** para ver las estadisticas de cada profesional:
+  - Total de turnos atendidos
+  - Turnos completados, cancelados y no-show
+  - Lista detallada de turnos completados con fecha, hora y servicio
 
 ### Pestana SERVICIOS
 Lo que ofrece tu salon.
@@ -113,12 +117,16 @@ Lo que ofrece tu salon.
    - **Nombre**: ej "Manicure semipermanente"
    - **Categoria**: elige de la lista (unas, maquillaje, masajes, depilacion, pestanas, cejas, facial, cabello, corporal, otro)
    - **Duracion**: en minutos (ej: 60)
-   - **Precio**: opcional (ej: 5000)
+   - **Precio efectivo**: precio para pago en efectivo (ej: 5000)
+   - **Precio tarjeta**: precio para pago con tarjeta (ej: 5500). Opcional.
+   - **Descuento efectivo %**: descuento para pago en efectivo (ej: 10)
+   - **Descuento tarjeta %**: descuento para pago con tarjeta (ej: 5)
    - **Imagen**: opcionalmente subi una foto del servicio
 3. Toca **"Crear"**
 4. Repeti para cada servicio
 
-- Toca un servicio para **editarlo** (cambiar nombre, duracion, precio, imagen)
+- Toca un servicio para **editarlo** (cambiar nombre, duracion, precios, imagen)
+- Las clientas ven ambos precios (efectivo y tarjeta) al reservar
 
 ### Pestana HORARIOS
 Dias y horas que atiende tu salon.
@@ -147,6 +155,72 @@ Lista de personas que quisieron turno pero no habia disponibilidad.
 - Se ve el nombre, telefono y fecha
 - Toca el icono de **WhatsApp** (verde) para avisarle que se libero un turno
 - Toca la **papelera** roja para borrar la entrada
+
+### Pestana CLIENTES
+Historial de tus clientas y observaciones clinicas.
+
+- Los clientes se crean **automaticamente** cuando se completa un turno
+- Busca por nombre en la barra de busqueda
+- Toca una clienta para ver su **ficha**:
+  - Datos de contacto (nombre, telefono, email)
+  - Boton de **WhatsApp** (verde) para contactarla directo
+  - **Historia Clinica**: observaciones de cada visita
+  - **Historial de Turnos**: todos los turnos pasados con estado y servicio
+
+#### Agregar una observacion:
+
+1. Toca una clienta para abrir su ficha
+2. Toca **"Agregar"** en la seccion Historia Clinica
+3. Llena:
+   - **Fecha**: se autocompleta con la fecha de hoy
+   - **Servicio realizado**: que se le hizo (ej: "Color rubio ceniza")
+   - **Profesional**: quien la atendio
+   - **Observacion**: detalles tecnicos, productos usados, notas para la proxima
+4. Toca **"Guardar"**
+
+- Toca el lapiz para **editar** una observacion
+- Toca la papelera para **eliminarla**
+
+**Tip**: Agrega observaciones despues de cada servicio para recordar que productos y tecnicas usaste con cada clienta.
+
+### Pestana STOCK
+Control de inventario de productos del salon.
+
+- Arriba se muestra una **alerta roja** si hay productos con stock bajo
+- Filtra por **categoria** con el desplegable (unas, cejas, color, peluqueria, etc.)
+- Cada producto muestra: nombre, marca, categoria, codigo de barras y cantidad
+
+#### Agregar un producto:
+
+1. Toca el boton **"+"** (dorado, arriba a la derecha)
+2. Llena:
+   - **Nombre del producto**: ej "Esmalte OPI rojo"
+   - **Marca**: ej "OPI" (opcional)
+   - **Codigo de barras**: podes escanearlo con la camara o ingresarlo manual
+   - **Categoria**: elige de la lista
+   - **Cantidad**: cuantas unidades tenes
+   - **Alerta minimo**: cuando te avisa que hay poco (ej: 5)
+3. Toca **"Crear"**
+
+#### Ajustar stock rapido:
+
+- Toca **"+"** o **"-"** al lado de la cantidad para sumar/restar de a 1
+- Para ajustes mayores: toca los **3 puntos** > **"Ajustar stock"** > elegi ingreso o egreso, cantidad y motivo
+
+#### Escanear codigo de barras:
+
+1. Toca el icono del **scanner** (al crear o editar un producto)
+2. Elegi **"Camara"** para escanear con el celular o **"Manual"** para tipear el codigo
+3. Si el producto ya existe, te ofrece sumarle +1 al stock directamente
+
+#### Menu de opciones (3 puntos):
+
+- **Editar**: cambiar datos del producto
+- **Ajustar stock**: ingresos o egresos con motivo
+- **Historial**: ver todos los movimientos del producto (fecha, cantidad, motivo)
+- **Eliminar**: borrar el producto
+
+**Tip**: El sistema te avisa cuando un producto baja del minimo configurado. Revisa las alertas antes de cerrar el salon.
 
 ### Pestana REPORTES
 Estadisticas de tu salon.
@@ -177,6 +251,14 @@ Configuracion completa de tu salon. Aca podes cambiar todo:
 - **Imagen de fondo**: una foto de tu salon
 
 Para subir una imagen, toca el recuadro con el icono de camara. Para quitar una imagen ya subida, toca la X roja.
+
+**Banner promocional:**
+- **Tipo de banner**: elegi entre **Texto**, **Video** o **Ambos**
+  - **Texto**: el banner clasico con mensaje de texto
+  - **Video**: un video MP4 que se reproduce automaticamente en la pagina (muted, en loop)
+  - **Ambos**: muestra el texto y el video
+- Para subir un video: toca **"Subir video"**, elegi un MP4 de tu galeria (maximo 30MB)
+- El video se ve en la pagina publica de tu salon como banner promocional
 
 **Colores:**
 - **Color primario**: el color principal de tu salon (textos, titulos)
@@ -242,6 +324,17 @@ Si la clienta ya tiene su codigo, puede tocarlo desde la pagina principal:
 
 ---
 
+## NOTIFICACIONES AUTOMATICAS
+
+El sistema te avisa automaticamente de cosas importantes:
+
+- **10 minutos antes del cierre**: te recuerda revisar el stock y agregar observaciones de las clientas del dia
+- **Stock bajo**: cuando un producto tiene menos unidades del minimo configurado, ves una alerta en la pestana Stock y un aviso en el panel
+
+Estas notificaciones aparecen dentro del panel de admin (no necesitan permisos del navegador).
+
+---
+
 ## PREGUNTAS FRECUENTES
 
 **La contrasena que me dieron no funciona?**
@@ -258,6 +351,18 @@ En la pestana **Profesionales**, **Servicios** o **Salon**, toca el icono de la 
 
 **Como envio recordatorios a mis clientas?**
 En la pestana **Turnos**, toca **"Enviar recordatorios de mañana"**. Se abre WhatsApp con el mensaje listo para cada clienta. Solo tenes que darle enviar.
+
+**Puedo poner precios distintos para efectivo y tarjeta?**
+Si! Al crear o editar un servicio, tenes campos separados para **precio efectivo** y **precio tarjeta**. Tambien podes poner descuentos por metodo de pago.
+
+**Como agrego observaciones de mis clientas?**
+Anda a la pestana **Clientes**, busca la clienta por nombre, tocala y usa el boton **"Agregar"** en la seccion Historia Clinica.
+
+**Como funciona el scanner de codigos de barras?**
+En la pestana **Stock**, al agregar o editar un producto, toca el icono del scanner. Podes usar la camara del celular o ingresar el codigo manualmente.
+
+**Puedo subir un video promocional?**
+Si! En la pestana **Salon**, busca la seccion de Banner. Cambia el tipo a **Video** o **Ambos** y subi un MP4 (maximo 30MB). Se muestra en tu pagina publica.
 
 ---
 

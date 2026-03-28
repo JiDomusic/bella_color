@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Bella Color</title>
+<style>
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: #0D0B0E;
+    color: #FFFFFF;
+    width: 100%;
+    min-height: 100vh;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .page {
+    background: #0D0B0E;
+    width: 100%;
+    min-height: 100vh;
+    padding: 60px 60px 40px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .logo-circle {
+    width: 72px;
+    height: 72px;
+    background: #E8A0BF;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #E8A0BF;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    color: #B8A9C9;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .divider {
+    height: 2px;
+    background: linear-gradient(90deg, #0D0B0E, #E8A0BF, #D4AF37, #E8A0BF, #0D0B0E);
+    margin: 30px 0;
+  }
+
+  .description {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #FFFFFF;
+    text-align: center;
+    margin-bottom: 32px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 32px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .feature {
+    background: #1A1720;
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+    border: 1px solid #2A2530;
+  }
+
+  .feature .icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .highlight {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .highlight-badge {
+    display: inline-block;
+    background: #D4AF37;
+    color: #0D0B0E;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 10px 30px;
+    border-radius: 30px;
+    letter-spacing: 0.5px;
+  }
+
+  .sub-highlight {
+    color: #B8A9C9;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid #2A2530;
+  }
+
+  .firma {
+    font-size: 20px;
+    font-weight: 700;
+    color: #E8A0BF;
+    margin-bottom: 4px;
+  }
+
+  .industria {
+    font-size: 11px;
+    color: #B8A9C9;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+  }
+
+  .whatsapp {
+    display: inline-block;
+    background: #25D366;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 12px 32px;
+    border-radius: 30px;
+  }
+
+  .whatsapp-label {
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.9;
+  }
+
+  .trial {
+    display: inline-block;
+    border: 2px solid #D4AF37;
+    color: #D4AF37;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 24px;
+    border-radius: 30px;
+    margin-top: 14px;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="header">
+    <div class="logo-circle">&#10024;</div>
+    <h1>Bella Color</h1>
+    <div class="subtitle">Sistema de Turnos para Salones de Belleza</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p class="description">
+    <strong>Bella Color</strong> es una plataforma web donde tus clientas reservan turnos online desde el celular, eligiendo servicio, profesional, dia y horario. Vos controlas todo desde un panel completo: turnos, profesionales, stock, historial de clientas y reportes.
+  </p>
+
+  <div class="features">
+    <div class="feature"><span class="icon">&#128197;</span> Turnos online 24/7</div>
+    <div class="feature"><span class="icon">&#128172;</span> Recordatorios WhatsApp</div>
+    <div class="feature"><span class="icon">&#128105;</span> Historia clinica</div>
+    <div class="feature"><span class="icon">&#128230;</span> Control de stock</div>
+    <div class="feature"><span class="icon">&#128179;</span> Efectivo y tarjeta</div>
+    <div class="feature"><span class="icon">&#127916;</span> Video promocional</div>
+    <div class="feature"><span class="icon">&#128202;</span> Reportes completos</div>
+    <div class="feature"><span class="icon">&#127912;</span> Colores personalizables</div>
+  </div>
+
+  <div class="highlight">
+    <span class="highlight-badge">Sin instalar nada. Funciona desde cualquier celular.</span>
+  </div>
+  <div class="sub-highlight">Tu salon online en minutos. Pagina propia con tu marca y colores.</div>
+
+  <div class="divider"></div>
+
+  <div class="footer">
+    <div class="firma">Programacion JJ</div>
+    <div class="industria">Industria Nacional</div>
+    <div class="whatsapp">
+      <span class="whatsapp-label">WhatsApp </span>3413363551
+    </div>
+    <br>
+    <div class="trial">15 DIAS DE PRUEBA GRATIS</div>
+  </div>
+</div>
+
+</body>
+</html>

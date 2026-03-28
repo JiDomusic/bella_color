@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Bella Color - Novedades</title>
+<style>
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: #0D0B0E;
+    color: #FFFFFF;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .page {
+    background: #0D0B0E;
+    width: 100%;
+    min-height: 100vh;
+    padding: 40px 60px 35px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #E8A0BF;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .sub {
+    color: #B8A9C9;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .divider {
+    height: 2px;
+    background: linear-gradient(90deg, #0D0B0E, #E8A0BF, #D4AF37, #E8A0BF, #0D0B0E);
+    margin: 18px 0;
+  }
+
+  .intro {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #FFFFFF;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+
+  .mejora {
+    background: #1A1720;
+    border-radius: 14px;
+    padding: 13px 18px;
+    margin-bottom: 10px;
+    border-left: 4px solid #E8A0BF;
+  }
+
+  .mejora h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #E8A0BF;
+    margin-bottom: 6px;
+  }
+
+  .mejora p {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #E0DCE8;
+  }
+
+  .mejora p strong {
+    color: #FFFFFF;
+  }
+
+  .nota {
+    background: #1A1720;
+    border: 2px solid #D4AF37;
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  .nota p {
+    font-size: 14px;
+    color: #D4AF37;
+    font-weight: 600;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #2A2530;
+  }
+
+  .firma {
+    font-size: 18px;
+    font-weight: 700;
+    color: #E8A0BF;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .industria {
+    font-size: 11px;
+    color: #B8A9C9;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .whatsapp {
+    display: inline-block;
+    background: #25D366;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 10px 28px;
+    border-radius: 30px;
+    letter-spacing: 0.5px;
+  }
+
+  .whatsapp-label {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="header">
+    <h1>Novedades en Bella Color</h1>
+    <div class="sub">Actualizacion para tu salon</div>
+  </div>
+
+  <p class="intro">
+    Hola! Agregamos funciones nuevas a tu sistema.<br>
+    Todo sigue funcionando igual que antes, estas son mejoras extra que ya podes usar.
+  </p>
+
+  <div class="divider"></div>
+
+  <div class="mejora">
+    <h3>Historial de Clientas</h3>
+    <p>Nueva pestana <strong>"Clientes"</strong> en tu panel. Cada clienta que completa un turno queda registrada. Podes buscarla por nombre, ver sus turnos pasados y anotar observaciones de cada visita (color, productos usados, notas para la proxima).</p>
+  </div>
+
+  <div class="mejora">
+    <h3>Control de Stock</h3>
+    <p>Nueva pestana <strong>"Stock"</strong> para llevar el inventario. Agrega productos con nombre, marca y codigo de barras (escanealo con la camara). Usa los botones + y - para ajustar cantidades. Te avisa cuando un producto esta por quedarse sin stock.</p>
+  </div>
+
+  <div class="mejora">
+    <h3>Precios Efectivo y Tarjeta</h3>
+    <p>Ahora podes poner <strong>precios separados</strong> para efectivo y tarjeta en cada servicio. Tus clientas ven ambos precios al reservar. Tambien podes agregar descuentos por metodo de pago.</p>
+  </div>
+
+  <div class="mejora">
+    <h3>Video Promocional</h3>
+    <p>Subi un <strong>video MP4</strong> como banner en tu pagina. Se reproduce solo cuando tus clientas entran. Ideal para mostrar tu salon o promos. Lo configuras desde la pestana <strong>"Salon"</strong>.</p>
+  </div>
+
+  <div class="mejora">
+    <h3>Estadisticas por Profesional</h3>
+    <p>En la pestana Profesionales, ahora ves las <strong>estadisticas</strong> de cada una: turnos atendidos, completados, cancelados y no-show.</p>
+  </div>
+
+  <div class="mejora">
+    <h3>Diseno Renovado</h3>
+    <p>El panel de admin tiene un <strong>nuevo diseno premium</strong> mas limpio y organizado, con mejor contraste y colores calidos de salon.</p>
+  </div>
+
+  <div class="nota">
+    <p>No tenes que hacer nada. Las mejoras ya estan activas en tu panel.</p>
+  </div>
+
+  <div class="footer">
+    <div class="firma">Programacion JJ</div>
+    <div class="industria">Industria Nacional</div>
+    <div class="whatsapp">
+      <span class="whatsapp-label">WhatsApp </span>3413363551
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

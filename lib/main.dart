@@ -62,13 +62,13 @@ class BellaColorApp extends StatelessWidget {
       theme: theme,
       home: const SplashScreen(),
       builder: (context, child) {
-        // Subtle mariposa-inspired gradient behind every screen.
+        // Gradiente cálido premium detrás de cada pantalla.
         return DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFF1E0F21),
-                Color(0xFF0D111A),
+                Color(0xFF150E18), // Plum profundo
+                AppConfig.colorFondoOscuro,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -86,51 +86,50 @@ class BellaColorApp extends StatelessWidget {
     return base.copyWith(
       useMaterial3: true,
       cardTheme: base.cardTheme.copyWith(
-        color: AppConfig.colorFondoCard.withOpacity(0.9),
+        color: AppConfig.colorFondoCard.withAlpha(230),
         surfaceTintColor: Colors.transparent,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppConfig.colorPrimario.withOpacity(0.22),
-          foregroundColor: AppConfig.colorTexto,
-          shadowColor: AppConfig.colorPrimario.withOpacity(0.35),
-          shape: const StadiumBorder(),
+          backgroundColor: AppConfig.colorPrimario,
+          foregroundColor: Colors.white,
+          shadowColor: AppConfig.colorPrimario.withAlpha(80),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppConfig.colorSecundario.withOpacity(0.2),
+          backgroundColor: AppConfig.colorSecundario.withAlpha(50),
           foregroundColor: AppConfig.colorTexto,
-          shape: const StadiumBorder(),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppConfig.colorTexto,
-          side: BorderSide(color: AppConfig.colorPrimario.withOpacity(0.5)),
-          backgroundColor: AppConfig.colorPrimario.withOpacity(0.08),
-          shape: const StadiumBorder(),
+          foregroundColor: AppConfig.colorPrimario,
+          side: BorderSide(color: AppConfig.colorPrimario.withAlpha(120)),
+          backgroundColor: AppConfig.colorPrimario.withAlpha(15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppConfig.colorTexto,
-          backgroundColor: AppConfig.colorPrimario.withOpacity(0.12),
-          shape: const StadiumBorder(),
+          foregroundColor: AppConfig.colorPrimario,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         ),
       ),
       floatingActionButtonTheme: base.floatingActionButtonTheme.copyWith(
-        shape: const CircleBorder(),
-        backgroundColor: AppConfig.colorAcento.withOpacity(0.35),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: AppConfig.colorAcento,
         foregroundColor: Colors.white,
-        elevation: 6,
+        elevation: 0,
       ),
       chipTheme: base.chipTheme.copyWith(
-        backgroundColor: AppConfig.colorPrimario.withOpacity(0.18),
+        backgroundColor: AppConfig.colorPrimario.withAlpha(30),
         shape: const StadiumBorder(),
         labelStyle: const TextStyle(color: AppConfig.colorTexto),
       ),

@@ -150,9 +150,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFD97FC2).withAlpha(30),
+                color: AppConfig.colorPrimario.withAlpha(30),
               ),
-              child: const Icon(Icons.card_giftcard, color: Color(0xFFD97FC2), size: 48),
+              child: const Icon(Icons.card_giftcard, color: AppConfig.colorPrimario, size: 48),
             ),
             const SizedBox(height: 20),
             const Text(
@@ -170,7 +170,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             const Text(
               'En total tenes 20 dias para probar el sistema.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFFD97FC2), fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppConfig.colorPrimario, fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -180,7 +180,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             child: ElevatedButton(
               onPressed: () => Navigator.pop(dlg),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD97FC2),
+                backgroundColor: AppConfig.colorPrimario,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -213,7 +213,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         title: Text(_tenant?.nombreSalon ?? 'Admin'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline, color: Color(0xFFD97FC2)),
+            icon: const Icon(Icons.help_outline, color: AppConfig.colorPrimario),
             tooltip: 'Guia de uso',
             onPressed: _showHelp,
           ),
@@ -506,15 +506,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFD97FC2).withAlpha(15),
+        color: AppConfig.colorPrimario.withAlpha(15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD97FC2).withAlpha(40)),
+        border: Border.all(color: AppConfig.colorPrimario.withAlpha(40)),
       ),
       child: Row(
         children: [
           Text(emoji, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 10),
-          Expanded(child: Text(text, style: const TextStyle(color: Color(0xFFE8C4D8), fontSize: 12, height: 1.4))),
+          Expanded(child: Text(text, style: const TextStyle(color: AppConfig.colorTerciario, fontSize: 12, height: 1.4))),
         ],
       ),
     );
@@ -759,7 +759,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             icon: const Icon(Icons.person_add),
             label: const Text('Agregar Profesional'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD97FC2),
+              backgroundColor: AppConfig.colorPrimario,
               foregroundColor: Colors.white,
             ),
           ),
@@ -820,7 +820,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: AppConfig.colorFondoCard,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => DraggableScrollableSheet(
         initialChildSize: 0.7,
@@ -853,7 +853,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(p.nombre, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text(p.especialidad, style: const TextStyle(color: Color(0xFF999999), fontSize: 13)),
+                        Text(p.especialidad, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 13)),
                       ],
                     )),
                   ],
@@ -862,7 +862,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 // Resumen
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: AppConfig.colorSurfaceVariant, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -879,17 +879,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 if (!snap.hasData)
                   const Center(child: CircularProgressIndicator())
                 else if (completados.isEmpty)
-                  const Text('No hay turnos completados aun.', style: TextStyle(color: Color(0xFF888888)))
+                  const Text('No hay turnos completados aun.', style: TextStyle(color: AppConfig.colorTextoSecundario))
                 else
                   ...completados.take(50).map((t) => Container(
                     margin: const EdgeInsets.only(bottom: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(color: const Color(0xFF2A2A2A), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(color: AppConfig.colorSurfaceVariant, borderRadius: BorderRadius.circular(10)),
                     child: Row(
                       children: [
-                        Text(t.fecha, style: const TextStyle(color: Color(0xFF999999), fontSize: 12)),
+                        Text(t.fecha, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
                         const SizedBox(width: 6),
-                        Text(t.hora, style: const TextStyle(color: Color(0xFF999999), fontSize: 12)),
+                        Text(t.hora, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
                         const SizedBox(width: 10),
                         Expanded(child: Text(t.servicioNombre ?? '-', style: const TextStyle(color: Colors.white, fontSize: 13))),
                         Text(t.nombreCliente, style: TextStyle(color: _accent, fontSize: 12)),
@@ -908,7 +908,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     return Column(
       children: [
         Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Color(0xFF999999), fontSize: 10)),
+        Text(label, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 10)),
       ],
     );
   }
@@ -1073,7 +1073,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             icon: const Icon(Icons.add),
             label: const Text('Agregar Servicio'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD97FC2),
+              backgroundColor: AppConfig.colorPrimario,
               foregroundColor: Colors.white,
             ),
           ),
@@ -2432,9 +2432,9 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFD97FC2).withAlpha(30),
+                color: AppConfig.colorPrimario.withAlpha(30),
               ),
-              child: const Icon(Icons.card_giftcard, color: Color(0xFFD97FC2), size: 48),
+              child: const Icon(Icons.card_giftcard, color: AppConfig.colorPrimario, size: 48),
             ),
             const SizedBox(height: 20),
             const Text(
@@ -2452,7 +2452,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             const Text(
               'En total tenes 20 dias para probar el sistema.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFFD97FC2), fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppConfig.colorPrimario, fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -2462,7 +2462,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(dlg),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD97FC2),
+                backgroundColor: AppConfig.colorPrimario,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -2570,28 +2570,28 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
           padding: const EdgeInsets.all(12),
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFD97FC2).withAlpha(10),
+            color: AppConfig.colorPrimario.withAlpha(10),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFD97FC2).withAlpha(30)),
+            border: Border.all(color: AppConfig.colorPrimario.withAlpha(30)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Escribi un mensaje y tus clientas lo van a ver en la pagina principal de tu salon. Por ejemplo: "Este mes 20% off en coloracion!" o "Nuevos horarios de atencion".',
-                style: TextStyle(color: Color(0xFFE8C4D8), fontSize: 12, height: 1.4),
+                style: TextStyle(color: AppConfig.colorTerciario, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Si lo dejas vacio, no se muestra nada.',
-                style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 11),
+                style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11),
               ),
             ],
           ),
         ),
         SwitchListTile(
           title: const Text('Mostrar aviso en el home', style: TextStyle(color: Colors.white, fontSize: 14)),
-          subtitle: const Text('Activa esto para mostrar un cartel con un mensaje en tu pagina (ej: descuentos, promos, avisos)', style: TextStyle(color: Color(0xFF999999), fontSize: 12)),
+          subtitle: const Text('Activa esto para mostrar un cartel con un mensaje en tu pagina (ej: descuentos, promos, avisos)', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
           value: _mostrarBanner,
           onChanged: (v) => setState(() => _mostrarBanner = v),
           activeColor: widget.primary,
@@ -2618,7 +2618,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A2A2A),
+                  color: AppConfig.colorSurfaceVariant,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -2653,7 +2653,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         const SizedBox(height: 12),
         SwitchListTile(
           title: const Text('Mostrar nombre del salon debajo del logo', style: TextStyle(color: Colors.white, fontSize: 14)),
-          subtitle: const Text('Desactivalo si tu logo ya incluye el nombre', style: TextStyle(color: Color(0xFF999999), fontSize: 12)),
+          subtitle: const Text('Desactivalo si tu logo ya incluye el nombre', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
           value: _mostrarNombreSalon,
           onChanged: (v) => setState(() => _mostrarNombreSalon = v),
           activeColor: widget.primary,
@@ -2670,7 +2670,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
           ),
           child: const Text(
             'Elegí como se ve el fondo de toda tu pagina publica.\nPodes subir una foto o elegir un color.\nSi no elegis nada, se usa un degradado suave con tus colores de marca.',
-            style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 12, height: 1.4),
+            style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12, height: 1.4),
           ),
         ),
         _imageUploadField(
@@ -2749,13 +2749,13 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
           padding: const EdgeInsets.all(12),
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF9800).withAlpha(10),
+            color: AppConfig.colorPendiente.withAlpha(10),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFF9800).withAlpha(30)),
+            border: Border.all(color: AppConfig.colorPendiente.withAlpha(30)),
           ),
           child: const Text(
             'Pedi una seña o pago anticipado a tus clientas antes de confirmar el turno. Ellas veran los datos bancarios y podran enviarte el comprobante por WhatsApp.',
-            style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 12, height: 1.4),
+            style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12, height: 1.4),
           ),
         ),
         SwitchListTile(
