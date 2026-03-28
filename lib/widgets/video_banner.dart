@@ -15,6 +15,7 @@ class _VideoBannerState extends State<VideoBanner> {
   late VideoPlayerController _controller;
   bool _initialized = false;
   bool _error = false;
+  String _errorMsg = '';
 
   @override
   void initState() {
@@ -27,8 +28,9 @@ class _VideoBannerState extends State<VideoBanner> {
           setState(() => _initialized = true);
           _controller.play();
         }
-      }).catchError((_) {
-        if (mounted) setState(() => _error = true);
+      }).catchError((e) {
+        debugPrint('VideoBanner error: $e');
+        if (mounted) setState(() { _error = true; _errorMsg = e.toString(); });
       });
   }
 
@@ -40,7 +42,19 @@ class _VideoBannerState extends State<VideoBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (_error) return const SizedBox.shrink();
+    if (_error) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.withAlpha(40),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text('Error al cargar video: $_errorMsg',
+          style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+      );
+    }
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
