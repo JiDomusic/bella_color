@@ -12,10 +12,9 @@ class VideoBanner extends StatefulWidget {
   State<VideoBanner> createState() => _VideoBannerState();
 }
 
-class _VideoBannerState extends State<VideoBanner> with SingleTickerProviderStateMixin {
+class _VideoBannerState extends State<VideoBanner> {
   late String _viewId;
   bool _visible = true;
-  double _opacity = 1.0;
 
   @override
   void initState() {
@@ -35,11 +34,7 @@ class _VideoBannerState extends State<VideoBanner> with SingleTickerProviderStat
 
     ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) => video);
 
-    // A los 18s empieza fade out, a los 20s desaparece
-    Future.delayed(const Duration(seconds: 18), () {
-      if (mounted) setState(() => _opacity = 0.0);
-    });
-    Future.delayed(const Duration(seconds: 20), () {
+    Future.delayed(const Duration(seconds: 30), () {
       if (mounted) setState(() => _visible = false);
     });
   }
@@ -47,10 +42,7 @@ class _VideoBannerState extends State<VideoBanner> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
-    return AnimatedOpacity(
-      opacity: _opacity,
-      duration: const Duration(seconds: 2),
-      child: Container(
+    return Container(
         width: double.infinity,
         height: 220,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -67,7 +59,6 @@ class _VideoBannerState extends State<VideoBanner> with SingleTickerProviderStat
         ),
         clipBehavior: Clip.antiAlias,
         child: HtmlElementView(viewType: _viewId),
-      ),
     );
   }
 }
