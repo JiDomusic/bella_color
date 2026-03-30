@@ -48,7 +48,7 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
   Future<void> _confirm() async {
     final code = _codeCtrl.text.trim().toUpperCase();
     if (code.isEmpty) {
-      setState(() => _error = 'Ingresa tu codigo de confirmacion');
+      setState(() => _error = 'Ingresá tu código de confirmación');
       return;
     }
 
@@ -119,7 +119,7 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
         Icon(Icons.verified_user, color: _accent, size: 56),
         const SizedBox(height: 24),
         Text(
-          'Ingresa tu codigo de confirmacion',
+          'Ingresá tu código de confirmación',
           style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 18),
           textAlign: TextAlign.center,
         ),

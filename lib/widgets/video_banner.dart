@@ -28,8 +28,8 @@ class _VideoBannerState extends State<VideoBanner> {
       ..loop = false
       ..style.width = '100%'
       ..style.height = '100%'
-      ..style.objectFit = 'contain'
-      ..style.backgroundColor = 'transparent'
+      ..style.objectFit = 'cover'
+      ..style.borderRadius = '14px'
       ..setAttribute('playsinline', 'true');
 
     ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) => video);
@@ -42,28 +42,50 @@ class _VideoBannerState extends State<VideoBanner> {
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
-    // Formato reel vertical (9:16) - se ve completo sin recorte
-    return Center(
-      child: AspectRatio(
-        aspectRatio: 9 / 16,
-        child: Container(
-          constraints: const BoxConstraints(maxHeight: 480),
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: widget.borderColor.withAlpha(80), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: widget.borderColor.withAlpha(40),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+
+        // Responsive: desktop chico, mobile más grande
+        final double videoWidth;
+        final double videoHeight;
+
+        if (screenWidth > 900) {
+          // Desktop → estilo Instagram web reel
+          videoWidth = 300;
+          videoHeight = 530;
+        } else if (screenWidth > 600) {
+          // Tablet
+          videoWidth = 280;
+          videoHeight = 500;
+        } else {
+          // Mobile → reel más grande pero no fullscreen
+          videoWidth = screenWidth * 0.65;
+          videoHeight = videoWidth * (16 / 9);
+        }
+
+        return Center(
+          child: Container(
+            width: videoWidth,
+            height: videoHeight,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: widget.borderColor.withAlpha(80), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.borderColor.withAlpha(50),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: HtmlElementView(viewType: _viewId),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: HtmlElementView(viewType: _viewId),
-        ),
-      ),
+        );
+      },
     );
   }
 }

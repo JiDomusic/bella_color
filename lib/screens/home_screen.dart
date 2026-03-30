@@ -536,7 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(builder: (_) => const ConfirmAppointmentScreen()),
               ),
               icon: const Icon(Icons.confirmation_number, size: 18),
-              label: const Text('Tengo un codigo de turno'),
+              label: const Text('Tengo un código de turno'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: _primary,
                 side: BorderSide(color: _primary.withAlpha(80)),

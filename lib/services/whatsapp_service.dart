@@ -162,8 +162,8 @@ $direccion''';
 
 ⚡ *IMPORTANTE:*
 - ⏰ Llega 10 minutos antes de tu horario
-- 🔑 Presenta tu codigo de confirmacion
-- ❌ Si no podes asistir, cancela con anticipacion
+- 🔑 Presentá tu código de confirmación
+- ❌ Si no podés asistir, cancelá con anticipación
 
 🇦🇷 _Hecho con amor en Argentina_ 💜
 _Mensaje automatico de ${salonName}_''';
@@ -181,26 +181,26 @@ _Mensaje automatico de ${salonName}_''';
     required String codigo,
     required String salonName,
   }) {
-    return '''*RECORDATORIO DE TURNO*
+    return '''⏰ *RECORDATORIO DE TURNO*
 
-Hola $nombreCliente!
+Hola $nombreCliente! 👋
 
-Tu turno en $salonName es *MANANA*:
+Tu turno en *$salonName* es *MAÑANA*:
 
-Servicio: $servicio
-Profesional: $profesional
-Fecha: $fecha
-Hora: $hora
-Codigo: *$codigo*
+🪞 Servicio: $servicio
+👩‍🎨 Profesional: $profesional
+📅 Fecha: $fecha
+🕐 Hora: $hora
+🔑 Código: *$codigo*
 
-*RECORDA:*
-- Llegar 10 minutos antes
-- Traer tu codigo de confirmacion
-- Si necesitas cancelar, avisanos con tiempo
+*RECORDÁ:*
+- ⏰ Llegar 10 minutos antes
+- 🔑 Traer tu código de confirmación
+- ❌ Si necesitás cancelar, avisanos con tiempo
 
-Te esperamos!
+Te esperamos! ✨
 
-_${salonName}_''';
+🇦🇷 _${salonName}_''';
   }
 
   /// Mensaje de cancelación
@@ -212,21 +212,21 @@ _${salonName}_''';
     required String codigo,
     required String salonName,
   }) {
-    return '''*TURNO CANCELADO*
+    return '''❌ *TURNO CANCELADO*
 
 Hola $nombreCliente,
 
 Tu turno ha sido cancelado:
 
-Codigo: *$codigo*
-Servicio: $servicio
-Era para: $fecha a las $hora
+🔑 Código: *$codigo*
+🪞 Servicio: $servicio
+📅 Era para: $fecha a las $hora
 
-Queres agendar un nuevo turno?
+¿Querés agendar un nuevo turno? 💇
 
-Esperamos verte pronto!
+¡Esperamos verte pronto! ✨
 
-_${salonName}_''';
+🇦🇷 _${salonName}_''';
   }
 
   /// Mensaje pidiendo confirmación al cliente
@@ -240,22 +240,22 @@ _${salonName}_''';
     required String salonName,
     int confirmationWindowHours = 2,
   }) {
-    return '''*${salonName.toUpperCase()}*
+    return '''✨ *${salonName.toUpperCase()}* ✨
 
-Hola $nombreCliente! Recibimos tu solicitud de turno
+Hola $nombreCliente! Recibimos tu solicitud de turno 📋
 
-*DETALLES:*
-Servicio: $servicio
-Profesional: $profesional
-Fecha: $fecha
-Hora: $hora
+💇 *DETALLES:*
+🪞 Servicio: $servicio
+👩‍🎨 Profesional: $profesional
+📅 Fecha: $fecha
+🕐 Hora: $hora
 
-*CONFIRMA TU TURNO:*
-Usa tu codigo: *$codigo*
+🔑 *CONFIRMÁ TU TURNO:*
+Usá tu código: *$codigo*
 
-Si no confirmas dentro de $confirmationWindowHours horas, el turno se cancelara automaticamente.
+⚠️ Si no confirmás dentro de $confirmationWindowHours horas, el turno se cancelará automáticamente.
 
-_${salonName}_''';
+🇦🇷 _${salonName}_''';
   }
 
   /// Mensaje de lista de espera
@@ -266,19 +266,19 @@ _${salonName}_''';
     required String hora,
     required String salonName,
   }) {
-    return '''*BUENAS NOTICIAS!*
+    return '''🎉 *¡BUENAS NOTICIAS!*
 
-Hola $nombreCliente!
+Hola $nombreCliente! 👋
 
-Se libero un lugar en $salonName para:
+Se liberó un lugar en *$salonName* para:
 
-Servicio: $servicio
-Fecha: $fecha
-Hora: $hora
+🪞 Servicio: $servicio
+📅 Fecha: $fecha
+🕐 Hora: $hora
 
-Queres que te reservemos? Respondenos rapido para asegurar tu lugar!
+¿Querés que te reservemos? ¡Respondenos rápido para asegurar tu lugar! 🏃‍♀️
 
-_${salonName}_''';
+🇦🇷 _${salonName}_''';
   }
 
   /// Enviar mensaje genérico

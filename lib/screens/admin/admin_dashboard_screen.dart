@@ -229,7 +229,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           ),
           IconButton(
             icon: const Icon(Icons.lock_outline, color: Colors.white70),
-            tooltip: 'Cambiar contrasena',
+            tooltip: 'Cambiar contraseña',
             onPressed: _promptChangePassword,
           ),
           IconButton(
@@ -1489,7 +1489,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   Widget _buildBlocksTab() {
     return Column(
       children: [
-        _tabHint('🚫', 'Necesitas cerrar un dia por feriado o vacaciones? O cerrar una hora especifica? Agrega un bloqueo y tus clientas no podran sacar turno en ese momento.'),
+        _tabHint('🚫', '¿Necesitás cerrar un día por feriado o vacaciones? ¿O cerrar una hora específica? Agregá un bloqueo y tus clientas no podrán sacar turno en ese momento.'),
         Padding(
           padding: const EdgeInsets.all(12),
           child: ElevatedButton.icon(
@@ -2119,7 +2119,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     String? validatedValue(String v1, String v2) {
       if (v1.isEmpty || v2.isEmpty) return 'Completa ambos campos';
       if (v1.length < 8) return 'Minimo 8 caracteres';
-      if (v1 != v2) return 'Las contrasenas no coinciden';
+      if (v1 != v2) return 'Las contraseñas no coinciden';
       return null;
     }
 
@@ -2130,20 +2130,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           builder: (_, setState) => AlertDialog(
             backgroundColor: AppConfig.colorFondoCard,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Cambiar contrasena', style: TextStyle(color: AppConfig.colorTexto)),
+            title: const Text('Cambiar contraseña', style: TextStyle(color: AppConfig.colorTexto)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: pass1,
-                  decoration: const InputDecoration(labelText: 'Nueva contrasena'),
+                  decoration: const InputDecoration(labelText: 'Nueva contraseña'),
                   obscureText: true,
                   style: const TextStyle(color: AppConfig.colorTexto),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: pass2,
-                  decoration: const InputDecoration(labelText: 'Repetir contrasena'),
+                  decoration: const InputDecoration(labelText: 'Repetir contraseña'),
                   obscureText: true,
                   style: const TextStyle(color: AppConfig.colorTexto),
                 ),
@@ -2178,13 +2178,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       await _svc.changePassword(newPass);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contrasena actualizada')),
+          const SnackBar(content: Text('Contraseña actualizada')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo cambiar la contrasena')),
+          const SnackBar(content: Text('No se pudo cambiar la contraseña')),
         );
       }
     } finally {
@@ -2729,7 +2729,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             _colorButton('Primario', _primaryColor, (c) => setState(() => _primaryColor = c)),
             _colorButton('Secundario', _secondaryColor, (c) => setState(() => _secondaryColor = c)),
             _colorButton('Terciario', _tertiaryColor, (c) => setState(() => _tertiaryColor = c)),
-            _colorButton('Acento', _accentColor, (c) => setState(() => _accentColor = c)),
+            _colorButton('Botones', _accentColor, (c) => setState(() => _accentColor = c)),
             _colorButton('Card Prof.', _cardProfColor, (c) => setState(() => _cardProfColor = c)),
           ],
         ),
@@ -2760,7 +2760,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             border: Border.all(color: AppConfig.colorPendiente.withAlpha(30)),
           ),
           child: const Text(
-            'Pedi una seña o pago anticipado a tus clientas antes de confirmar el turno. Ellas veran los datos bancarios y podran enviarte el comprobante por WhatsApp.',
+            'Pedí una seña o pago anticipado a tus clientas antes de confirmar el turno. Ellas verán los datos bancarios y podrán enviarte el comprobante por WhatsApp.',
             style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12, height: 1.4),
           ),
         ),

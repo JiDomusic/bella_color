@@ -104,7 +104,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
               TextField(
                 controller: passwordCtrl,
                 style: const TextStyle(color: AppConfig.colorTexto),
-                decoration: _inputDecor('Contrasena temporal', Icons.lock),
+                decoration: _inputDecor('Contraseña temporal', Icons.lock),
               ),
               const SizedBox(height: 8),
               Text(
@@ -217,7 +217,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
               _infoRow('Salon', salonName),
               _infoRow('Tenant ID', tenantId),
               _infoRow('Email admin', email),
-              _infoRow('Contrasena', password),
+              _infoRow('Contraseña', password),
               const Divider(color: Colors.white24),
               const SizedBox(height: 8),
               const Text('Link para el cliente:', style: TextStyle(color: Colors.white70, fontSize: 13)),
@@ -251,7 +251,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
               const SizedBox(height: 12),
               const Text(
                 'Enviale estos datos al cliente por WhatsApp.\n'
-                'El cliente entra al link, se loguea con email y contrasena, '
+                'El cliente entra al link, se loguea con email y contraseña, '
                 'y configura todo desde el onboarding.',
                 style: TextStyle(color: Colors.white54, fontSize: 12),
               ),
@@ -264,7 +264,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
               final text = 'Hola! Tu sistema de turnos esta listo.\n\n'
                   'Link: $link\n'
                   'Email: $email\n'
-                  'Contrasena: $password\n\n'
+                  'Contraseña: $password\n\n'
                   'Ingresa al link, logueate y configura tu salon.';
               Clipboard.setData(ClipboardData(text: text));
               ScaffoldMessenger.of(ctx).showSnackBar(

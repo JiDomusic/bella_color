@@ -26,7 +26,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   Future<void> _login() async {
     if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Completa email y contrasena');
+      setState(() => _error = 'Completa email y contraseña');
       return;
     }
     setState(() { _loading = true; _error = null; });
