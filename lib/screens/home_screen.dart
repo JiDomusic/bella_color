@@ -52,19 +52,25 @@ class _HomeScreenState extends State<HomeScreen> {
           _tenant = tenant;
           _services = services;
           _professionals = professionals;
-          // Salón configurado = tiene servicios Y profesionales cargados
-          final tieneContenido = services.isNotEmpty && professionals.isNotEmpty;
-          _isLanding = (tenantId == 'demo' || tenantId.isEmpty || (!tenant.onboardingCompleted && !tieneContenido));
-          debugPrint('[HOME] _isLanding=$_isLanding (demo=${tenantId == 'demo'}, empty=${tenantId.isEmpty}, noOnboard=${!tenant.onboardingCompleted}, tieneContenido=$tieneContenido)');
+          // Salón configurado = tiene contenido O tiene logo/nombre personalizado
+          final tieneContenido = services.isNotEmpty || professionals.isNotEmpty;
+          final tieneConfig = (tenant.logoUrl != null && tenant.logoUrl!.isNotEmpty) || tenant.onboardingCompleted;
+          _isLanding = (tenantId == 'demo' || tenantId.isEmpty || (!tieneConfig && !tieneContenido));
+          debugPrint('[HOME] _isLanding=$_isLanding (demo=${tenantId == 'demo'}, empty=${tenantId.isEmpty}, tieneConfig=$tieneConfig, tieneContenido=$tieneContenido)');
           _loading = false;
         });
       }
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('[HOME] Error loading tenant: $e');
-      // Si falla (tenant demo no existe), mostrar landing
+      debugPrint('[HOME] Stack: $st');
       if (mounted) {
         setState(() {
-          _isLanding = true;
+          // Si ya tenemos tenant con logo o contenido, no mostrar landing
+          if (_tenant != null && ((_tenant!.logoUrl ?? '').isNotEmpty || _services.isNotEmpty || _professionals.isNotEmpty)) {
+            _isLanding = false;
+          } else {
+            _isLanding = true;
+          }
           _loading = false;
         });
       }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
@@ -15,7 +16,41 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _passCtrl = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+  bool _remember = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('admin_email') ?? '';
+    final savedPass = prefs.getString('admin_pass') ?? '';
+    final remember = prefs.getBool('admin_remember') ?? false;
+    if (remember && savedEmail.isNotEmpty) {
+      setState(() {
+        _emailCtrl.text = savedEmail;
+        _passCtrl.text = savedPass;
+        _remember = true;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_remember) {
+      await prefs.setString('admin_email', _emailCtrl.text.trim());
+      await prefs.setString('admin_pass', _passCtrl.text.trim());
+      await prefs.setBool('admin_remember', true);
+    } else {
+      await prefs.remove('admin_email');
+      await prefs.remove('admin_pass');
+      await prefs.setBool('admin_remember', false);
+    }
+  }
 
   @override
   void dispose() {
@@ -26,7 +61,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   Future<void> _login() async {
     if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.trim().isEmpty) {
-      setState(() => _error = 'Completa email y contraseña');
+      setState(() => _error = 'Completá email y contraseña');
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -37,6 +72,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         SupabaseService.instance.setTenantId(tenantId);
         await SupabaseService.instance.loadTenant();
       }
+      await _saveCredentials();
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
@@ -57,7 +93,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         backgroundColor: const Color(0xFFFFF0F3),
         foregroundColor: const Color(0xFF8B6B6B),
         elevation: 0,
-        title: const Text('Administracion', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        title: const Text('Administración', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -91,7 +127,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               TextField(
                 controller: _passCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Contrasena',
+                  labelText: 'Contraseña',
                   labelStyle: const TextStyle(color: Color(0xFF8B6B6B), fontSize: 16),
                   prefixIcon: const Icon(Icons.lock, color: Color(0xFFD4A0A0)),
                   suffixIcon: IconButton(
@@ -114,6 +150,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 ),
                 obscureText: _obscure,
                 style: const TextStyle(color: Color(0xFF4A3535), fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _remember,
+                      onChanged: (v) => setState(() => _remember = v ?? false),
+                      activeColor: const Color(0xFFD4A0A0),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _remember = !_remember),
+                    child: const Text(
+                      'Recordar contraseña',
+                      style: TextStyle(color: Color(0xFF8B6B6B), fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
               if (_error != null) ...[
                 const SizedBox(height: 14),

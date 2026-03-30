@@ -233,36 +233,15 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               child: child,
             );
           },
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [_colorSecondary, _colorPrimary],
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(color: _colorAccent, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: _colorPrimary.withValues(alpha: 0.26),
-                  blurRadius: 20,
-                  spreadRadius: -5,
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/images/logo_chica.png',
-                width: isMobile ? 110 : 130,
-                height: isMobile ? 110 : 130,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.content_cut_rounded,
-                  color: _colorPrimary,
-                  size: isMobile ? 44 : 52,
-                ),
-              ),
+          child: Image.asset(
+            'assets/images/logo_chica.png',
+            width: isMobile ? 120 : 140,
+            height: isMobile ? 120 : 140,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Icon(
+              Icons.content_cut_rounded,
+              color: _colorPrimary,
+              size: isMobile ? 44 : 52,
             ),
           ),
         ),
