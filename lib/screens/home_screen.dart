@@ -52,8 +52,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _tenant = tenant;
           _services = services;
           _professionals = professionals;
-          _isLanding = (tenantId == 'demo' || tenantId.isEmpty || !tenant.onboardingCompleted);
-          debugPrint('[HOME] _isLanding=$_isLanding (demo=${tenantId == 'demo'}, empty=${tenantId.isEmpty}, noOnboard=${!tenant.onboardingCompleted})');
+          // Salón configurado = tiene servicios Y profesionales cargados
+          final tieneContenido = services.isNotEmpty && professionals.isNotEmpty;
+          _isLanding = (tenantId == 'demo' || tenantId.isEmpty || (!tenant.onboardingCompleted && !tieneContenido));
+          debugPrint('[HOME] _isLanding=$_isLanding (demo=${tenantId == 'demo'}, empty=${tenantId.isEmpty}, noOnboard=${!tenant.onboardingCompleted}, tieneContenido=$tieneContenido)');
           _loading = false;
         });
       }
@@ -341,18 +343,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           if (_tenant?.logoUrl != null)
-            Container(
+            ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 200, maxHeight: 200),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withAlpha(30), blurRadius: 12, offset: const Offset(0, 4))],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.network(
-                  _tenant!.logoUrl!,
-                  fit: BoxFit.contain,
-                ),
+              child: Image.network(
+                _tenant!.logoUrl!,
+                fit: BoxFit.contain,
               ),
             )
           else
