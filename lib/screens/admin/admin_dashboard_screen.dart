@@ -61,8 +61,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     super.dispose();
   }
 
-  Color get _primary => _tenant != null ? AppConfig.hexToColor(_tenant!.colorPrimario) : AppConfig.colorPrimario;
-  Color get _accent => _tenant != null ? AppConfig.hexToColor(_tenant!.colorAcento) : AppConfig.colorAcento;
+  Color get _primaryRaw => _tenant != null ? AppConfig.hexToColor(_tenant!.colorPrimario) : AppConfig.colorPrimario;
+  Color get _primary {
+    final c = _primaryRaw;
+    if (c.computeLuminance() < 0.15) {
+      return Color.lerp(c, Colors.white, 0.5)!;
+    }
+    return c;
+  }
+  Color get _accentRaw => _tenant != null ? AppConfig.hexToColor(_tenant!.colorAcento) : AppConfig.colorAcento;
+  /// Acento con contraste garantizado sobre fondo oscuro del admin.
+  Color get _accent {
+    final c = _accentRaw;
+    // Si el color es muy oscuro (luminancia < 0.15), usar versión clara
+    if (c.computeLuminance() < 0.15) {
+      return Color.lerp(c, Colors.white, 0.5)!;
+    }
+    return c;
+  }
 
   Future<void> _loadAll() async {
     try {
