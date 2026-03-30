@@ -39,41 +39,42 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _load() async {
+    final tenantId = _svc.tenantId;
+    debugPrint('[HOME] Cargando tenantId=$tenantId');
+
+    // 1. Cargar tenant primero (tabla pública)
     try {
-      final tenantId = _svc.tenantId;
-      debugPrint('[HOME] Cargando tenantId=$tenantId');
       final tenant = await _svc.loadTenant();
-      debugPrint('[HOME] Tenant cargado: nombre=${tenant.nombreSalon}, onboarding=${tenant.onboardingCompleted}, blocked=${tenant.isBlocked}');
-      final services = await _svc.loadActiveServices();
-      final professionals = await _svc.loadActiveProfessionals();
-      debugPrint('[HOME] Servicios=${services.length}, Profesionales=${professionals.length}');
-      if (mounted) {
-        setState(() {
-          _tenant = tenant;
-          _services = services;
-          _professionals = professionals;
-          // Salón configurado = tiene contenido O tiene logo/nombre personalizado
-          final tieneContenido = services.isNotEmpty || professionals.isNotEmpty;
-          final tieneConfig = (tenant.logoUrl != null && tenant.logoUrl!.isNotEmpty) || tenant.onboardingCompleted;
-          _isLanding = (tenantId == 'demo' || tenantId.isEmpty || (!tieneConfig && !tieneContenido));
-          debugPrint('[HOME] _isLanding=$_isLanding (demo=${tenantId == 'demo'}, empty=${tenantId.isEmpty}, tieneConfig=$tieneConfig, tieneContenido=$tieneContenido)');
-          _loading = false;
-        });
-      }
-    } catch (e, st) {
+      debugPrint('[HOME] Tenant cargado: nombre=${tenant.nombreSalon}, logo=${tenant.logoUrl}, onboarding=${tenant.onboardingCompleted}');
+      if (mounted) setState(() => _tenant = tenant);
+    } catch (e) {
       debugPrint('[HOME] Error loading tenant: $e');
-      debugPrint('[HOME] Stack: $st');
-      if (mounted) {
-        setState(() {
-          // Si ya tenemos tenant con logo o contenido, no mostrar landing
-          if (_tenant != null && ((_tenant!.logoUrl ?? '').isNotEmpty || _services.isNotEmpty || _professionals.isNotEmpty)) {
-            _isLanding = false;
-          } else {
-            _isLanding = true;
-          }
-          _loading = false;
-        });
-      }
+      if (mounted) setState(() { _isLanding = true; _loading = false; });
+      return;
+    }
+
+    // 2. Cargar servicios y profesionales (puede fallar por RLS sin auth)
+    List<Service> services = [];
+    List<Professional> professionals = [];
+    try {
+      services = await _svc.loadActiveServices();
+      professionals = await _svc.loadActiveProfessionals();
+      debugPrint('[HOME] Servicios=${services.length}, Profesionales=${professionals.length}');
+    } catch (e) {
+      debugPrint('[HOME] Error loading services/professionals (RLS?): $e');
+    }
+
+    // 3. Determinar si mostrar landing o vista del salón
+    if (mounted) {
+      setState(() {
+        _services = services;
+        _professionals = professionals;
+        final tieneContenido = services.isNotEmpty || professionals.isNotEmpty;
+        final tieneConfig = (_tenant!.logoUrl != null && _tenant!.logoUrl!.isNotEmpty) || _tenant!.onboardingCompleted;
+        _isLanding = (tenantId == 'demo' || tenantId.isEmpty || (!tieneConfig && !tieneContenido));
+        debugPrint('[HOME] _isLanding=$_isLanding (tieneConfig=$tieneConfig, tieneContenido=$tieneContenido)');
+        _loading = false;
+      });
     }
   }
 
