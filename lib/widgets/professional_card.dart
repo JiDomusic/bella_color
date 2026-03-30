@@ -5,12 +5,14 @@ import '../models/professional.dart';
 class ProfessionalCard extends StatelessWidget {
   final Professional professional;
   final Color primary;
+  final Color? cardColor;
   final VoidCallback onTap;
 
   const ProfessionalCard({
     super.key,
     required this.professional,
     required this.primary,
+    this.cardColor,
     required this.onTap,
   });
 
@@ -21,7 +23,7 @@ class ProfessionalCard extends StatelessWidget {
       child: Container(
         width: 140,
         decoration: BoxDecoration(
-          color: AppConfig.colorFondoCard,
+          color: cardColor ?? AppConfig.colorFondoCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: primary.withAlpha(40)),
         ),

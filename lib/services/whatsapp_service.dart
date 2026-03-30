@@ -123,21 +123,21 @@ class WhatsappService {
     String? senaAlias,
     String? senaTitular,
   }) {
-    String message = '''*${salonName.toUpperCase()}*
+    String message = '''✨ *${salonName.toUpperCase()}* ✨
 
-Hola $nombreCliente! Tu turno esta confirmado
+Hola $nombreCliente! 🎉 Tu turno esta confirmado!
 
-*DETALLES DE TU TURNO:*
-Servicio: $servicio
-Profesional: $profesional
-Fecha: $fecha
-Hora: $hora
-Codigo: *$codigo*''';
+💇 *DETALLES DE TU TURNO:*
+🪞 Servicio: $servicio
+👩‍🎨 Profesional: $profesional
+📅 Fecha: $fecha
+🕐 Hora: $hora
+🔑 Codigo: *$codigo*''';
 
     if (montoSena != null && montoSena > 0) {
       message += '''
 
-*SEÑA REQUERIDA:*
+💰 *SEÑA REQUERIDA:*
 Monto: \$${montoSena.toStringAsFixed(2)}''';
       if (senaCbu != null && senaCbu.isNotEmpty) {
         message += '\nCBU: $senaCbu';
@@ -154,17 +154,18 @@ Monto: \$${montoSena.toStringAsFixed(2)}''';
     if (direccion != null && direccion.isNotEmpty) {
       message += '''
 
-*UBICACION:*
+📍 *UBICACION:*
 $direccion''';
     }
 
     message += '''
 
-*IMPORTANTE:*
-- Llega 10 minutos antes de tu horario
-- Presenta tu codigo de confirmacion
-- Si no podes asistir, cancela con anticipacion
+⚡ *IMPORTANTE:*
+- ⏰ Llega 10 minutos antes de tu horario
+- 🔑 Presenta tu codigo de confirmacion
+- ❌ Si no podes asistir, cancela con anticipacion
 
+🇦🇷 _Hecho con amor en Argentina_ 💜
 _Mensaje automatico de ${salonName}_''';
 
     return message;

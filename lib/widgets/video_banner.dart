@@ -28,8 +28,8 @@ class _VideoBannerState extends State<VideoBanner> {
       ..loop = false
       ..style.width = '100%'
       ..style.height = '100%'
-      ..style.objectFit = 'cover'
-      ..style.borderRadius = '14px'
+      ..style.objectFit = 'contain'
+      ..style.backgroundColor = 'transparent'
       ..setAttribute('playsinline', 'true');
 
     ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) => video);
@@ -42,23 +42,28 @@ class _VideoBannerState extends State<VideoBanner> {
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
-    return Container(
-        width: double.infinity,
-        height: 220,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: widget.borderColor.withAlpha(80), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: widget.borderColor.withAlpha(40),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    // Formato reel vertical (9:16) - se ve completo sin recorte
+    return Center(
+      child: AspectRatio(
+        aspectRatio: 9 / 16,
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 480),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: widget.borderColor.withAlpha(80), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: widget.borderColor.withAlpha(40),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: HtmlElementView(viewType: _viewId),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: HtmlElementView(viewType: _viewId),
+      ),
     );
   }
 }

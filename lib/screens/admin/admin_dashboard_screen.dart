@@ -2244,6 +2244,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   late Color _secondaryColor;
   late Color _tertiaryColor;
   late Color _accentColor;
+  late Color _cardProfColor;
   late int _minAnticipacion;
   late int _maxAnticipacion;
   late int _autoRelease;
@@ -2286,6 +2287,9 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _secondaryColor = AppConfig.hexToColor(t.colorSecundario);
     _tertiaryColor = AppConfig.hexToColor(t.colorTerciario);
     _accentColor = AppConfig.hexToColor(t.colorAcento);
+    _cardProfColor = t.colorCardProfesional.isNotEmpty
+        ? AppConfig.hexToColor(t.colorCardProfesional)
+        : AppConfig.colorFondoCard;
     _minAnticipacion = t.minAnticipacionHoras;
     _maxAnticipacion = t.maxAnticipacionDias;
     _autoRelease = t.minutosAutoLiberacion;
@@ -2502,6 +2506,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'color_secundario': _colorToHex(_secondaryColor),
         'color_terciario': _colorToHex(_tertiaryColor),
         'color_acento': _colorToHex(_accentColor),
+        'color_card_profesional': _colorToHex(_cardProfColor),
         'min_anticipacion_horas': _minAnticipacion,
         'max_anticipacion_dias': _maxAnticipacion,
         'minutos_auto_liberacion': _autoRelease,
@@ -2725,6 +2730,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             _colorButton('Secundario', _secondaryColor, (c) => setState(() => _secondaryColor = c)),
             _colorButton('Terciario', _tertiaryColor, (c) => setState(() => _tertiaryColor = c)),
             _colorButton('Acento', _accentColor, (c) => setState(() => _accentColor = c)),
+            _colorButton('Card Prof.', _cardProfColor, (c) => setState(() => _cardProfColor = c)),
           ],
         ),
 

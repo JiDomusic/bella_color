@@ -50,6 +50,7 @@ class Tenant {
   final bool mostrarBanner;
   final String bannerVideoUrl;
   final String bannerTipo;
+  final String colorCardProfesional;
 
   Tenant({
     required this.id,
@@ -103,6 +104,7 @@ class Tenant {
     this.mostrarBanner = false,
     this.bannerVideoUrl = '',
     this.bannerTipo = 'texto',
+    this.colorCardProfesional = '',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -176,6 +178,7 @@ class Tenant {
       mostrarBanner: json['mostrar_banner'] ?? false,
       bannerVideoUrl: json['banner_video_url'] ?? '',
       bannerTipo: json['banner_tipo'] ?? 'texto',
+      colorCardProfesional: json['color_card_profesional'] ?? '',
     );
   }
 
@@ -230,6 +233,7 @@ class Tenant {
     'mostrar_banner': mostrarBanner,
     'banner_video_url': bannerVideoUrl,
     'banner_tipo': bannerTipo,
+    'color_card_profesional': colorCardProfesional,
   };
 
   Tenant copyWith({

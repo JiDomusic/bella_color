@@ -486,6 +486,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ProfessionalCard(
             professional: _professionals[i],
             primary: _primary,
+            cardColor: _tenant?.colorCardProfesional.isNotEmpty == true
+                ? AppConfig.hexToColor(_tenant!.colorCardProfesional)
+                : null,
             onTap: () => _openBooking(professional: _professionals[i]),
           ),
         ),
