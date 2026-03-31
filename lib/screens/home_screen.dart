@@ -351,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Text(
         _tenant?.bannerTexto ?? '',
-        style: PublicTheme.banner,
+        style: PublicTheme.banner.copyWith(fontSize: 14),
         textAlign: TextAlign.center,
       ),
     );
@@ -601,34 +601,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServicesGrid() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final columns = width > 900 ? 4 : width > 600 ? 3 : 2;
-        final spacing = 12.0;
-        final padding = 16.0;
-        final totalSpacing = spacing * (columns - 1) + padding * 2;
-        final cardWidth = (width - totalSpacing) / columns;
-        final maxCard = 200.0;
-        final finalWidth = cardWidth > maxCard ? maxCard : cardWidth;
-
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding),
-          child: Wrap(
-            spacing: spacing,
-            runSpacing: spacing,
-            children: _services.map((s) => SizedBox(
-              width: finalWidth,
-              child: ServiceCard(
-                service: s,
-                primary: _primary,
-                accent: _accent,
-                onTap: () => _openBooking(service: s),
-              ),
-            )).toList(),
+    return SizedBox(
+      height: 360,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _services.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => SizedBox(
+          width: 240,
+          child: ServiceCard(
+            service: _services[i],
+            primary: _primary,
+            accent: _accent,
+            onTap: () => _openBooking(service: _services[i]),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
