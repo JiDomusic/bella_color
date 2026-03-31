@@ -14,6 +14,7 @@ import '../../services/supabase_service.dart';
 import '../../services/subscription_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/notification_service.dart';
+import '../../utils/price_format.dart';
 import 'admin_login_screen.dart';
 import 'reports_tab.dart';
 import 'clientes_tab.dart';
@@ -720,7 +721,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
                 if (hasPrecio)
                   Text(
-                    '\$${price!.toStringAsFixed(0)}',
+                    formatPrecioConSigno(price!),
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _primary),
                   ),
               ],
@@ -995,7 +996,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                             Expanded(child: Text(t.servicioNombre ?? '-', style: const TextStyle(color: Colors.white, fontSize: 13))),
                             if (_precioTurno(t) != null) ...[
                               const SizedBox(width: 8),
-                              Text('\$${_precioTurno(t)!.toStringAsFixed(0)}', style: TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                              Text(formatPrecioConSigno(_precioTurno(t)!), style: TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w700)),
                             ],
                             const SizedBox(width: 8),
                             Text(t.nombreCliente, style: TextStyle(color: _accent, fontSize: 12)),
@@ -1204,7 +1205,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     child: s.imagenUrl == null ? Icon(Icons.spa, color: _primary) : null,
                   ),
                   title: Text(s.nombre, style: const TextStyle(color: AppConfig.colorTexto)),
-                  subtitle: Text('${s.duracionMinutos} min - ${Service.categoriaLabel(s.categoria)}${s.precio != null ? ' - \$${s.precio!.toStringAsFixed(0)}' : ''}',
+                  subtitle: Text('${s.duracionMinutos} min - ${Service.categoriaLabel(s.categoria)}${s.precio != null ? ' - ${formatPrecioConSigno(s.precio!)}' : ''}',
                       style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

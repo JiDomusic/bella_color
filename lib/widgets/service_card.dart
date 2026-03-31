@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/public_theme.dart';
 import '../models/service.dart';
+import '../utils/price_format.dart';
 
 class ServiceCard extends StatelessWidget {
   final Service service;
@@ -58,28 +59,26 @@ class ServiceCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Icon(Icons.access_time, size: 14, color: primary),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       Text(
                         '${service.duracionMinutos} min',
                         style: GoogleFonts.spaceGrotesk(fontSize: 12, fontWeight: FontWeight.w600, color: PublicTheme.softMuted),
                       ),
-                      const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          if (service.precioEfectivoFinal != null)
-                            _pricePill('\$${service.precioEfectivoFinal!.toStringAsFixed(0)}', primary, Icons.payments_outlined),
-                          if (service.precioTarjetaFinal != null) ...[
-                            const SizedBox(height: 4),
-                            _pricePill('\$${service.precioTarjetaFinal!.toStringAsFixed(0)}', accent, Icons.credit_card),
-                          ],
-                        ],
-                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      if (service.precioEfectivoFinal != null)
+                        _pricePill(formatPrecioConSigno(service.precioEfectivoFinal!), primary, Icons.payments_outlined),
+                      if (service.precioTarjetaFinal != null)
+                        _pricePill(formatPrecioConSigno(service.precioTarjetaFinal!), accent, Icons.credit_card),
                     ],
                   ),
                 ],
@@ -93,8 +92,7 @@ class ServiceCard extends StatelessWidget {
 
   Widget _pricePill(String text, Color color, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withAlpha(28),
         borderRadius: BorderRadius.circular(10),
@@ -103,11 +101,11 @@ class ServiceCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 5),
           Text(
             text,
-            style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+            style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),

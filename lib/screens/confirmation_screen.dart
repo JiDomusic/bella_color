@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../models/appointment.dart';
 import '../services/supabase_service.dart';
 import '../services/whatsapp_service.dart';
+import '../utils/price_format.dart';
 import '../widgets/page_background.dart';
 
 class ConfirmationScreen extends StatelessWidget {
@@ -142,14 +143,14 @@ class ConfirmationScreen extends StatelessWidget {
                             child: Column(
                               children: [
                                 Text(
-                                  '\$${montoSena.toStringAsFixed(2)}',
+                                  formatPrecioConSigno(montoSena),
                                   style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFFE65100)),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   esPagoTotal
                                       ? '100% del servicio'
-                                      : '${tenant.senaPorcentaje}% del servicio (\$${precio.toStringAsFixed(2)})',
+                                      : '${tenant.senaPorcentaje}% del servicio (${formatPrecioConSigno(precio)})',
                                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                                 ),
                               ],

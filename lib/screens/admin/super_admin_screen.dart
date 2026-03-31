@@ -149,6 +149,11 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
         salonName: name,
       );
 
+      // Guardar credenciales para consulta posterior
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('sa_cred_email_$tenantId', email);
+      await prefs.setString('sa_cred_pass_$tenantId', password);
+
       if (mounted) Navigator.pop(context); // cerrar progress
 
       // Mostrar resultado con el link
@@ -444,7 +449,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   itemCount: _tenants.length,
                   itemBuilder: (_, i) => _buildTenantCard(_tenants[i]),
                 ),
@@ -578,7 +583,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                   onPressed: () => _toggleBlock(t),
                 ),
                 TextButton.icon(
-                  onPressed: () => _showCredentials(t.id, t.nombreSalon.isEmpty ? t.id : t.nombreSalon),
+                  onPressed: () => _showCredentials(t),
                   icon: Icon(Icons.key, color: Colors.white.withAlpha(153), size: 18),
                   label: Text('Credenciales', style: TextStyle(color: Colors.white.withAlpha(153), fontSize: 13)),
                 ),
@@ -595,34 +600,99 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     );
   }
 
-  Future<void> _showCredentials(String tenantId, String name) async {
+  Future<void> _showCredentials(Tenant t) async {
     final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('sa_cred_email_$tenantId') ?? 'No guardado';
+    final tenantId = t.id;
+    final name = t.nombreSalon.isEmpty ? t.id : t.nombreSalon;
+    // Email: primero SharedPreferences, fallback a admin_emails del tenant
+    var savedEmail = prefs.getString('sa_cred_email_$tenantId');
+    if (savedEmail == null && t.adminEmails.isNotEmpty) {
+      savedEmail = t.adminEmails.first;
+      // Guardar para futuras consultas
+      await prefs.setString('sa_cred_email_$tenantId', savedEmail);
+    }
+    savedEmail ??= 'No guardado';
     final savedPass = prefs.getString('sa_cred_pass_$tenantId') ?? 'No guardado';
     final link = _bookingLink(tenantId);
 
     if (!mounted) return;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppConfig.colorFondoCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(name, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 18)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _credRow('Email', savedEmail),
-            const SizedBox(height: 12),
-            _credRow('Password', savedPass),
-            const SizedBox(height: 12),
-            _credRow('Link', link),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
-        ],
-      ),
+      builder: (ctx) {
+        String currentPass = savedPass;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            backgroundColor: AppConfig.colorFondoCard,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(name, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 18)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _credRow('Email', savedEmail!),
+                  const SizedBox(height: 12),
+                  _credRow('Password', currentPass),
+                  const SizedBox(height: 12),
+                  _credRow('Link', link),
+                  if (currentPass == 'No guardado' && t.adminUserId != null) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final newPass = _generateTempPassword();
+                          try {
+                            await _svc.resetAuthUserPassword(t.adminUserId!, newPass);
+                            await prefs.setString('sa_cred_pass_$tenantId', newPass);
+                            setDialogState(() => currentPass = newPass);
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                const SnackBar(content: Text('Contrasena reseteada!')),
+                              );
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Resetear contrasena'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              if (savedEmail != 'No guardado')
+                TextButton.icon(
+                  onPressed: () {
+                    final text = 'Hola! Tu sistema de turnos esta listo.\n\n'
+                        'Link: $link\n'
+                        'Email: $savedEmail\n'
+                        'Contrasena: $currentPass\n\n'
+                        'Ingresa al link, logueate y configura tu salon.';
+                    Clipboard.setData(ClipboardData(text: text));
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Mensaje copiado para WhatsApp')),
+                    );
+                  },
+                  icon: const Icon(Icons.chat, size: 16),
+                  label: const Text('Copiar para WhatsApp'),
+                ),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
+            ],
+          ),
+        );
+      },
     );
   }
 

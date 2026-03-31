@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/price_format.dart';
 
 class WhatsappService {
   static Future<bool> _openUrl(String url) async {
@@ -123,22 +124,22 @@ class WhatsappService {
     String? senaAlias,
     String? senaTitular,
   }) {
-    String message = '''✨ *${salonName.toUpperCase()}* ✨
+    String message = '''\u2728 *${salonName.toUpperCase()}* \u2728
 
-Hola $nombreCliente! 🎉 Tu turno esta confirmado!
+Hola $nombreCliente! Tu turno esta confirmado!
 
-💇 *DETALLES DE TU TURNO:*
-🪞 Servicio: $servicio
-👩‍🎨 Profesional: $profesional
-📅 Fecha: $fecha
-🕐 Hora: $hora
-🔑 Codigo: *$codigo*''';
+\u2702 *DETALLES DE TU TURNO:*
+\u25B8 Servicio: $servicio
+\u25B8 Profesional: $profesional
+\u25B8 Fecha: $fecha
+\u25B8 Hora: $hora
+\u25B8 Codigo: *$codigo*''';
 
     if (montoSena != null && montoSena > 0) {
       message += '''
 
-💰 *SEÑA REQUERIDA:*
-Monto: \$${montoSena.toStringAsFixed(2)}''';
+\u25A0 *SE\u00D1A REQUERIDA:*
+Monto: ${formatPrecioConSigno(montoSena)}''';
       if (senaCbu != null && senaCbu.isNotEmpty) {
         message += '\nCBU: $senaCbu';
       }
@@ -154,18 +155,18 @@ Monto: \$${montoSena.toStringAsFixed(2)}''';
     if (direccion != null && direccion.isNotEmpty) {
       message += '''
 
-📍 *UBICACION:*
+\u25C6 *UBICACION:*
 $direccion''';
     }
 
     message += '''
 
-⚡ *IMPORTANTE:*
-- ⏰ Llega 10 minutos antes de tu horario
-- 🔑 Presentá tu código de confirmación
-- ❌ Si no podés asistir, cancelá con anticipación
+\u26A0 *IMPORTANTE:*
+\u2022 Llega 10 minutos antes de tu horario
+\u2022 Presenta tu codigo de confirmacion
+\u2022 Si no podes asistir, cancela con anticipacion
 
-🇦🇷 _Hecho con amor en Argentina_ 💜
+_Hecho con amor en Argentina_
 _Mensaje automatico de ${salonName}_''';
 
     return message;
@@ -181,26 +182,26 @@ _Mensaje automatico de ${salonName}_''';
     required String codigo,
     required String salonName,
   }) {
-    return '''⏰ *RECORDATORIO DE TURNO*
+    return '''\u23F0 *RECORDATORIO DE TURNO*
 
-Hola $nombreCliente! 👋
+Hola $nombreCliente!
 
-Tu turno en *$salonName* es *MAÑANA*:
+Tu turno en *$salonName* es *MA\u00D1ANA*:
 
-🪞 Servicio: $servicio
-👩‍🎨 Profesional: $profesional
-📅 Fecha: $fecha
-🕐 Hora: $hora
-🔑 Código: *$codigo*
+\u25B8 Servicio: $servicio
+\u25B8 Profesional: $profesional
+\u25B8 Fecha: $fecha
+\u25B8 Hora: $hora
+\u25B8 Codigo: *$codigo*
 
-*RECORDÁ:*
-- ⏰ Llegar 10 minutos antes
-- 🔑 Traer tu código de confirmación
-- ❌ Si necesitás cancelar, avisanos con tiempo
+*RECORDA:*
+\u2022 Llegar 10 minutos antes
+\u2022 Traer tu codigo de confirmacion
+\u2022 Si necesitas cancelar, avisanos con tiempo
 
-Te esperamos! ✨
+Te esperamos! \u2728
 
-🇦🇷 _${salonName}_''';
+_${salonName}_''';
   }
 
   /// Mensaje de cancelación
@@ -212,21 +213,21 @@ Te esperamos! ✨
     required String codigo,
     required String salonName,
   }) {
-    return '''❌ *TURNO CANCELADO*
+    return '''\u2716 *TURNO CANCELADO*
 
 Hola $nombreCliente,
 
 Tu turno ha sido cancelado:
 
-🔑 Código: *$codigo*
-🪞 Servicio: $servicio
-📅 Era para: $fecha a las $hora
+\u25B8 Codigo: *$codigo*
+\u25B8 Servicio: $servicio
+\u25B8 Era para: $fecha a las $hora
 
-¿Querés agendar un nuevo turno? 💇
+Queres agendar un nuevo turno?
 
-¡Esperamos verte pronto! ✨
+Esperamos verte pronto! \u2728
 
-🇦🇷 _${salonName}_''';
+_${salonName}_''';
   }
 
   /// Mensaje pidiendo confirmación al cliente
@@ -240,22 +241,22 @@ Tu turno ha sido cancelado:
     required String salonName,
     int confirmationWindowHours = 2,
   }) {
-    return '''✨ *${salonName.toUpperCase()}* ✨
+    return '''\u2728 *${salonName.toUpperCase()}* \u2728
 
-Hola $nombreCliente! Recibimos tu solicitud de turno 📋
+Hola $nombreCliente! Recibimos tu solicitud de turno.
 
-💇 *DETALLES:*
-🪞 Servicio: $servicio
-👩‍🎨 Profesional: $profesional
-📅 Fecha: $fecha
-🕐 Hora: $hora
+\u2702 *DETALLES:*
+\u25B8 Servicio: $servicio
+\u25B8 Profesional: $profesional
+\u25B8 Fecha: $fecha
+\u25B8 Hora: $hora
 
-🔑 *CONFIRMÁ TU TURNO:*
-Usá tu código: *$codigo*
+\u25A0 *CONFIRMA TU TURNO:*
+Usa tu codigo: *$codigo*
 
-⚠️ Si no confirmás dentro de $confirmationWindowHours horas, el turno se cancelará automáticamente.
+\u26A0 Si no confirmas dentro de $confirmationWindowHours horas, el turno se cancelara automaticamente.
 
-🇦🇷 _${salonName}_''';
+_${salonName}_''';
   }
 
   /// Mensaje de lista de espera
@@ -266,19 +267,19 @@ Usá tu código: *$codigo*
     required String hora,
     required String salonName,
   }) {
-    return '''🎉 *¡BUENAS NOTICIAS!*
+    return '''\u2605 *BUENAS NOTICIAS!*
 
-Hola $nombreCliente! 👋
+Hola $nombreCliente!
 
-Se liberó un lugar en *$salonName* para:
+Se libero un lugar en *$salonName* para:
 
-🪞 Servicio: $servicio
-📅 Fecha: $fecha
-🕐 Hora: $hora
+\u25B8 Servicio: $servicio
+\u25B8 Fecha: $fecha
+\u25B8 Hora: $hora
 
-¿Querés que te reservemos? ¡Respondenos rápido para asegurar tu lugar! 🏃‍♀️
+Queres que te reservemos? Respondenos rapido para asegurar tu lugar!
 
-🇦🇷 _${salonName}_''';
+_${salonName}_''';
   }
 
   /// Enviar mensaje genérico

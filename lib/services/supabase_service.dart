@@ -459,6 +459,32 @@ class SupabaseService {
     return userId;
   }
 
+  // ---- Resetear contraseña de usuario via Admin API ----
+  Future<void> resetAuthUserPassword(String userId, String newPassword) async {
+    const serviceKey = String.fromEnvironment('SRK');
+    if (serviceKey.isEmpty) {
+      throw Exception('Configuracion de servicio no disponible. Contacte al administrador.');
+    }
+    final url = '${AppConfig.supabaseUrl}/auth/v1/admin/users/$userId';
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': 'Bearer $serviceKey',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'password': newPassword,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['msg'] ?? body['message'] ?? 'Error al resetear contrasena');
+    }
+  }
+
   // ---- Crear salon completo (usuario + tenant) ----
   /// Crea usuario via Admin API (SRK) + tenant via RPC create_tenant.
   /// Mismo patron que reserva_template (funciona con build_prod.sh).

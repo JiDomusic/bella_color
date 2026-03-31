@@ -11,6 +11,7 @@ import '../../services/supabase_service.dart';
 import '../../services/confirmation_code_service.dart';
 import '../../widgets/time_slot_widget.dart';
 import '../../widgets/urgency_banner.dart';
+import '../../utils/price_format.dart';
 import '../../widgets/page_background.dart';
 import '../confirmation_screen.dart';
 
@@ -404,7 +405,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         const SizedBox(height: 16),
         ..._services.map((s) => _selectionTile(
           title: s.nombre,
-          subtitle: '${s.duracionMinutos} min${s.precioEfectivoFinal != null ? ' - Efect. \$${s.precioEfectivoFinal!.toStringAsFixed(0)}' : ''}${s.precioTarjetaFinal != null ? ' / Tarj. \$${s.precioTarjetaFinal!.toStringAsFixed(0)}' : ''}',
+          subtitle: '${s.duracionMinutos} min${s.precioEfectivoFinal != null ? ' - Efect. ${formatPrecioConSigno(s.precioEfectivoFinal!)}' : ''}${s.precioTarjetaFinal != null ? ' / Tarj. ${formatPrecioConSigno(s.precioTarjetaFinal!)}' : ''}',
           icon: Icons.spa,
           selected: _selectedService?.id == s.id,
           imageUrl: s.imagenUrl,

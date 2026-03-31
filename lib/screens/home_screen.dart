@@ -601,10 +601,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServicesGrid() {
-    final isMobile = MediaQuery.of(context).size.width < 640;
-    final itemWidth = isMobile ? 220.0 : 240.0;
-    final itemHeight = isMobile ? 320.0 : 360.0;
-    const spacing = 12.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 640;
+    final itemWidth = isMobile ? 220.0 : 280.0;
+    final itemHeight = isMobile ? 320.0 : 380.0;
+    const spacing = 16.0;
 
     return SizedBox(
       height: itemHeight,
