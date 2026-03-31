@@ -229,6 +229,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         'professional_nombre': _selectedProfessional?.nombre,
         'codigo_confirmacion': code,
         'comentarios': _commentsController.text.trim().isEmpty ? null : _commentsController.text.trim(),
+        // Guardamos un snapshot del precio vigente del servicio.
+        'precio': _selectedService!.precioEfectivoFinal ?? _selectedService!.precioTarjetaFinal,
       });
 
       if (mounted) {

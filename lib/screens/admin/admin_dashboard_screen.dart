@@ -619,6 +619,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     final stateColor = _stateColor(a.estado);
     final tenantCountry = _tenant?.codigoPaisTelefono ?? '54';
     final hasPhone = a.telefono.trim().isNotEmpty;
+    final hasPrecio = a.precio != null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -650,8 +651,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ],
               ],
             ),
-            Text('${a.servicioNombre ?? ''} ${a.professionalNombre != null ? '- ${a.professionalNombre}' : ''}',
-                style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario), overflow: TextOverflow.ellipsis),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('${a.servicioNombre ?? ''} ${a.professionalNombre != null ? '- ${a.professionalNombre}' : ''}',
+                      style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario), overflow: TextOverflow.ellipsis),
+                ),
+                if (hasPrecio)
+                  Text(
+                    '\$${a.precio!.toStringAsFixed(0)}',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _primary),
+                  ),
+              ],
+            ),
             Text(a.telefono, style: const TextStyle(fontSize: 12, color: AppConfig.colorTextoSecundario)),
             const SizedBox(height: 8),
             // Action buttons

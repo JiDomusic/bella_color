@@ -71,6 +71,7 @@ Aca se ven los turnos del dia.
   - **Completar**: cuando termino
   - **No Show**: si no vino
   - **Cancelar**: si cancela
+  - **WhatsApp**: aparece si hay telefono; abre chat directo con la clienta
 
 **Flujo normal de un turno:**
 ```
@@ -157,38 +158,28 @@ Lista de personas que quisieron turno pero no habia disponibilidad.
 - Toca la **papelera** roja para borrar la entrada
 
 ### Pestana CLIENTES
-Historial de tus clientas y observaciones clinicas.
+Historial completo de tus clientas.
 
-- Los clientes se crean **automaticamente** cuando se completa un turno
-- Busca por nombre en la barra de busqueda
-- Toca una clienta para ver su **ficha**:
-  - Datos de contacto (nombre, telefono, email)
-  - Boton de **WhatsApp** (verde) para contactarla directo
-  - **Historia Clinica**: observaciones de cada visita
-  - **Historial de Turnos**: todos los turnos pasados con estado y servicio
+- Se crean **automaticamente** al completar un turno.
+- Busca por nombre en la barra de busqueda.
+- Ficha de cliente:
+  - Datos de contacto (nombre, telefono, email) y **boton WhatsApp** para escribirle directo.
+  - **Historia Clinica / Observaciones** por visita.
+  - **Historial de Turnos** con fechas, estados y servicios.
 
 #### Agregar una observacion:
+1. Abri la ficha de la clienta > **Historia Clinica > Agregar**.
+2. Completa servicio, profesional y observacion; la fecha se autocompleta.
+3. Guarda. Puedes editar (lapiz) o borrar (papelera) cada nota.
 
-1. Toca una clienta para abrir su ficha
-2. Toca **"Agregar"** en la seccion Historia Clinica
-3. Llena:
-   - **Fecha**: se autocompleta con la fecha de hoy
-   - **Servicio realizado**: que se le hizo (ej: "Color rubio ceniza")
-   - **Profesional**: quien la atendio
-   - **Observacion**: detalles tecnicos, productos usados, notas para la proxima
-4. Toca **"Guardar"**
+**Tip**: Registra productos/tecnicas usados y notas para la proxima visita.
 
-- Toca el lapiz para **editar** una observacion
-- Toca la papelera para **eliminarla**
+### Pestana STOCK (con codigo de barras)
+Control de inventario con scanner y historial de movimientos.
 
-**Tip**: Agrega observaciones despues de cada servicio para recordar que productos y tecnicas usaste con cada clienta.
-
-### Pestana STOCK
-Control de inventario de productos del salon.
-
-- Arriba se muestra una **alerta roja** si hay productos con stock bajo
-- Filtra por **categoria** con el desplegable (unas, cejas, color, peluqueria, etc.)
-- Cada producto muestra: nombre, marca, categoria, codigo de barras y cantidad
+- Alerta roja cuando hay productos bajo minimo.
+- Filtro por categoria (unas, cejas, color, peluqueria, etc.).
+- Cada producto muestra nombre, marca, categoria, **codigo de barras** y cantidad.
 
 #### Agregar un producto:
 
@@ -203,11 +194,10 @@ Control de inventario de productos del salon.
 3. Toca **"Crear"**
 
 #### Ajustar stock rapido:
-
 - Toca **"+"** o **"-"** al lado de la cantidad para sumar/restar de a 1
 - Para ajustes mayores: toca los **3 puntos** > **"Ajustar stock"** > elegi ingreso o egreso, cantidad y motivo
 
-#### Escanear codigo de barras:
+#### Escanear codigo de barras (camara):
 
 1. Toca el icono del **scanner** (al crear o editar un producto)
 2. Elegi **"Camara"** para escanear con el celular o **"Manual"** para tipear el codigo
@@ -217,7 +207,7 @@ Control de inventario de productos del salon.
 
 - **Editar**: cambiar datos del producto
 - **Ajustar stock**: ingresos o egresos con motivo
-- **Historial**: ver todos los movimientos del producto (fecha, cantidad, motivo)
+- **Historial**: ver todos los movimientos del producto (fecha, cantidad, motivo, usuario)
 - **Eliminar**: borrar el producto
 
 **Tip**: El sistema te avisa cuando un producto baja del minimo configurado. Revisa las alertas antes de cerrar el salon.
@@ -293,7 +283,7 @@ Tus clientas abren el link de tu salon y ven tu pagina con los servicios, profes
 
 **Paso 3** - Elige fecha y hora disponible
 
-**Paso 4** - Pone su nombre y telefono, y toca **"Confirmar Turno"**
+**Paso 4** - Pone su nombre y telefono (WhatsApp para coordinar), y toca **"Confirmar Turno"**
 
 Despues de reservar recibe un **codigo de confirmacion** (6 letras/numeros) y puede:
 - **Confirmar por WhatsApp**: toca el boton verde para mandarte el mensaje por WhatsApp

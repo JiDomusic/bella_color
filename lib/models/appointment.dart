@@ -19,6 +19,7 @@ class Appointment {
   final bool recordatorioEnviado;
   final DateTime? recordatorioEnviadoAt;
   final DateTime? createdAt;
+  final double? precio;
 
   Appointment({
     required this.id,
@@ -41,6 +42,7 @@ class Appointment {
     this.recordatorioEnviado = false,
     this.recordatorioEnviadoAt,
     this.createdAt,
+    this.precio,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) => Appointment(
@@ -66,6 +68,7 @@ class Appointment {
         ? DateTime.tryParse(json['recordatorio_enviado_at'])
         : null,
     createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
+    precio: (json['precio'] as num?)?.toDouble(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -85,6 +88,7 @@ class Appointment {
     'estado': estado,
     'confirmado_cliente': confirmadoCliente,
     'comentarios': comentarios,
+    'precio': precio,
   };
 
   bool get isPending => estado == 'pendiente_confirmacion';
