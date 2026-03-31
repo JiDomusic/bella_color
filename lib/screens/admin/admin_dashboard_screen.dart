@@ -54,6 +54,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     _loadAll();
   }
 
+  double? _precioTurno(Appointment a) {
+    if (a.precio != null) return a.precio;
+    if (a.servicioId == null) return null;
+    final svc = _services.firstWhere(
+      (s) => s.id == a.servicioId,
+      orElse: () => Service(
+        id: '',
+        tenantId: _tenant?.id ?? '',
+        nombre: '',
+        duracionMinutos: 0,
+        categoria: 'otro',
+      ),
+    );
+    if (svc.id.isEmpty) return null;
+    return svc.precioEfectivoFinal ?? svc.precioTarjetaFinal;
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -145,6 +162,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     }
 
     if (mounted) setState(() => _loading = false);
+  }
+
+  void _goToday() {
+    final now = DateTime.now();
+    _selectedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    _refreshAppointments();
+  }
+
+  void _shiftDay(int delta) {
+    final current = DateTime.tryParse(_selectedDate) ?? DateTime.now();
+    final next = current.add(Duration(days: delta));
+    _selectedDate = '${next.year}-${next.month.toString().padLeft(2, '0')}-${next.day.toString().padLeft(2, '0')}';
+    _refreshAppointments();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      locale: const Locale('es', ''),
+      useRootNavigator: false,
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      initialDate: DateTime.tryParse(_selectedDate) ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 90)),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(colorScheme: ColorScheme.dark(primary: _primary, secondary: _accent, surface: AppConfig.colorFondoCard)),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      _selectedDate = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      _refreshAppointments();
+    }
   }
 
   Future<void> _refreshAppointments() async {
@@ -544,44 +594,52 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         // Date selector
         Padding(
           padding: const EdgeInsets.all(12),
-          child: GestureDetector(
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                locale: const Locale('es', ''),
-                useRootNavigator: true,
-                initialEntryMode: DatePickerEntryMode.calendarOnly,
-                initialDate: DateTime.tryParse(_selectedDate) ?? DateTime.now(),
-                firstDate: DateTime.now().subtract(const Duration(days: 90)),
-                lastDate: DateTime.now().add(const Duration(days: 90)),
-                builder: (ctx, child) => Theme(
-                  data: Theme.of(ctx).copyWith(colorScheme: ColorScheme.dark(primary: _primary, secondary: _accent, surface: AppConfig.colorFondoCard)),
-                  child: child!,
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                color: _primary,
+                onPressed: () => _shiftDay(-1),
+                tooltip: 'Dia anterior',
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _pickDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppConfig.colorFondoCard,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _primary.withAlpha(60)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_today, color: _primary, size: 18),
+                        const SizedBox(width: 8),
+                        Text(_selectedDate, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 15)),
+                        const SizedBox(width: 8),
+                        Icon(Icons.arrow_drop_down, color: _primary),
+                      ],
+                    ),
+                  ),
                 ),
-              );
-              if (picked != null) {
-                _selectedDate = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-                _refreshAppointments();
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppConfig.colorFondoCard,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _primary.withAlpha(60)),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.calendar_today, color: _primary, size: 18),
-                  const SizedBox(width: 8),
-                  Text(_selectedDate, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 15)),
-                  const SizedBox(width: 8),
-                  Icon(Icons.arrow_drop_down, color: _primary),
-                ],
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                color: _primary,
+                onPressed: () => _shiftDay(1),
+                tooltip: 'Dia siguiente',
               ),
-            ),
+              const SizedBox(width: 4),
+              TextButton(
+                onPressed: () => _goToday(),
+                child: const Text('Hoy'),
+              ),
+            ],
           ),
         ),
         // Reminder button
@@ -621,7 +679,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     final stateColor = _stateColor(a.estado);
     final tenantCountry = _tenant?.codigoPaisTelefono ?? '54';
     final hasPhone = a.telefono.trim().isNotEmpty;
-    final hasPrecio = a.precio != null;
+    final price = _precioTurno(a);
+    final hasPrecio = price != null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -661,7 +720,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
                 if (hasPrecio)
                   Text(
-                    '\$${a.precio!.toStringAsFixed(0)}',
+                    '\$${price!.toStringAsFixed(0)}',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _primary),
                   ),
               ],
@@ -934,9 +993,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                             Text(t.hora, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
                             const SizedBox(width: 10),
                             Expanded(child: Text(t.servicioNombre ?? '-', style: const TextStyle(color: Colors.white, fontSize: 13))),
-                            if (t.precio != null) ...[
+                            if (_precioTurno(t) != null) ...[
                               const SizedBox(width: 8),
-                              Text('\$${t.precio!.toStringAsFixed(0)}', style: TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                              Text('\$${_precioTurno(t)!.toStringAsFixed(0)}', style: TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w700)),
                             ],
                             const SizedBox(width: 8),
                             Text(t.nombreCliente, style: TextStyle(color: _accent, fontSize: 12)),
@@ -1605,7 +1664,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   final d = await showDatePicker(
                     context: ctx,
                     locale: const Locale('es', ''),
-                    useRootNavigator: true,
+                    useRootNavigator: false,
                     initialEntryMode: DatePickerEntryMode.calendarOnly,
                     initialDate: DateTime.now(),
                     firstDate: DateTime.now(),
