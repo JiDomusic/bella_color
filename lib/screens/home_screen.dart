@@ -368,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: double.infinity,
       color: PublicTheme.cream,
-      padding: EdgeInsets.fromLTRB(isWideLayout(context) ? 28 : 18, 18, isWideLayout(context) ? 28 : 18, isWideLayout(context) ? 28 : 18),
+      padding: EdgeInsets.fromLTRB(isWideLayout(context) ? 28 : 16, 16, isWideLayout(context) ? 28 : 16, isWideLayout(context) ? 26 : 18),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -448,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isWide ? 16 : 12),
           Text(
             headline.toUpperCase(),
             style: PublicTheme.heroTitle.copyWith(fontSize: isWide ? 34 : 28),
@@ -458,7 +458,7 @@ class _HomeScreenState extends State<HomeScreen> {
             slogan,
             style: PublicTheme.heroSubtitle.copyWith(fontSize: isWide ? 16 : 15),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: isWide ? 18 : 12),
           if (_tenant?.direccion.isNotEmpty == true)
             GestureDetector(
               onTap: _openMaps,
@@ -540,8 +540,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeroVideo(bool isWide) {
-    final maxWidth = isWide ? 420.0 : double.infinity;
-    final maxHeight = isWide ? 620.0 : double.infinity;
+    final maxWidth = isWide ? 420.0 : 320.0;
+    final maxHeight = isWide ? 620.0 : 360.0;
 
     return AnimatedSlide(
       duration: const Duration(milliseconds: 450),
@@ -601,15 +601,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServicesGrid() {
+    final isMobile = MediaQuery.of(context).size.width < 640;
     return SizedBox(
-      height: 360,
+      height: isMobile ? 280 : 360,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _services.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (_, i) => SizedBox(
-          width: 240,
+          width: isMobile ? 210 : 240,
           child: ServiceCard(
             service: _services[i],
             primary: _primary,

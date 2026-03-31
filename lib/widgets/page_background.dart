@@ -13,6 +13,7 @@ class PageBackground extends StatelessWidget {
     final tenant = SupabaseService.instance.currentTenant;
     final primary = tenant != null ? AppConfig.hexToColor(tenant.colorPrimario) : AppConfig.colorPrimario;
     final tertiary = tenant != null ? AppConfig.hexToColor(tenant.colorTerciario) : const Color(0xFFE8C4C4);
+    final fullHeight = MediaQuery.of(context).size.height;
 
     // Fondo de pagina: foto de fondo > color elegido > gradiente
     final fondoUrl = tenant?.fondoUrl ?? '';
@@ -20,6 +21,7 @@ class PageBackground extends StatelessWidget {
 
     if (fondoUrl.isNotEmpty) {
       return Container(
+        constraints: BoxConstraints(minHeight: fullHeight),
         decoration: BoxDecoration(
           image: DecorationImage(
             image: NetworkImage(fondoUrl),
@@ -37,6 +39,7 @@ class PageBackground extends StatelessWidget {
     if (colorFondo.isNotEmpty) {
       final bgColor = AppConfig.hexToColor(colorFondo);
       return Container(
+        constraints: BoxConstraints(minHeight: fullHeight),
         color: bgColor,
         child: child,
       );
@@ -44,6 +47,7 @@ class PageBackground extends StatelessWidget {
 
     // Gradiente elegante por defecto usando colores del salón
     return Container(
+      constraints: BoxConstraints(minHeight: fullHeight),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
