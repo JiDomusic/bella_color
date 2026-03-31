@@ -19,6 +19,9 @@ class ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isNarrow = MediaQuery.of(context).size.width < 700;
+    final imageAspect = isNarrow ? 1.0 : 4 / 5;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -35,7 +38,7 @@ class ServiceCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AspectRatio(
-              aspectRatio: 4 / 5,
+              aspectRatio: imageAspect,
               child: service.imagenUrl != null
                   ? Image.network(service.imagenUrl!, fit: BoxFit.cover)
                   : Container(
@@ -44,9 +47,10 @@ class ServiceCard extends StatelessWidget {
                     ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     service.nombre,
@@ -54,8 +58,9 @@ class ServiceCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Icon(Icons.access_time, size: 14, color: primary),
                       const SizedBox(width: 6),
@@ -64,10 +69,17 @@ class ServiceCard extends StatelessWidget {
                         style: GoogleFonts.spaceGrotesk(fontSize: 12, fontWeight: FontWeight.w600, color: PublicTheme.softMuted),
                       ),
                       const Spacer(),
-                      if (service.precioEfectivoFinal != null)
-                        _pricePill('\$${service.precioEfectivoFinal!.toStringAsFixed(0)}', primary, Icons.payments_outlined),
-                      if (service.precioTarjetaFinal != null)
-                        _pricePill('\$${service.precioTarjetaFinal!.toStringAsFixed(0)}', accent, Icons.credit_card),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (service.precioEfectivoFinal != null)
+                            _pricePill('\$${service.precioEfectivoFinal!.toStringAsFixed(0)}', primary, Icons.payments_outlined),
+                          if (service.precioTarjetaFinal != null) ...[
+                            const SizedBox(height: 4),
+                            _pricePill('\$${service.precioTarjetaFinal!.toStringAsFixed(0)}', accent, Icons.credit_card),
+                          ],
+                        ],
+                      ),
                     ],
                   ),
                 ],
