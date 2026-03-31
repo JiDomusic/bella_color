@@ -5,8 +5,16 @@ import 'package:flutter/material.dart';
 class VideoBanner extends StatefulWidget {
   final String videoUrl;
   final Color borderColor;
+  final VoidCallback? onPlay;
+  final VoidCallback? onEnded;
 
-  const VideoBanner({super.key, required this.videoUrl, required this.borderColor});
+  const VideoBanner({
+    super.key,
+    required this.videoUrl,
+    required this.borderColor,
+    this.onPlay,
+    this.onEnded,
+  });
 
   @override
   State<VideoBanner> createState() => _VideoBannerState();
@@ -14,7 +22,6 @@ class VideoBanner extends StatefulWidget {
 
 class _VideoBannerState extends State<VideoBanner> {
   late String _viewId;
-  bool _visible = true;
 
   @override
   void initState() {
@@ -32,17 +39,14 @@ class _VideoBannerState extends State<VideoBanner> {
       ..style.borderRadius = '14px'
       ..setAttribute('playsinline', 'true');
 
-    ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) => video);
+    video.onPlay.listen((_) => widget.onPlay?.call());
+    video.onEnded.listen((_) => widget.onEnded?.call());
 
-    Future.delayed(const Duration(seconds: 30), () {
-      if (mounted) setState(() => _visible = false);
-    });
+    ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) => video);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_visible) return const SizedBox.shrink();
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;

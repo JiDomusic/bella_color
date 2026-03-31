@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../config/app_config.dart';
+import '../../config/public_theme.dart';
 import '../../models/service.dart';
 import '../../models/professional.dart';
 import '../../models/appointment.dart';
@@ -350,24 +352,29 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
-        appBar: AppBar(title: const Text('Reservar Turno')),
+        backgroundColor: PublicTheme.cream,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          title: Text('Reservar Turno', style: GoogleFonts.sora(fontWeight: FontWeight.w800)),
+        ),
         body: Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: PublicTheme.cream,
       appBar: AppBar(
-        backgroundColor: Colors.white.withAlpha(220),
-        foregroundColor: Colors.grey[800],
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 0,
-        title: Text('Reservar Turno', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey[800])),
+        title: Text('Reservar Turno', style: GoogleFonts.sora(fontWeight: FontWeight.w800, letterSpacing: 0.4)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
             value: (_currentPage + 1) / 4,
-            backgroundColor: Colors.grey[200],
+            backgroundColor: Colors.white24,
             valueColor: AlwaysStoppedAnimation(_primary),
           ),
         ),

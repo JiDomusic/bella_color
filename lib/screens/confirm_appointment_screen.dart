@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../config/app_config.dart';
+import '../config/public_theme.dart';
 import '../services/supabase_service.dart';
 import 'home_screen.dart';
 
@@ -90,15 +92,15 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppConfig.colorFondoOscuro,
+      backgroundColor: PublicTheme.cream,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Confirmar Turno', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w300)),
+        title: Text('Confirmar Turno', style: GoogleFonts.sora(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -120,13 +122,13 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
         const SizedBox(height: 24),
         Text(
           'Ingresá tu código de confirmación',
-          style: TextStyle(color: Colors.white.withAlpha(200), fontSize: 18),
+          style: GoogleFonts.sora(color: PublicTheme.ink, fontSize: 18, fontWeight: FontWeight.w700),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'Lo recibiste por WhatsApp al reservar tu turno',
-          style: TextStyle(color: Colors.white.withAlpha(130), fontSize: 13),
+          style: GoogleFonts.spaceGrotesk(color: PublicTheme.softMuted, fontSize: 13),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
@@ -134,26 +136,26 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
           controller: _codeCtrl,
           textCapitalization: TextCapitalization.characters,
           textAlign: TextAlign.center,
-          style: TextStyle(color: _accent, fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: 6),
+          style: GoogleFonts.sora(color: PublicTheme.ink, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 6),
           decoration: InputDecoration(
             hintText: 'ABC123',
-            hintStyle: TextStyle(color: Colors.white.withAlpha(50), fontSize: 28, letterSpacing: 6),
+            hintStyle: GoogleFonts.sora(color: Colors.grey[400], fontSize: 26, letterSpacing: 6),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withAlpha(50)),
+              borderSide: BorderSide(color: PublicTheme.stroke),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: _accent),
+              borderSide: BorderSide(color: _accent, width: 2),
             ),
             filled: true,
-            fillColor: Colors.white.withAlpha(13),
+            fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           ),
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+          Text(_error!, style: GoogleFonts.spaceGrotesk(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w600)),
         ],
         const SizedBox(height: 24),
         SizedBox(
@@ -161,14 +163,14 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
           child: ElevatedButton(
             onPressed: _loading ? null : _confirm,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _accent,
-              foregroundColor: AppConfig.colorFondoOscuro,
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
             child: _loading
-                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppConfig.colorFondoOscuro))
-                : const Text('Confirmar', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Text('Confirmar', style: GoogleFonts.sora(fontSize: 17, fontWeight: FontWeight.w700)),
           ),
         ),
       ],
@@ -192,15 +194,18 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
         const SizedBox(height: 24),
         Text(
           r['estado'] == 'confirmada' ? 'Turno Confirmado!' : 'Detalles del Turno',
-          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w300),
+          style: GoogleFonts.sora(color: PublicTheme.ink, fontSize: 24, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(13),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withAlpha(25)),
+            border: Border.all(color: PublicTheme.stroke),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 12, offset: const Offset(0, 4)),
+            ],
           ),
           child: Column(
             children: [
@@ -217,7 +222,7 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
         const SizedBox(height: 12),
         Text(
           'Recorda llegar 10 minutos antes',
-          style: TextStyle(color: Colors.white.withAlpha(130), fontSize: 13),
+          style: GoogleFonts.spaceGrotesk(color: PublicTheme.softMuted, fontSize: 13),
         ),
         const SizedBox(height: 32),
         SizedBox(
@@ -232,8 +237,8 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
             icon: const Icon(Icons.home, size: 20),
             label: const Text('Volver al inicio'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: BorderSide(color: Colors.white.withAlpha(80)),
+              foregroundColor: PublicTheme.ink,
+              side: BorderSide(color: PublicTheme.stroke),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
@@ -248,9 +253,9 @@ class _ConfirmAppointmentScreenState extends State<ConfirmAppointmentScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white.withAlpha(100), size: 18),
+          Icon(icon, color: PublicTheme.softMuted, size: 18),
           const SizedBox(width: 12),
-          Text(text, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+          Text(text, style: GoogleFonts.spaceGrotesk(color: PublicTheme.ink, fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       ),
     );

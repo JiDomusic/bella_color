@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/app_config.dart';
 import '../services/supabase_service.dart';
+import '../config/public_theme.dart';
 
 class PageBackground extends StatelessWidget {
   final Widget child;
@@ -48,11 +49,11 @@ class PageBackground extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            tertiary.withAlpha(40),
+            PublicTheme.cream,
             Colors.white,
-            primary.withAlpha(15),
+            primary.withAlpha(24),
           ],
-          stops: const [0.0, 0.5, 1.0],
+          stops: const [0.0, 0.55, 1.0],
         ),
       ),
       child: child,

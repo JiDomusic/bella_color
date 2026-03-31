@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../config/public_theme.dart';
 
 class TimeSlotWidget extends StatelessWidget {
   final String time;
@@ -23,28 +25,28 @@ class TimeSlotWidget extends StatelessWidget {
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: PublicTheme.cream,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey[300]!, width: 1.5),
+          border: Border.all(color: PublicTheme.stroke, width: 1.4),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               time,
-              style: TextStyle(
+              style: GoogleFonts.sora(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: Colors.grey[400],
                 decoration: TextDecoration.lineThrough,
-                decorationColor: Colors.red[300],
+                decorationColor: Colors.red[200],
                 decorationThickness: 2,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               'Ocupado',
-              style: TextStyle(fontSize: 9, color: Colors.red[300], fontWeight: FontWeight.w600),
+              style: GoogleFonts.spaceGrotesk(fontSize: 9, color: Colors.red[300], fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -57,23 +59,28 @@ class TimeSlotWidget extends StatelessWidget {
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: isSelected ? primary : Colors.white,
+          color: isSelected ? Colors.black : Colors.white,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? primary : Colors.grey[400]!,
-            width: isSelected ? 3 : 2,
+            color: isSelected ? Colors.black : PublicTheme.stroke,
+            width: isSelected ? 3 : 1.8,
           ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: primary.withAlpha(60), blurRadius: 10, spreadRadius: 1)]
-              : [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 6, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: (isSelected ? Colors.black : primary).withAlpha(30),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Center(
           child: Text(
             time,
-            style: TextStyle(
+            style: GoogleFonts.sora(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isSelected ? Colors.white : Colors.grey[800],
+              letterSpacing: 0.2,
+              color: isSelected ? Colors.white : PublicTheme.ink,
             ),
           ),
         ),

@@ -41,7 +41,16 @@ class AppConfig {
   }) {
     final primary = primario ?? colorPrimario;
     final accent = acento ?? colorAcento;
-    final textTheme = GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme);
+    final baseText = ThemeData.dark().textTheme;
+    final textTheme = baseText.copyWith(
+      headlineLarge: GoogleFonts.sora(color: colorTexto, fontWeight: FontWeight.w800, fontSize: 26, letterSpacing: -0.5),
+      headlineMedium: GoogleFonts.sora(color: colorTexto, fontWeight: FontWeight.w700, fontSize: 20, letterSpacing: -0.2),
+      titleLarge: GoogleFonts.sora(color: colorTexto, fontWeight: FontWeight.w700, fontSize: 16),
+      bodyLarge: GoogleFonts.spaceGrotesk(color: colorTexto, fontSize: 14, height: 1.45),
+      bodyMedium: GoogleFonts.spaceGrotesk(color: colorTextoSecundario, fontSize: 14, height: 1.45),
+      bodySmall: GoogleFonts.spaceGrotesk(color: colorTextoSecundario, fontSize: 12, height: 1.4),
+      labelLarge: GoogleFonts.sora(color: colorTexto, fontWeight: FontWeight.w700, fontSize: 13, letterSpacing: 0.3),
+    );
 
     return ThemeData(
       brightness: Brightness.dark,

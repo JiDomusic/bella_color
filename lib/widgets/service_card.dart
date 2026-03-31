@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../config/public_theme.dart';
 import '../models/service.dart';
 
 class ServiceCard extends StatelessWidget {
@@ -19,114 +21,83 @@ class ServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: primary.withAlpha(20), blurRadius: 8, offset: const Offset(0, 2)),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Imagen de fondo
-              if (service.imagenUrl != null)
-                Image.network(service.imagenUrl!, fit: BoxFit.cover)
-              else
-                Container(
-                  color: primary.withAlpha(15),
-                  child: Icon(_categoryIcon(service.categoria), size: 48, color: primary.withAlpha(80)),
-                ),
-              // Gradiente oscuro abajo
-              Positioned(
-                left: 0, right: 0, bottom: 0,
-                child: Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withAlpha(180)],
-                    ),
-                  ),
-                ),
-              ),
-              // Info sobre el gradiente
-              Positioned(
-                left: 10, right: 10, bottom: 10,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      service.nombre,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 11, color: Colors.white70),
-                        const SizedBox(width: 3),
-                        Text(
-                          '${service.duracionMinutos} min',
-                          style: const TextStyle(fontSize: 11, color: Colors.white70),
-                        ),
-                        if (service.precioEfectivoFinal != null || service.precioTarjetaFinal != null) ...[
-                          const Spacer(),
-                          if (service.precioEfectivoFinal != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              margin: const EdgeInsets.only(right: 4),
-                              decoration: BoxDecoration(
-                                color: primary,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.payments_outlined, size: 10, color: Colors.white70),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    '\$${service.precioEfectivoFinal!.toStringAsFixed(0)}',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          if (service.precioTarjetaFinal != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: accent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.credit_card, size: 10, color: Colors.white70),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    '\$${service.precioTarjetaFinal!.toStringAsFixed(0)}',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: PublicTheme.paper,
+          borderRadius: PublicTheme.borderLg,
+          border: Border.all(color: PublicTheme.stroke),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 12, offset: const Offset(0, 4)),
+          ],
         ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 4 / 5,
+              child: service.imagenUrl != null
+                  ? Image.network(service.imagenUrl!, fit: BoxFit.cover)
+                  : Container(
+                      color: primary.withAlpha(24),
+                      child: Icon(_categoryIcon(service.categoria), size: 46, color: primary.withAlpha(140)),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.nombre,
+                    style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w700, color: PublicTheme.ink),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 14, color: primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${service.duracionMinutos} min',
+                        style: GoogleFonts.spaceGrotesk(fontSize: 12, fontWeight: FontWeight.w600, color: PublicTheme.softMuted),
+                      ),
+                      const Spacer(),
+                      if (service.precioEfectivoFinal != null)
+                        _pricePill('\$${service.precioEfectivoFinal!.toStringAsFixed(0)}', primary, Icons.payments_outlined),
+                      if (service.precioTarjetaFinal != null)
+                        _pricePill('\$${service.precioTarjetaFinal!.toStringAsFixed(0)}', accent, Icons.credit_card),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pricePill(String text, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.only(left: 6),
+      decoration: BoxDecoration(
+        color: color.withAlpha(28),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withAlpha(120)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
+import '../config/public_theme.dart';
 import '../models/tenant.dart';
 import '../models/service.dart';
 import '../models/professional.dart';
@@ -31,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Professional> _professionals = [];
   bool _loading = true;
   bool _isLanding = false;
+  bool _isVideoPlaying = false;
 
   @override
   void initState() {
@@ -86,9 +89,25 @@ class _HomeScreenState extends State<HomeScreen> {
       ? AppConfig.hexToColor(_tenant!.colorAcento)
       : AppConfig.colorAcento;
 
-  static const _bgWhite = Color(0xFFFAFAFA);
-  static const _textDark = Color(0xFF1A1A1A);
-  static const _textMuted = Color(0xFF666666);
+  bool get _hasBannerVideo {
+    if (_tenant == null || _tenant!.mostrarBanner != true) return false;
+    if (_tenant!.bannerTipo == 'video' || _tenant!.bannerTipo == 'ambos') {
+      return _tenant!.bannerVideoUrl.isNotEmpty;
+    }
+    return false;
+  }
+
+  bool get _showTextBanner {
+    if (_tenant == null) return false;
+    if (_tenant!.mostrarBanner != true) return false;
+    final tipo = _tenant!.bannerTipo;
+    final hasText = _tenant!.bannerTexto.isNotEmpty;
+    return hasText && (tipo == 'texto' || tipo == 'ambos');
+  }
+
+  static const _bgWhite = PublicTheme.cream;
+  static const _textDark = PublicTheme.ink;
+  static const _textMuted = PublicTheme.softMuted;
 
   void _showSuperAdminAuth() {
     final pin = PinAuthService.instance;
@@ -247,173 +266,44 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // ─── Home normal del salón configurado ───
+    final hasVideo = _hasBannerVideo;
+    final showStrip = _showTextBanner;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: PageBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildHeader(),
-                // Banner promocional del salon (texto, video o ambos)
-                if (_tenant?.mostrarBanner == true) ...[
-                  // Video banner
-                  if ((_tenant!.bannerTipo == 'video' || _tenant!.bannerTipo == 'ambos') && _tenant!.bannerVideoUrl.isNotEmpty)
-                    VideoBanner(videoUrl: _tenant!.bannerVideoUrl, borderColor: _primary),
-                  // Texto banner
-                  if ((_tenant!.bannerTipo == 'texto' || _tenant!.bannerTipo == 'ambos') && _tenant!.bannerTexto.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(200),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _primary.withAlpha(60)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.auto_awesome, color: _accent, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _tenant!.bannerTexto,
-                              style: TextStyle(color: _primary, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      if (_services.isNotEmpty) ...[
-                        _sectionTitle('Nuestros Servicios'),
-                        _buildServicesGrid(),
-                      ],
-                      if (_professionals.isNotEmpty) ...[
-                        _sectionTitle('Nuestro Equipo'),
-                        _buildProfessionalsList(),
-                      ],
-                      _buildCTA(),
-                      _buildFooter(),
-                      const SizedBox(height: 80),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: PublicTheme.cream,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openBooking(),
-        backgroundColor: _accent,
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.calendar_today),
         label: const Text('Reservar Turno'),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(180),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _accent.withAlpha(100)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.admin_panel_settings, color: _accent, size: 18),
-                      const SizedBox(width: 8),
-                      Text('Admin', style: TextStyle(color: _accent, fontWeight: FontWeight.w700)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_tenant?.logoUrl != null)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 200, maxHeight: 200),
-              child: Image.network(
-                _tenant!.logoUrl!,
-                fit: BoxFit.contain,
-              ),
-            )
-          else
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(200),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: _primary.withAlpha(60)),
-              ),
-              child: Icon(Icons.spa, size: 60, color: _primary),
-            ),
-          const SizedBox(height: 16),
-          // Nombre, slogan y dirección sobre el fondo
-          if (_tenant?.mostrarNombreSalon != false)
-            Text(
-              _tenant?.nombreSalon ?? 'Salon de Belleza',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: _textDark,
-                shadows: [Shadow(color: Colors.white.withAlpha(200), blurRadius: 10)],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          if (_tenant?.slogan.isNotEmpty == true) ...[
-            const SizedBox(height: 4),
-            Text(
-              _tenant!.slogan,
-              style: TextStyle(
-                fontSize: 13,
-                color: _primary,
-                fontStyle: FontStyle.italic,
-                shadows: [Shadow(color: Colors.white.withAlpha(200), blurRadius: 8)],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-          if (_tenant?.direccion.isNotEmpty == true) ...[
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () => _openMaps(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(160),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopNav(),
+            if (showStrip) _buildBannerStrip(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
                   children: [
-                    Icon(Icons.location_on, size: 14, color: _primary),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '${_tenant!.direccion}, ${_tenant!.ciudad}',
-                        style: TextStyle(fontSize: 12, color: _textDark),
-                        overflow: TextOverflow.ellipsis,
+                    _buildHeroSection(hasVideo),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          if (_services.isNotEmpty) ...[
+                            _sectionTitle('Servicios'),
+                            _buildServicesGrid(),
+                          ],
+                          if (_professionals.isNotEmpty) ...[
+                            _sectionTitle('Nuestro equipo'),
+                            _buildProfessionalsList(),
+                          ],
+                          _buildCTA(),
+                          _buildFooter(),
+                          const SizedBox(height: 80),
+                        ],
                       ),
                     ),
                   ],
@@ -421,25 +311,291 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopNav() {
+    final salonName = (_tenant?.nombreSalon ?? 'Bella Color').toUpperCase();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      color: PublicTheme.nav,
+      child: Row(
+        children: [
+          Text(salonName, style: PublicTheme.navItem.copyWith(letterSpacing: 1.2)),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+            ),
+            onLongPress: _showSuperAdminAuth,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.admin_panel_settings, color: Colors.white.withAlpha(200), size: 18),
+                const SizedBox(width: 8),
+                Text('Admin', style: PublicTheme.navItem.copyWith(color: Colors.white70)),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _sectionTitle(String title) {
+  Widget _buildBannerStrip() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(0, 12, 0, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(180),
-        borderRadius: BorderRadius.circular(12),
+      width: double.infinity,
+      color: PublicTheme.blush,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Text(
+        _tenant?.bannerTexto ?? '',
+        style: PublicTheme.banner,
+        textAlign: TextAlign.center,
       ),
-      child: Row(
+    );
+  }
+
+  Widget _buildHeroSection(bool hasVideo) {
+    final headline = _tenant?.subtitulo.isNotEmpty == true
+        ? _tenant!.subtitulo
+        : 'Colour without bleach?';
+    final bodyCopy = _tenant?.slogan.isNotEmpty == true
+        ? _tenant!.slogan
+        : 'Transformá tu color sin decolorar, con brillo y dimensión.';
+
+    return Container(
+      width: double.infinity,
+      color: PublicTheme.cream,
+      padding: EdgeInsets.fromLTRB(isWideLayout(context) ? 28 : 18, 18, isWideLayout(context) ? 28 : 18, isWideLayout(context) ? 28 : 18),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 900;
+              final heroCopy = _buildHeroCopy(headline, bodyCopy, isWide);
+              final video = hasVideo ? _buildHeroVideo(isWide) : const SizedBox.shrink();
+
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      flex: hasVideo ? 6 : 7,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 540),
+                          child: heroCopy,
+                        ),
+                      ),
+                    ),
+                    if (hasVideo) const SizedBox(width: 32),
+                    if (hasVideo) Expanded(flex: 5, child: video),
+                  ],
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  heroCopy,
+                  if (hasVideo) const SizedBox(height: 18),
+                  video,
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroCopy(String headline, String bodyCopy, bool isWide) {
+    final name = _tenant?.nombreSalon ?? 'Bella Color';
+    final slogan = bodyCopy;
+
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOut,
+      offset: _isVideoPlaying && isWide ? const Offset(-0.03, 0) : Offset.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: 3, height: 20, decoration: BoxDecoration(color: _accent, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 10),
-          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _primary)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildLogoBadge(),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name.toUpperCase(),
+                    style: PublicTheme.heroKicker.copyWith(letterSpacing: 1, fontSize: isWide ? 12 : 11),
+                  ),
+                  if (_tenant?.slogan.isNotEmpty == true)
+                    Text(
+                      _tenant!.slogan,
+                      style: PublicTheme.heroSubtitle.copyWith(
+                        color: PublicTheme.softMuted,
+                        fontSize: isWide ? 14 : 13,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            headline.toUpperCase(),
+            style: PublicTheme.heroTitle.copyWith(fontSize: isWide ? 34 : 28),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            slogan,
+            style: PublicTheme.heroSubtitle.copyWith(fontSize: isWide ? 16 : 15),
+          ),
+          const SizedBox(height: 18),
+          if (_tenant?.direccion.isNotEmpty == true)
+            GestureDetector(
+              onTap: _openMaps,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: isWide ? 16 : 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: PublicTheme.borderMd,
+                  border: Border.all(color: PublicTheme.stroke),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withAlpha(14), blurRadius: 10, offset: const Offset(0, 3)),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.place_outlined, size: 16, color: _primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_tenant!.direccion}, ${_tenant!.ciudad}',
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: isWide ? 13 : 12,
+                        fontWeight: FontWeight.w600,
+                        color: PublicTheme.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              ElevatedButton(
+                onPressed: _openBooking,
+                style: PublicTheme.primaryButton(),
+                child: const Text('Reservar ahora'),
+              ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ConfirmAppointmentScreen()),
+                ),
+                style: PublicTheme.outlineButton(_primary),
+                child: const Text('Tengo un código'),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogoBadge() {
+    if (_tenant?.logoUrl != null) {
+      return Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: PublicTheme.stroke),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Image.network(_tenant!.logoUrl!, width: 70, height: 70, fit: BoxFit.contain),
+      );
+    }
+
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: PublicTheme.stroke),
+      ),
+      child: Icon(Icons.spa, size: 34, color: _primary),
+    );
+  }
+
+  Widget _buildHeroVideo(bool isWide) {
+    final maxWidth = isWide ? 420.0 : double.infinity;
+    final maxHeight = isWide ? 620.0 : double.infinity;
+
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOut,
+      offset: _isVideoPlaying && isWide ? const Offset(0.03, 0) : Offset.zero,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: PublicTheme.borderLg,
+              border: Border.all(color: _primary.withAlpha(60)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withAlpha(16), blurRadius: 16, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: VideoBanner(
+              videoUrl: _tenant!.bannerVideoUrl,
+              borderColor: _primary,
+              onPlay: _handleVideoPlay,
+              onEnded: _handleVideoEnd,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool isWideLayout(BuildContext context) => MediaQuery.of(context).size.width > 1100;
+
+  void _handleVideoPlay() {
+    if (!_isVideoPlaying && mounted) {
+      setState(() => _isVideoPlaying = true);
+    }
+  }
+
+  void _handleVideoEnd() {
+    if (mounted) {
+      setState(() => _isVideoPlaying = false);
+    }
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
+      child: Text(
+        title.toUpperCase(),
+        style: PublicTheme.heroKicker.copyWith(
+          letterSpacing: 1.2,
+          fontSize: 13,
+          color: PublicTheme.ink,
+        ),
       ),
     );
   }
@@ -502,49 +658,47 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(210),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _primary.withAlpha(40)),
+          color: Colors.white,
+          borderRadius: PublicTheme.borderLg,
+          border: Border.all(color: PublicTheme.stroke),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 14, offset: const Offset(0, 6)),
+          ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Reserva tu turno ahora', style: PublicTheme.heroTitle.copyWith(fontSize: 22)),
+            const SizedBox(height: 10),
             Text(
-              'Reserva tu turno ahora',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _primary),
+              'Elegí servicio, profesional y horario sin esperar en el salón.',
+              style: PublicTheme.heroSubtitle,
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Elige tu servicio, profesional y horario preferido',
-              style: TextStyle(fontSize: 13, color: _textMuted),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _openBooking(),
-              icon: const Icon(Icons.calendar_today, size: 18),
-              label: const Text('Reservar Turno'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _accent,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ConfirmAppointmentScreen()),
-              ),
-              icon: const Icon(Icons.confirmation_number, size: 18),
-              label: const Text('Tengo un código de turno'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _primary,
-                side: BorderSide(color: _primary.withAlpha(80)),
-                minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _openBooking,
+                    style: PublicTheme.primaryButton(),
+                    icon: const Icon(Icons.calendar_today, size: 18),
+                    label: const Text('Reservar turno'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ConfirmAppointmentScreen()),
+                    ),
+                    style: PublicTheme.outlineButton(_primary),
+                    icon: const Icon(Icons.confirmation_number, size: 18),
+                    label: const Text('Ya reservé'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -557,7 +711,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
       child: Column(
         children: [
-          Divider(color: _primary.withAlpha(30)),
+          Divider(color: PublicTheme.stroke),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -586,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onLongPress: _showSuperAdminAuth,
             child: Text(
               'Desarrollado por ${AppConfig.nombreEmpresa}',
-              style: TextStyle(fontSize: 11, color: _textMuted.withAlpha(150)),
+              style: PublicTheme.heroSubtitle.copyWith(fontSize: 11, color: _textMuted.withAlpha(180)),
             ),
           ),
         ],

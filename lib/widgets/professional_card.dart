@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../config/app_config.dart';
+import '../config/public_theme.dart';
 import '../models/professional.dart';
 
 class ProfessionalCard extends StatelessWidget {
@@ -21,26 +23,29 @@ class ProfessionalCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 140,
+        width: 150,
         decoration: BoxDecoration(
-          color: cardColor ?? AppConfig.colorFondoCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: primary.withAlpha(40)),
+          color: cardColor ?? Colors.white,
+          borderRadius: PublicTheme.borderLg,
+          border: Border.all(color: PublicTheme.stroke),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           children: [
             const SizedBox(height: 16),
             // Avatar
             CircleAvatar(
-              radius: 40,
-              backgroundColor: primary.withAlpha(30),
+              radius: 42,
+              backgroundColor: primary.withAlpha(24),
               backgroundImage: professional.fotoUrl != null
                   ? NetworkImage(professional.fotoUrl!)
                   : null,
               child: professional.fotoUrl == null
                   ? Text(
                       professional.nombre.isNotEmpty ? professional.nombre[0].toUpperCase() : '?',
-                      style: TextStyle(fontSize: 28, color: primary, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.sora(fontSize: 26, color: primary, fontWeight: FontWeight.w700),
                     )
                   : null,
             ),
@@ -49,7 +54,7 @@ class ProfessionalCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 professional.nombre,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppConfig.colorTexto),
+                style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w700, color: PublicTheme.ink),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -61,7 +66,7 @@ class ProfessionalCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   professional.especialidad,
-                  style: TextStyle(fontSize: 11, color: primary.withAlpha(180)),
+                  style: GoogleFonts.spaceGrotesk(fontSize: 11, color: PublicTheme.softMuted),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -72,12 +77,12 @@ class ProfessionalCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: primary.withAlpha(20),
-                borderRadius: BorderRadius.circular(8),
+                color: primary,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 'Ver turnos',
-                style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w500),
+                style: GoogleFonts.sora(fontSize: 11, color: AppConfig.colorFondoOscuro, fontWeight: FontWeight.w700, letterSpacing: 0.3),
               ),
             ),
             const SizedBox(height: 12),
