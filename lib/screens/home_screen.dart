@@ -602,44 +602,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildServicesGrid() {
     final isMobile = MediaQuery.of(context).size.width < 640;
+    final itemWidth = isMobile ? 220.0 : 240.0;
+    final itemHeight = isMobile ? 320.0 : 360.0;
+    const spacing = 12.0;
+
     return SizedBox(
-      height: isMobile ? 280 : 360,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _services.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (_, i) => SizedBox(
-          width: isMobile ? 210 : 240,
-          child: ServiceCard(
-            service: _services[i],
-            primary: _primary,
-            accent: _accent,
-            onTap: () => _openBooking(service: _services[i]),
-          ),
-        ),
+      height: itemHeight,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          final contentWidth = _services.length * itemWidth + (_services.length - 1) * spacing;
+          final sidePadding = contentWidth < maxWidth
+              ? (maxWidth - contentWidth) / 2
+              : 16.0;
+
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: sidePadding.clamp(16.0, 200.0)),
+            itemCount: _services.length,
+            separatorBuilder: (_, __) => const SizedBox(width: spacing),
+            itemBuilder: (_, i) => SizedBox(
+              width: itemWidth,
+              child: ServiceCard(
+                service: _services[i],
+                primary: _primary,
+                accent: _accent,
+                onTap: () => _openBooking(service: _services[i]),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildProfessionalsList() {
+    const cardWidth = 160.0;
+    const spacing = 12.0;
+    const height = 240.0;
+
     return SizedBox(
-      height: 240,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: _professionals.length,
-        itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: ProfessionalCard(
-            professional: _professionals[i],
-            primary: _primary,
-            cardColor: _tenant?.colorCardProfesional.isNotEmpty == true
-                ? AppConfig.hexToColor(_tenant!.colorCardProfesional)
-                : null,
-            onTap: () => _openBooking(professional: _professionals[i]),
-          ),
-        ),
+      height: height,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          final count = _professionals.length;
+          final contentWidth = count * cardWidth + (count - 1) * spacing;
+          final sidePadding = contentWidth < maxWidth
+              ? (maxWidth - contentWidth) / 2
+              : 12.0;
+
+          return ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: sidePadding.clamp(12.0, 200.0)),
+            itemCount: count,
+            separatorBuilder: (_, __) => const SizedBox(width: spacing),
+            itemBuilder: (_, i) => SizedBox(
+              width: cardWidth,
+              child: ProfessionalCard(
+                professional: _professionals[i],
+                primary: _primary,
+                cardColor: _tenant?.colorCardProfesional.isNotEmpty == true
+                    ? AppConfig.hexToColor(_tenant!.colorCardProfesional)
+                    : null,
+                onTap: () => _openBooking(professional: _professionals[i]),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
