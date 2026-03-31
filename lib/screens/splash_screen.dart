@@ -58,12 +58,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       final svc = SupabaseService.instance;
       final tenant = await svc.loadTenant();
       if (mounted) setState(() {}); // rebuild con tenant cargado
-      // Si ya completó onboarding, ir rápido. Si no, esperar para que lea el banner.
-      if (tenant.onboardingCompleted) {
-        await Future.delayed(const Duration(milliseconds: 1500));
-      } else {
-        await Future.delayed(const Duration(milliseconds: 4500));
-      }
+      // Splash breve si ya tienen logo/onboarding; más largo solo en configuración inicial.
+      final tieneLogo = tenant.logoUrl != null && tenant.logoUrl!.isNotEmpty;
+      final estaConfigurado = tenant.onboardingCompleted || tieneLogo;
+      await Future.delayed(Duration(milliseconds: estaConfigurado ? 900 : 3800));
 
       if (!mounted) return;
 
@@ -195,7 +193,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   /// Si el tenant no completó onboarding, mostrar contenido genérico
   bool get _usarGenerico {
     final tenant = SupabaseService.instance.currentTenant;
-    return tenant == null || !tenant.onboardingCompleted;
+    // Mostrar el splash solo si aún no completó onboarding o no subió logo.
+    if (tenant == null) return true;
+    final sinLogo = tenant.logoUrl == null || tenant.logoUrl!.isEmpty;
+    return !tenant.onboardingCompleted || sinLogo;
   }
 
   @override
