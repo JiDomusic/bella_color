@@ -549,6 +549,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
               final picked = await showDatePicker(
                 context: context,
                 locale: const Locale('es', ''),
+                useRootNavigator: true,
+                initialEntryMode: DatePickerEntryMode.calendarOnly,
                 initialDate: DateTime.tryParse(_selectedDate) ?? DateTime.now(),
                 firstDate: DateTime.now().subtract(const Duration(days: 90)),
                 lastDate: DateTime.now().add(const Duration(days: 90)),
@@ -922,20 +924,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   const Text('No hay turnos completados aun.', style: TextStyle(color: AppConfig.colorTextoSecundario))
                 else
                   ...completados.take(50).map((t) => Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(color: AppConfig.colorSurfaceVariant, borderRadius: BorderRadius.circular(10)),
-                    child: Row(
-                      children: [
-                        Text(t.fecha, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
-                        const SizedBox(width: 6),
-                        Text(t.hora, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(t.servicioNombre ?? '-', style: const TextStyle(color: Colors.white, fontSize: 13))),
-                        Text(t.nombreCliente, style: TextStyle(color: _accent, fontSize: 12)),
-                      ],
-                    ),
-                  )),
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(color: AppConfig.colorSurfaceVariant, borderRadius: BorderRadius.circular(10)),
+                        child: Row(
+                          children: [
+                            Text(t.fecha, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+                            const SizedBox(width: 6),
+                            Text(t.hora, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(t.servicioNombre ?? '-', style: const TextStyle(color: Colors.white, fontSize: 13))),
+                            if (t.precio != null) ...[
+                              const SizedBox(width: 8),
+                              Text('\$${t.precio!.toStringAsFixed(0)}', style: TextStyle(color: _primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                            ],
+                            const SizedBox(width: 8),
+                            Text(t.nombreCliente, style: TextStyle(color: _accent, fontSize: 12)),
+                          ],
+                        ),
+                      )),
               ],
             );
           },
@@ -1598,6 +1605,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   final d = await showDatePicker(
                     context: ctx,
                     locale: const Locale('es', ''),
+                    useRootNavigator: true,
+                    initialEntryMode: DatePickerEntryMode.calendarOnly,
                     initialDate: DateTime.now(),
                     firstDate: DateTime.now(),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
