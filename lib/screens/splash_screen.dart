@@ -25,6 +25,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   String? _error;
   bool _blocked = false;
   String _blockMessage = '';
+  bool _tenantLoaded = false;
+  bool _configured = false;
 
   @override
   void initState() {
@@ -57,11 +59,15 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     try {
       final svc = SupabaseService.instance;
       final tenant = await svc.loadTenant();
-      if (mounted) setState(() {}); // rebuild con tenant cargado
+      if (mounted) {
+        setState(() {
+          _tenantLoaded = true;
+          final tieneLogo = tenant.logoUrl != null && tenant.logoUrl!.isNotEmpty;
+          _configured = tenant.onboardingCompleted || tieneLogo;
+        });
+      }
       // Splash breve si ya tienen logo/onboarding; más largo solo en configuración inicial.
-      final tieneLogo = tenant.logoUrl != null && tenant.logoUrl!.isNotEmpty;
-      final estaConfigurado = tenant.onboardingCompleted || tieneLogo;
-      await Future.delayed(Duration(milliseconds: estaConfigurado ? 900 : 3800));
+      await Future.delayed(Duration(milliseconds: _configured ? 300 : 3800));
 
       if (!mounted) return;
 
@@ -192,11 +198,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   /// Si el tenant no completó onboarding, mostrar contenido genérico
   bool get _usarGenerico {
-    final tenant = SupabaseService.instance.currentTenant;
-    // Mostrar el splash solo si aún no completó onboarding o no subió logo.
-    if (tenant == null) return true;
-    final sinLogo = tenant.logoUrl == null || tenant.logoUrl!.isEmpty;
-    return !tenant.onboardingCompleted || sinLogo;
+    // Solo mostrar helper si aún no cargamos tenant o si no está configurado.
+    if (!_tenantLoaded) return false;
+    return !_configured;
   }
 
   @override
