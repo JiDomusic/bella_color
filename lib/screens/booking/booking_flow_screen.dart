@@ -752,6 +752,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         _bookingField(_nameController, 'Nombre completo *', Icons.person_outline, textCapitalization: TextCapitalization.words),
         const SizedBox(height: 12),
         _bookingField(_phoneController, 'Telefono *', Icons.phone, keyboardType: TextInputType.phone),
+        const SizedBox(height: 6),
+        Text(
+          'Deja tu WhatsApp para coordinar fácil.',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
         const SizedBox(height: 12),
         _bookingField(_emailController, 'Email (opcional)', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
         const SizedBox(height: 12),

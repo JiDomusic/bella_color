@@ -548,6 +548,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
+                locale: const Locale('es', ''),
                 initialDate: DateTime.tryParse(_selectedDate) ?? DateTime.now(),
                 firstDate: DateTime.now().subtract(const Duration(days: 90)),
                 lastDate: DateTime.now().add(const Duration(days: 90)),
@@ -616,6 +617,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
   Widget _appointmentCard(Appointment a) {
     final stateColor = _stateColor(a.estado);
+    final tenantCountry = _tenant?.codigoPaisTelefono ?? '54';
+    final hasPhone = a.telefono.trim().isNotEmpty;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -661,6 +665,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   _stateBtn('No Show', Icons.person_off, Colors.orange, () => _changeState(a.id, 'no_show')),
                   _stateBtn('Cancelar', Icons.close, Colors.red, () => _changeState(a.id, 'cancelada')),
                 ],
+                if (hasPhone)
+                  _stateBtn('WhatsApp', Icons.chat, Colors.green.shade600, () {
+                    WhatsappService.openChat(
+                      phone: a.telefono,
+                      countryCode: tenantCountry,
+                      message: 'Hola ${a.nombreCliente}, soy del salon ${_tenant?.nombreSalon ?? ''}.',
+                    );
+                  }),
               ],
             ),
           ],
@@ -1573,6 +1585,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 onTap: () async {
                   final d = await showDatePicker(
                     context: ctx,
+                    locale: const Locale('es', ''),
                     initialDate: DateTime.now(),
                     firstDate: DateTime.now(),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
