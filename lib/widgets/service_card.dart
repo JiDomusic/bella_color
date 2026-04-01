@@ -20,9 +20,6 @@ class ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isNarrow = MediaQuery.of(context).size.width < 700;
-    final imageAspect = isNarrow ? 1.0 : 4 / 5;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -38,14 +35,16 @@ class ServiceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: imageAspect,
-              child: service.imagenUrl != null
-                  ? Image.network(service.imagenUrl!, fit: BoxFit.cover)
-                  : Container(
-                      color: primary.withAlpha(24),
-                      child: Icon(_categoryIcon(service.categoria), size: 46, color: primary.withAlpha(140)),
-                    ),
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: service.imagenUrl != null
+                    ? Image.network(service.imagenUrl!, fit: BoxFit.cover)
+                    : Container(
+                        color: primary.withAlpha(24),
+                        child: Icon(_categoryIcon(service.categoria), size: 46, color: primary.withAlpha(140)),
+                      ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
