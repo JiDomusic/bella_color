@@ -16,7 +16,19 @@ class WhatsappService {
     }
   }
 
-  static String _generateWhatsAppUrl(String phoneNumber, String message, {String countryCode = '54'}) {
+  static Future<bool> _openUri(Uri uri) async {
+    try {
+      if (await canLaunchUrl(uri)) {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        return await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static String _cleanPhoneNumber(String phoneNumber, String countryCode) {
     String cleanPhone = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
     if (!cleanPhone.startsWith(countryCode)) {
       if (cleanPhone.startsWith('0')) {
@@ -27,8 +39,17 @@ class WhatsappService {
         cleanPhone = '${countryCode}9$cleanPhone';
       }
     }
-    final encodedMessage = Uri.encodeComponent(message);
-    return 'https://wa.me/$cleanPhone?text=$encodedMessage';
+    return cleanPhone;
+  }
+
+  /// Genera Uri de WhatsApp sin pasar por String intermedio
+  /// Esto preserva emojis correctamente
+  static Uri _buildWhatsAppUri(String phoneNumber, String message, {String countryCode = '54'}) {
+    final cleanPhone = _cleanPhoneNumber(phoneNumber, countryCode);
+    return Uri.https('api.whatsapp.com', '/send', {
+      'phone': cleanPhone,
+      'text': message,
+    });
   }
 
   /// Abrir chat genérico
@@ -37,8 +58,8 @@ class WhatsappService {
     String countryCode = '54',
     String message = '',
   }) async {
-    final url = _generateWhatsAppUrl(phone, message, countryCode: countryCode);
-    await _openUrl(url);
+    final uri = _buildWhatsAppUri(phone, message, countryCode: countryCode);
+    await _openUri(uri);
   }
 
   /// Soporte técnico
@@ -83,8 +104,8 @@ class WhatsappService {
       senaTitular: senaTitular,
       plantillaPersonalizada: plantillaPersonalizada,
     );
-    final url = _generateWhatsAppUrl(phone, message, countryCode: countryCode);
-    await _openUrl(url);
+    final uri = _buildWhatsAppUri(phone, message, countryCode: countryCode);
+    await _openUri(uri);
   }
 
   /// Copiar mensaje de confirmación al portapapeles
@@ -285,8 +306,8 @@ class WhatsappService {
     required String message,
     String countryCode = '54',
   }) async {
-    final url = _generateWhatsAppUrl(phoneNumber, message, countryCode: countryCode);
-    final success = await _openUrl(url);
+    final uri = _buildWhatsAppUri(phoneNumber, message, countryCode: countryCode);
+    final success = await _openUri(uri);
     if (!success) {
       throw Exception('No se pudo abrir WhatsApp');
     }
