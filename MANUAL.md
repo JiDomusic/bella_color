@@ -129,6 +129,24 @@ Lo que ofrece tu salon.
 - Toca un servicio para **editarlo** (cambiar nombre, duracion, precios, imagen)
 - Las clientas ven ambos precios (efectivo y tarjeta) al reservar
 
+#### Solapamiento de servicios (NUEVO)
+
+Algunos servicios tienen **tiempo de espera** donde la clienta queda sola procesando (ej: color, alisado, permanente). En esos casos, la profesional puede atender a otra clienta mientras tanto.
+
+Para activarlo:
+
+1. Al crear o editar un servicio, busca el switch **"Permite solapamiento"**
+2. Activalo en servicios donde **la clienta queda procesando sola** (ej: color, alisado)
+3. Dejalo desactivado en servicios de **atencion continua** (ej: corte, cejas, unas)
+
+Ademas, en la pestana **Profesionales**, cada profesional tiene un campo **"Turnos simultaneos"**:
+- Pone **cuantas clientas puede atender a la vez** (ej: 3 para una colorista)
+- Si la profesional solo atiende una clienta a la vez, deja el **1** (que viene por defecto)
+
+**Ejemplo**: Laura (colorista, turnos simultaneos = 3) esta haciendo un color a las 10:00. Otra clienta puede reservar cejas a las 10:00 con Laura, porque el color permite solapamiento. Pero no puede reservar un corte a las 10:00, porque el corte no permite solapamiento.
+
+**Importante**: La duracion del servicio ahora se tiene en cuenta. Si un color dura 90 minutos y empieza a las 10:00, los horarios de las 10:30 y 11:00 se marcan como ocupados para esa profesional (salvo que haya solapamiento).
+
 ### Pestana HORARIOS
 Dias y horas que atiende tu salon.
 
@@ -283,7 +301,19 @@ Tus clientas abren el link de tu salon y ven tu pagina con los servicios, profes
 
 **Paso 3** - Elige fecha y hora disponible
 
-**Paso 4** - Pone su nombre y telefono (WhatsApp para coordinar), y toca **"Confirmar Turno"**
+**Paso 4** - Pone su nombre y telefono (WhatsApp para coordinar)
+
+**Si el servicio requiere seña/pago anticipado:**
+- Ve el **CBU**, **Alias** y **Titular** del salon (puede copiar tocando el icono)
+- Ve el **monto** a transferir
+- Hace la transferencia desde su banco/app
+- Toca **"Subir comprobante de transferencia"** y elige la captura de pantalla
+- El sistema **valida automaticamente** que la imagen sea un comprobante real
+- Si es valido: aparece **"Comprobante recibido"** y se habilita el boton **"Confirmar Turno"**
+- Si no es valido: muestra un mensaje pidiendo que suba una captura de pantalla de la transferencia
+- **Sin comprobante valido no puede reservar**
+
+Toca **"Confirmar Turno"**
 
 Despues de reservar recibe un **codigo de confirmacion** (6 letras/numeros) y puede:
 - **Confirmar por WhatsApp**: toca el boton verde para mandarte el mensaje por WhatsApp

@@ -1049,6 +1049,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   void _addProfessionalDialog() {
     final nameCtrl = TextEditingController();
     final specCtrl = TextEditingController();
+    final maxSimultCtrl = TextEditingController(text: '1');
     Uint8List? imageBytes;
     String? imageName;
 
@@ -1087,6 +1088,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
                 const SizedBox(height: 8),
                 TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad'), style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: maxSimultCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Turnos simultaneos',
+                    helperText: 'Clientes que puede atender a la vez',
+                  ),
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                ),
               ],
             ),
           ),
@@ -1102,6 +1113,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 await _svc.createProfessional({
                   'nombre': nameCtrl.text.trim(),
                   'especialidad': specCtrl.text.trim(),
+                  'max_turnos_simultaneos': int.tryParse(maxSimultCtrl.text) ?? 1,
                   if (fotoUrl != null) 'foto_url': fotoUrl,
                 });
                 _professionals = await _svc.loadProfessionals();
@@ -1119,6 +1131,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   void _editProfessionalDialog(Professional p) {
     final nameCtrl = TextEditingController(text: p.nombre);
     final specCtrl = TextEditingController(text: p.especialidad);
+    final maxSimultCtrl = TextEditingController(text: p.maxTurnosSimultaneos.toString());
     Uint8List? imageBytes;
     String? imageName;
     String? currentFotoUrl = p.fotoUrl;
@@ -1165,6 +1178,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nombre'), style: const TextStyle(color: AppConfig.colorTexto)),
                 const SizedBox(height: 8),
                 TextField(controller: specCtrl, decoration: const InputDecoration(labelText: 'Especialidad'), style: const TextStyle(color: AppConfig.colorTexto)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: maxSimultCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Turnos simultaneos',
+                    helperText: 'Clientes que puede atender a la vez',
+                  ),
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                ),
               ],
             ),
           ),
@@ -1181,6 +1204,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'nombre': nameCtrl.text.trim(),
                   'especialidad': specCtrl.text.trim(),
                   'foto_url': fotoUrl,
+                  'max_turnos_simultaneos': int.tryParse(maxSimultCtrl.text) ?? 1,
                 });
                 _professionals = await _svc.loadProfessionals();
                 if (ctx.mounted) Navigator.pop(ctx);
@@ -1275,6 +1299,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     Uint8List? imageBytes;
     String? imageName;
     bool requiereSena = false;
+    bool permiteSolapamiento = false;
 
     showDialog(
       context: context,
@@ -1350,6 +1375,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     dense: true,
                   ),
                 ],
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  value: permiteSolapamiento,
+                  onChanged: (v) => setDState(() => permiteSolapamiento = v),
+                  title: const Text('Permite solapamiento', style: TextStyle(color: AppConfig.colorTexto, fontSize: 14)),
+                  subtitle: const Text('La clienta queda procesando sola (ej: color, alisado)', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+                  activeColor: _accent,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               ],
             ),
           ),
@@ -1374,6 +1409,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'descuento_tarjeta_pct': int.tryParse(descTarjetaCtrl.text) ?? 0,
                   if (imagenUrl != null) 'imagen_url': imagenUrl,
                   'requiere_sena': requiereSena,
+                  'permite_solapamiento': permiteSolapamiento,
                 });
                 _services = await _svc.loadServices();
                 if (ctx.mounted) Navigator.pop(ctx);
@@ -1399,6 +1435,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     String? imageName;
     String? currentImageUrl = s.imagenUrl;
     bool requiereSena = s.requiereSena;
+    bool permiteSolapamiento = s.permiteSolapamiento;
 
     showDialog(
       context: context,
@@ -1481,6 +1518,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     dense: true,
                   ),
                 ],
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  value: permiteSolapamiento,
+                  onChanged: (v) => setDState(() => permiteSolapamiento = v),
+                  title: const Text('Permite solapamiento', style: TextStyle(color: AppConfig.colorTexto, fontSize: 14)),
+                  subtitle: const Text('La clienta queda procesando sola (ej: color, alisado)', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+                  activeColor: _accent,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               ],
             ),
           ),
@@ -1505,6 +1552,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   'descuento_tarjeta_pct': int.tryParse(descTarjetaCtrl.text) ?? 0,
                   'imagen_url': imagenUrl,
                   'requiere_sena': requiereSena,
+                  'permite_solapamiento': permiteSolapamiento,
                 });
                 _services = await _svc.loadServices();
                 if (ctx.mounted) Navigator.pop(ctx);

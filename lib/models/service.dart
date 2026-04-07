@@ -16,6 +16,7 @@ class Service {
   final int maxTurnosDia;
   final int orden;
   final bool requiereSena;
+  final bool permiteSolapamiento;
 
   Service({
     required this.id,
@@ -35,6 +36,7 @@ class Service {
     this.maxTurnosDia = 8,
     this.orden = 0,
     this.requiereSena = false,
+    this.permiteSolapamiento = false,
   });
 
   /// Precio efectivo con fallback al precio general
@@ -61,6 +63,7 @@ class Service {
     maxTurnosDia: json['max_turnos_dia'] ?? 8,
     orden: json['orden'] ?? 0,
     requiereSena: json['requiere_sena'] ?? false,
+    permiteSolapamiento: json['permite_solapamiento'] ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -81,6 +84,7 @@ class Service {
     'max_turnos_dia': maxTurnosDia,
     'orden': orden,
     'requiere_sena': requiereSena,
+    'permite_solapamiento': permiteSolapamiento,
   };
 
   static const categorias = [

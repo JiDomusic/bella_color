@@ -11,12 +11,14 @@ class ConfirmationScreen extends StatelessWidget {
   final Appointment appointment;
   final double? precioServicio;
   final bool requiereSena;
+  final String? comprobanteUrl;
 
   const ConfirmationScreen({
     super.key,
     required this.appointment,
     this.precioServicio,
     this.requiereSena = false,
+    this.comprobanteUrl,
   });
 
   @override
@@ -176,17 +178,27 @@ class ConfirmationScreen extends StatelessWidget {
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E0),
+                              color: comprobanteUrl != null ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
+                                Icon(
+                                  comprobanteUrl != null ? Icons.check_circle : Icons.info_outline,
+                                  size: 16,
+                                  color: comprobanteUrl != null ? const Color(0xFF4CAF50) : Colors.orange[700],
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Envia el comprobante por WhatsApp para confirmar tu turno',
-                                    style: TextStyle(fontSize: 12, color: Colors.orange[800], height: 1.3),
+                                    comprobanteUrl != null
+                                        ? 'Comprobante enviado. Confirma tu turno por WhatsApp.'
+                                        : 'Envia el comprobante por WhatsApp para confirmar tu turno',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: comprobanteUrl != null ? const Color(0xFF2E7D32) : Colors.orange[800],
+                                      height: 1.3,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -290,10 +302,13 @@ class ConfirmationScreen extends StatelessWidget {
                       child: mostrarSena
                           ? ElevatedButton.icon(
                               onPressed: () => _sendToSalon(tenant, mostrarSena ? montoSena : null),
-                              icon: const Icon(Icons.account_balance_outlined, size: 20),
-                              label: const Text('Enviar comprobante al salon', style: TextStyle(fontWeight: FontWeight.w600)),
+                              icon: Icon(comprobanteUrl != null ? Icons.chat_rounded : Icons.account_balance_outlined, size: 20),
+                              label: Text(
+                                comprobanteUrl != null ? 'Confirmar turno por WhatsApp' : 'Enviar comprobante al salon',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF9800),
+                                backgroundColor: comprobanteUrl != null ? const Color(0xFF25D366) : const Color(0xFFFF9800),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

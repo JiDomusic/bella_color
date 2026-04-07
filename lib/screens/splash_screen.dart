@@ -1,3 +1,4 @@
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../config/app_config.dart';
@@ -103,8 +104,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         final tenantForUser = await svc.getTenantIdForCurrentUser();
         if (tenantForUser == svc.tenantId) {
           isAdmin = true;
+        } else if (tenantForUser != null && tenantForUser.isNotEmpty) {
+          // Logueado como admin de OTRO tenant → redirigir a su salon
+          final origin = html.window.location.origin;
+          html.window.location.href = '$origin/$tenantForUser';
+          return;
         } else {
-          // Sesion de otro tenant, cerrar sesion
+          // Sin tenant asociado, cerrar sesion
           await svc.signOut();
         }
       }

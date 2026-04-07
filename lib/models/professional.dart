@@ -8,6 +8,7 @@ class Professional {
   final String telefono;
   final bool activo;
   final int orden;
+  final int maxTurnosSimultaneos;
 
   Professional({
     required this.id,
@@ -19,6 +20,7 @@ class Professional {
     this.telefono = '',
     this.activo = true,
     this.orden = 0,
+    this.maxTurnosSimultaneos = 1,
   });
 
   factory Professional.fromJson(Map<String, dynamic> json) => Professional(
@@ -31,6 +33,7 @@ class Professional {
     telefono: json['telefono'] ?? '',
     activo: json['activo'] ?? true,
     orden: json['orden'] ?? 0,
+    maxTurnosSimultaneos: json['max_turnos_simultaneos'] ?? 1,
   );
 
   Map<String, dynamic> toJson() => {
@@ -43,5 +46,6 @@ class Professional {
     'telefono': telefono,
     'activo': activo,
     'orden': orden,
+    'max_turnos_simultaneos': maxTurnosSimultaneos,
   };
 }

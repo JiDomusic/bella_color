@@ -1,5 +1,8 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../config/app_config.dart';
 import '../../config/public_theme.dart';
 import '../../models/service.dart';
@@ -52,6 +55,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   int _totalSlots = 0;
   bool _loading = true;
   bool _submitting = false;
+
+  // Comprobante de seña
+  Uint8List? _comprobanteBytes;
+  bool _comprobanteValido = false;
+  String? _comprobanteError;
 
   @override
   void initState() {
@@ -121,6 +129,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     _blocks = await _svc.loadBlocks(fecha: dateStr);
     _existingAppointments = await _svc.loadAppointmentsByDate(dateStr);
 
+    // Lookup de servicios para verificar solapamiento
+    final serviceMap = {for (final s in _services) s.id: s};
+
     final slots = <String>[];
     for (final h in dayHours) {
       final start = _parseTime(h.horaInicio);
@@ -164,27 +175,72 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         }
       }
 
-      // Check existing appointments for same service/professional
+      // Check existing appointments (duration-aware + solapamiento)
       if (available && _selectedService != null) {
-        final slotsForTime = _existingAppointments.where((a) { // ignore: unused_local_variable
-          if (a.hora != slot) return false;
-          if (_selectedProfessional != null && a.professionalId == _selectedProfessional!.id) return true;
-          if (a.servicioId == _selectedService!.id) return true;
-          return false;
-        }).length;
+        final slotMinutes = _parseTime(slot);
+        final newDuration = _selectedService!.duracionMinutos;
 
-        final maxTurnos = _selectedService!.maxTurnosDia;
-        // Count all appointments for this service on this date
+        // Helper: verifica si un turno existente se solapa en tiempo con el nuevo
+        bool overlaps(Appointment a) {
+          final aStart = _parseTime(a.hora);
+          final aEnd = aStart + a.duracionMinutos;
+          final newEnd = slotMinutes + newDuration;
+          return slotMinutes < aEnd && aStart < newEnd;
+        }
+
+        // 1. maxTurnosDia: limite total del servicio en el dia
         final totalForService = _existingAppointments.where((a) => a.servicioId == _selectedService!.id).length;
-        if (totalForService >= maxTurnos) {
+        if (totalForService >= _selectedService!.maxTurnosDia) {
           available = false;
         }
 
-        // Check professional busy at this time
-        if (_selectedProfessional != null) {
-          final profBusy = _existingAppointments.any((a) =>
-            a.hora == slot && a.professionalId == _selectedProfessional!.id);
-          if (profBusy) available = false;
+        // 2. Check profesional seleccionado (duration-aware + simultaneos)
+        if (available && _selectedProfessional != null) {
+          final overlapping = _existingAppointments.where((a) =>
+            a.professionalId == _selectedProfessional!.id && overlaps(a)
+          ).toList();
+
+          if (overlapping.isNotEmpty) {
+            final maxSimult = _selectedProfessional!.maxTurnosSimultaneos;
+
+            if (overlapping.length >= maxSimult) {
+              // Ya esta al maximo de capacidad
+              available = false;
+            } else {
+              // Tiene capacidad, verificar permisos de solapamiento:
+              // El servicio nuevo Y todos los existentes deben permitir solapamiento
+              final newAllows = _selectedService!.permiteSolapamiento;
+              final allExistingAllow = overlapping.every((a) {
+                final svc = a.servicioId != null ? serviceMap[a.servicioId!] : null;
+                return svc?.permiteSolapamiento ?? false;
+              });
+
+              if (!newAllows || !allExistingAllow) {
+                available = false;
+              }
+            }
+          }
+        }
+
+        // 3. "Sin preferencia": disponible si AL MENOS un profesional puede
+        if (available && _selectedProfessional == null) {
+          final anyAvailable = _professionals.any((prof) {
+            final profOverlapping = _existingAppointments.where((a) =>
+              a.professionalId == prof.id && overlaps(a)
+            ).toList();
+
+            if (profOverlapping.isEmpty) return true;
+            if (profOverlapping.length >= prof.maxTurnosSimultaneos) return false;
+
+            final newAllows = _selectedService!.permiteSolapamiento;
+            final allAllow = profOverlapping.every((a) {
+              final svc = a.servicioId != null ? serviceMap[a.servicioId!] : null;
+              return svc?.permiteSolapamiento ?? false;
+            });
+            return newAllows && allAllow;
+          });
+
+          if (!anyAvailable) available = false;
         }
       }
 
@@ -205,10 +261,62 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 
+  bool get _requiereSena {
+    final tenant = _svc.currentTenant;
+    return tenant != null &&
+        tenant.senaHabilitada &&
+        _selectedService != null &&
+        _selectedService!.requiereSena &&
+        ((_selectedService!.precioEfectivoFinal ?? 0) > 0) &&
+        tenant.senaPorcentaje > 0;
+  }
+
+  Future<void> _seleccionarComprobante() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1500, imageQuality: 90);
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+
+    // Decodificar imagen para obtener dimensiones
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    final width = frame.image.width;
+    final height = frame.image.height;
+    frame.image.dispose();
+
+    // Validar que parece un screenshot
+    final pesoKB = bytes.length / 1024;
+    final esVertical = height > width;
+    final anchoScreenshot = width >= 300 && width <= 1500;
+    final pesoScreenshot = pesoKB >= 30 && pesoKB <= 1500;
+
+    if (esVertical && anchoScreenshot && pesoScreenshot) {
+      setState(() {
+        _comprobanteBytes = bytes;
+        _comprobanteValido = true;
+        _comprobanteError = null;
+      });
+    } else {
+      setState(() {
+        _comprobanteBytes = null;
+        _comprobanteValido = false;
+        _comprobanteError = !esVertical
+            ? 'La imagen debe ser vertical (captura de pantalla)'
+            : !anchoScreenshot
+                ? 'La imagen parece una foto de camara, no un comprobante. Subi una captura de pantalla.'
+                : 'El archivo es demasiado ${pesoKB < 30 ? 'chico' : 'grande'}. Subi una captura de pantalla.';
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (_selectedService == null || _selectedDate == null || _selectedTime == null) return;
     if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
       _showError('Por favor completa nombre y telefono');
+      return;
+    }
+    if (_requiereSena && !_comprobanteValido) {
+      _showError('Subi el comprobante de transferencia para confirmar tu turno');
       return;
     }
 
@@ -216,6 +324,15 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     try {
       final dateStr = '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
       final code = ConfirmationCodeService.generate();
+
+      // Subir comprobante si existe
+      String? comprobanteUrl;
+      if (_comprobanteBytes != null && _comprobanteValido) {
+        comprobanteUrl = await _svc.uploadImage(
+          'comprobantes/${DateTime.now().millisecondsSinceEpoch}_${_nameController.text.trim().replaceAll(' ', '_')}.jpg',
+          _comprobanteBytes!,
+        );
+      }
 
       final appointment = await _svc.createAppointment({
         'fecha': dateStr,
@@ -230,8 +347,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         'professional_nombre': _selectedProfessional?.nombre,
         'codigo_confirmacion': code,
         'comentarios': _commentsController.text.trim().isEmpty ? null : _commentsController.text.trim(),
-        // Guardamos un snapshot del precio vigente del servicio.
         'precio': _selectedService!.precioEfectivoFinal ?? _selectedService!.precioTarjetaFinal,
+        if (comprobanteUrl != null) 'comprobante_url': comprobanteUrl,
       });
 
       if (mounted) {
@@ -240,6 +357,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             appointment: appointment,
             precioServicio: _selectedService!.precioEfectivoFinal,
             requiereSena: _selectedService!.requiereSena,
+            comprobanteUrl: comprobanteUrl,
           )),
         );
       }
@@ -764,6 +882,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         _bookingField(_emailController, 'Email (opcional)', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
         const SizedBox(height: 12),
         _bookingField(_commentsController, 'Comentarios (opcional)', Icons.comment_outlined, maxLines: 3),
+
+        // Sección seña + comprobante
+        if (_requiereSena) ...[
+          const SizedBox(height: 20),
+          _buildSenaCard(),
+        ],
+
         const SizedBox(height: 24),
         Row(
           children: [
@@ -775,19 +900,202 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             ),
             const Spacer(),
             ElevatedButton.icon(
-              onPressed: _submitting ? null : _submit,
+              onPressed: (_submitting || (_requiereSena && !_comprobanteValido)) ? null : _submit,
               icon: _submitting
                   ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.check),
               label: Text(_submitting ? 'Reservando...' : 'Confirmar Turno'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _accent,
+                backgroundColor: (_requiereSena && !_comprobanteValido) ? Colors.grey[400] : _accent,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSenaCard() {
+    final tenant = _svc.currentTenant!;
+    final precio = _selectedService!.precioEfectivoFinal ?? 0;
+    final montoSena = precio * tenant.senaPorcentaje / 100;
+    final esPagoTotal = tenant.senaPorcentaje == 100;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFF9800).withAlpha(60)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 12, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withAlpha(25),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.account_balance_outlined, size: 18, color: Color(0xFFFF9800)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  esPagoTotal ? 'Pago anticipado requerido' : 'Seña requerida para reservar',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFFE65100)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Monto
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF9800).withAlpha(15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  formatPrecioConSigno(montoSena),
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFFE65100)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  esPagoTotal
+                      ? '100% del servicio'
+                      : '${tenant.senaPorcentaje}% del servicio (${formatPrecioConSigno(precio)})',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // CBU / Alias / Titular
+          if (tenant.senaCbu.isNotEmpty) _copiableField('CBU', tenant.senaCbu),
+          if (tenant.senaAlias.isNotEmpty) _copiableField('Alias', tenant.senaAlias),
+          if (tenant.senaTitular.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Text('Titular: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600])),
+                  Expanded(child: Text(tenant.senaTitular, style: TextStyle(fontSize: 13, color: Colors.grey[800]))),
+                ],
+              ),
+            ),
+          const SizedBox(height: 12),
+          // Botón subir comprobante
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _seleccionarComprobante,
+              icon: Icon(_comprobanteValido ? Icons.check_circle : Icons.camera_alt, size: 20),
+              label: Text(_comprobanteValido ? 'Comprobante recibido' : 'Subir comprobante de transferencia'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _comprobanteValido ? const Color(0xFF4CAF50) : const Color(0xFFFF9800),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          // Preview del comprobante
+          if (_comprobanteValido && _comprobanteBytes != null) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.memory(_comprobanteBytes!, height: 120, fit: BoxFit.cover),
+            ),
+            const SizedBox(height: 6),
+            GestureDetector(
+              onTap: _seleccionarComprobante,
+              child: Text('Cambiar imagen', style: TextStyle(fontSize: 12, color: _primary, decoration: TextDecoration.underline)),
+            ),
+          ],
+          // Error
+          if (_comprobanteError != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.red.withAlpha(15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber, size: 16, color: Colors.redAccent),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_comprobanteError!, style: const TextStyle(fontSize: 12, color: Colors.redAccent))),
+                ],
+              ),
+            ),
+          ],
+          // Aviso de validación
+          if (!_comprobanteValido) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.verified_user, size: 16, color: Colors.orange[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'El comprobante sera validado automaticamente. Subi una captura de pantalla de tu transferencia bancaria.',
+                      style: TextStyle(fontSize: 12, color: Colors.orange[800], height: 1.3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _copiableField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Text('$label: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600])),
+          Expanded(
+            child: Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          ),
+          GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: value));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$label copiado!'),
+                  backgroundColor: _primary,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            child: Icon(Icons.copy_rounded, size: 16, color: Colors.grey[400]),
+          ),
+        ],
+      ),
     );
   }
 
