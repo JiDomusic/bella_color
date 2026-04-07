@@ -51,6 +51,7 @@ class Tenant {
   final String bannerVideoUrl;
   final String bannerTipo;
   final String colorCardProfesional;
+  final String mensajeWhatsappConfirmacion;
 
   Tenant({
     required this.id,
@@ -105,6 +106,7 @@ class Tenant {
     this.bannerVideoUrl = '',
     this.bannerTipo = 'texto',
     this.colorCardProfesional = '',
+    this.mensajeWhatsappConfirmacion = '',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -179,6 +181,7 @@ class Tenant {
       bannerVideoUrl: json['banner_video_url'] ?? '',
       bannerTipo: json['banner_tipo'] ?? 'texto',
       colorCardProfesional: json['color_card_profesional'] ?? '',
+      mensajeWhatsappConfirmacion: json['mensaje_whatsapp_confirmacion'] ?? '',
     );
   }
 
@@ -234,6 +237,7 @@ class Tenant {
     'banner_video_url': bannerVideoUrl,
     'banner_tipo': bannerTipo,
     'color_card_profesional': colorCardProfesional,
+    'mensaje_whatsapp_confirmacion': mensajeWhatsappConfirmacion,
   };
 
   Tenant copyWith({

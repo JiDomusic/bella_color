@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../config/app_config.dart';
@@ -1593,60 +1594,193 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   }
 
   // ==== TAB 4: BLOQUEOS ====
+  DateTime _calendarFocusedDay = DateTime.now();
+  DateTime? _calendarSelectedDay;
+
+  Set<String> get _blockedDateStrings => _blocks.map((b) => b.fecha ?? '').toSet();
+
+  List<Block> _blocksForDay(DateTime day) {
+    final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    return _blocks.where((b) => b.fecha == dateStr).toList();
+  }
+
   Widget _buildBlocksTab() {
+    final selectedBlocks = _calendarSelectedDay != null ? _blocksForDay(_calendarSelectedDay!) : <Block>[];
+
     return Column(
       children: [
-        _tabHint('🚫', '¿Necesitás cerrar un día por feriado o vacaciones? ¿O cerrar una hora específica? Agregá un bloqueo y tus clientas no podrán sacar turno en ese momento.'),
+        _tabHint('🚫', 'Tocá un día en el calendario para ver o agregar bloqueos. Los días bloqueados aparecen en rojo.'),
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: ElevatedButton.icon(
-            onPressed: _addBlockDialog,
-            icon: const Icon(Icons.event_busy),
-            label: const Text('Cerrar un dia u hora'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withAlpha(180),
-              foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: TableCalendar(
+            locale: 'es_ES',
+            firstDay: DateTime.now().subtract(const Duration(days: 30)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
+            focusedDay: _calendarFocusedDay,
+            selectedDayPredicate: (day) => _calendarSelectedDay != null && isSameDay(_calendarSelectedDay!, day),
+            onDaySelected: (selected, focused) {
+              setState(() {
+                _calendarSelectedDay = selected;
+                _calendarFocusedDay = focused;
+              });
+            },
+            onPageChanged: (focused) => _calendarFocusedDay = focused,
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focused) {
+                final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                final hasFullDay = _blocks.any((b) => b.fecha == dateStr && b.diaCompleto);
+                final hasPartial = _blocks.any((b) => b.fecha == dateStr && !b.diaCompleto);
+                if (hasFullDay) {
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withAlpha(180),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('${day.day}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  );
+                } else if (hasPartial) {
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withAlpha(100),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('${day.day}', style: const TextStyle(color: Colors.white)),
+                  );
+                }
+                return null;
+              },
+              todayBuilder: (context, day, focused) {
+                final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                final hasBlock = _blockedDateStrings.contains(dateStr);
+                return Container(
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: hasBlock ? Colors.redAccent.withAlpha(180) : _primary.withAlpha(50),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _primary, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('${day.day}', style: TextStyle(color: hasBlock ? Colors.white : AppConfig.colorTexto, fontWeight: FontWeight.bold)),
+                );
+              },
+            ),
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextStyle: const TextStyle(color: AppConfig.colorTexto, fontSize: 16, fontWeight: FontWeight.w600),
+              leftChevronIcon: Icon(Icons.chevron_left, color: _primary),
+              rightChevronIcon: Icon(Icons.chevron_right, color: _primary),
+            ),
+            calendarStyle: CalendarStyle(
+              defaultTextStyle: const TextStyle(color: AppConfig.colorTexto),
+              weekendTextStyle: const TextStyle(color: AppConfig.colorTextoSecundario),
+              outsideTextStyle: TextStyle(color: Colors.white.withAlpha(40)),
+              selectedDecoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(8)),
+              todayDecoration: BoxDecoration(color: _primary.withAlpha(50), borderRadius: BorderRadius.circular(8)),
+            ),
+            daysOfWeekStyle: const DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
+              weekendStyle: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
             ),
           ),
         ),
-        Expanded(
-          child: _blocks.isEmpty
-              ? const Center(child: Text('Sin bloqueos', style: TextStyle(color: AppConfig.colorTextoSecundario)))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: _blocks.length,
-                  itemBuilder: (_, i) {
-                    final b = _blocks[i];
-                    return Card(
-                      child: ListTile(
-                        leading: Icon(b.diaCompleto ? Icons.calendar_today : Icons.access_time, color: Colors.redAccent),
-                        title: Text(
-                          b.diaCompleto ? 'Dia completo - ${b.fecha ?? ''}' : '${b.fecha ?? ''} ${b.hora ?? ''}',
-                          style: const TextStyle(color: AppConfig.colorTexto),
-                        ),
-                        subtitle: Text(b.motivo, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
-                          onPressed: () async {
-                            await _svc.deleteBlock(b.id);
-                            _blocks = await _svc.loadBlocks();
-                            setState(() {});
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
+
+        // Leyenda
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.redAccent.withAlpha(180), borderRadius: BorderRadius.circular(4))),
+              const SizedBox(width: 6),
+              const Text('Dia cerrado', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+              const SizedBox(width: 16),
+              Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.orange.withAlpha(100), borderRadius: BorderRadius.circular(4))),
+              const SizedBox(width: 6),
+              const Text('Hora bloqueada', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+            ],
+          ),
         ),
+
+        // Botón agregar + bloques del día seleccionado
+        if (_calendarSelectedDay != null) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Text(
+                  '${_calendarSelectedDay!.day}/${_calendarSelectedDay!.month}/${_calendarSelectedDay!.year}',
+                  style: const TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: () => _addBlockForDate(_calendarSelectedDay!),
+                  icon: const Icon(Icons.event_busy, size: 18),
+                  label: const Text('Bloquear'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withAlpha(180),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: selectedBlocks.isEmpty
+                ? const Center(child: Text('Sin bloqueos este dia', style: TextStyle(color: AppConfig.colorTextoSecundario)))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    itemCount: selectedBlocks.length,
+                    itemBuilder: (_, i) {
+                      final b = selectedBlocks[i];
+                      return Card(
+                        child: ListTile(
+                          leading: Icon(b.diaCompleto ? Icons.block : Icons.access_time, color: Colors.redAccent),
+                          title: Text(
+                            b.diaCompleto ? 'Dia completo' : 'Hora: ${b.hora ?? ''}',
+                            style: const TextStyle(color: AppConfig.colorTexto),
+                          ),
+                          subtitle: b.motivo.isNotEmpty
+                              ? Text(b.motivo, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12))
+                              : null,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                            onPressed: () async {
+                              try {
+                                await _svc.deleteBlock(b.id);
+                                _blocks = await _svc.loadBlocks();
+                                setState(() {});
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ] else
+          const Expanded(
+            child: Center(child: Text('Seleccioná un dia en el calendario', style: TextStyle(color: AppConfig.colorTextoSecundario))),
+          ),
       ],
     );
   }
 
-  void _addBlockDialog() {
-    DateTime? blockDate;
+  void _addBlockForDate(DateTime date) {
     String? blockHour;
-    bool fullDay = false;
+    bool fullDay = true;
     final motivoCtrl = TextEditingController();
+    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
     showDialog(
       context: context,
@@ -1654,26 +1788,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         builder: (ctx, setDState) => AlertDialog(
           backgroundColor: AppConfig.colorFondoCard,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Nuevo Bloqueo', style: TextStyle(color: AppConfig.colorTexto)),
+          title: Text('Bloquear ${date.day}/${date.month}/${date.year}', style: const TextStyle(color: AppConfig.colorTexto)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                title: Text(blockDate != null ? '${blockDate!.day}/${blockDate!.month}/${blockDate!.year}' : 'Seleccionar fecha', style: const TextStyle(color: AppConfig.colorTexto)),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: ctx,
-                    locale: const Locale('es', ''),
-                    useRootNavigator: false,
-                    initialEntryMode: DatePickerEntryMode.calendarOnly,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                  );
-                  if (d != null) setDState(() => blockDate = d);
-                },
-              ),
               SwitchListTile(
                 title: const Text('Dia completo', style: TextStyle(color: AppConfig.colorTexto)),
                 value: fullDay,
@@ -1687,26 +1805,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                   onChanged: (v) => blockHour = v,
                 ),
               const SizedBox(height: 8),
-              TextField(controller: motivoCtrl, decoration: const InputDecoration(labelText: 'Motivo'), style: const TextStyle(color: AppConfig.colorTexto)),
+              TextField(controller: motivoCtrl, decoration: const InputDecoration(labelText: 'Motivo (opcional)'), style: const TextStyle(color: AppConfig.colorTexto)),
             ],
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
-                if (blockDate == null) return;
-                final dateStr = '${blockDate!.year}-${blockDate!.month.toString().padLeft(2, '0')}-${blockDate!.day.toString().padLeft(2, '0')}';
-                await _svc.createBlock({
-                  'fecha': dateStr,
-                  'hora': fullDay ? null : blockHour,
-                  'dia_completo': fullDay,
-                  'motivo': motivoCtrl.text.trim(),
-                });
-                _blocks = await _svc.loadBlocks();
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) setState(() {});
+                try {
+                  await _svc.createBlock({
+                    'fecha': dateStr,
+                    'hora': fullDay ? null : blockHour,
+                    'dia_completo': fullDay,
+                    'motivo': motivoCtrl.text.trim(),
+                  });
+                  _blocks = await _svc.loadBlocks();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) setState(() {});
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                }
               },
-              child: const Text('Crear'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              child: const Text('Bloquear'),
             ),
           ],
         ),
@@ -2366,6 +2491,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
   late TextEditingController _senaCbuCtrl;
   late TextEditingController _senaAliasCtrl;
   late TextEditingController _senaTitularCtrl;
+  late TextEditingController _mensajeWhatsappCtrl;
   // _fondoPaginaUrl eliminado - se usa _fondoUrl para todo
   Color? _colorFondoPagina;
   bool _saving = false;
@@ -2411,6 +2537,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _senaCbuCtrl = TextEditingController(text: t.senaCbu);
     _senaAliasCtrl = TextEditingController(text: t.senaAlias);
     _senaTitularCtrl = TextEditingController(text: t.senaTitular);
+    _mensajeWhatsappCtrl = TextEditingController(text: t.mensajeWhatsappConfirmacion);
     // fondoPaginaUrl eliminado - se usa fondoUrl para todo
     _colorFondoPagina = t.colorFondoPagina.isNotEmpty ? AppConfig.hexToColor(t.colorFondoPagina) : null;
   }
@@ -2432,6 +2559,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
     _senaCbuCtrl.dispose();
     _senaAliasCtrl.dispose();
     _senaTitularCtrl.dispose();
+    _mensajeWhatsappCtrl.dispose();
     super.dispose();
   }
 
@@ -2629,6 +2757,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'sena_alias': _senaAliasCtrl.text.trim(),
         'sena_titular': _senaTitularCtrl.text.trim(),
         'color_fondo_pagina': _colorFondoPagina != null ? _colorToHex(_colorFondoPagina!) : '',
+        'mensaje_whatsapp_confirmacion': _mensajeWhatsappCtrl.text,
         'onboarding_completed': true,
       });
 
@@ -2894,6 +3023,140 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
           _textField('Titular de la cuenta', _senaTitularCtrl),
         ],
 
+        const SizedBox(height: 24),
+        _sectionTitle('Mensaje de WhatsApp'),
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.green.withAlpha(10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.withAlpha(30)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Personalizá el mensaje que se envia por WhatsApp cuando se confirma un turno. Podés usar emojis y estas variables:',
+                style: TextStyle(color: AppConfig.colorTerciario, fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  _variableChip('{nombre}', 'Nombre del cliente'),
+                  _variableChip('{servicio}', 'Servicio'),
+                  _variableChip('{profesional}', 'Profesional'),
+                  _variableChip('{fecha}', 'Fecha'),
+                  _variableChip('{hora}', 'Hora'),
+                  _variableChip('{codigo}', 'Código'),
+                  _variableChip('{salon}', 'Nombre del salón'),
+                  _variableChip('{direccion}', 'Dirección'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Si lo dejas vacio, se usa el mensaje por defecto.',
+                style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: TextField(
+            controller: _mensajeWhatsappCtrl,
+            style: const TextStyle(color: AppConfig.colorTexto, fontSize: 13),
+            maxLines: 10,
+            minLines: 5,
+            decoration: InputDecoration(
+              labelText: 'Mensaje personalizado',
+              hintText: 'Ej: Hola {nombre}! ✨ Tu turno de {servicio} con {profesional} el {fecha} a las {hora} esta confirmado. Tu codigo: {codigo}. Te esperamos en {salon}!',
+              hintStyle: TextStyle(color: Colors.white.withAlpha(50), fontSize: 12),
+              labelStyle: TextStyle(color: Colors.white.withAlpha(150)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.white.withAlpha(50)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.green),
+              ),
+              filled: true,
+              fillColor: Colors.white.withAlpha(13),
+              contentPadding: const EdgeInsets.all(14),
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  final preview = WhatsappService.buildConfirmationMessage(
+                    nombreCliente: 'María',
+                    servicio: 'Corte + Color',
+                    profesional: 'Ana',
+                    fecha: '15/04/2026',
+                    hora: '10:00',
+                    codigo: 'ABC123',
+                    salonName: _nombreCtrl.text.isNotEmpty ? _nombreCtrl.text : 'Mi Salon',
+                    direccion: _direccionCtrl.text,
+                    plantillaPersonalizada: _mensajeWhatsappCtrl.text,
+                  );
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: AppConfig.colorFondoCard,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Row(
+                        children: [
+                          Icon(Icons.visibility, color: Colors.green, size: 20),
+                          SizedBox(width: 8),
+                          Text('Vista previa', style: TextStyle(color: AppConfig.colorTexto)),
+                        ],
+                      ),
+                      content: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF075E54).withAlpha(30),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: SelectableText(
+                          preview,
+                          style: const TextStyle(color: AppConfig.colorTexto, fontSize: 13, height: 1.5),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+                      ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.visibility, size: 18),
+                label: const Text('Vista previa'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  side: const BorderSide(color: Colors.green),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() => _mensajeWhatsappCtrl.clear()),
+                icon: const Icon(Icons.restore, size: 18),
+                label: const Text('Usar default'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppConfig.colorTextoSecundario,
+                  side: BorderSide(color: Colors.white.withAlpha(50)),
+                ),
+              ),
+            ),
+          ],
+        ),
+
         const SizedBox(height: 32),
         ElevatedButton.icon(
           onPressed: _saving ? null : _save,
@@ -3011,6 +3274,31 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _variableChip(String variable, String description) {
+    return InkWell(
+      onTap: () {
+        final text = _mensajeWhatsappCtrl.text;
+        final selection = _mensajeWhatsappCtrl.selection;
+        final pos = selection.isValid ? selection.baseOffset : text.length;
+        final newText = text.substring(0, pos) + variable + text.substring(pos);
+        _mensajeWhatsappCtrl.text = newText;
+        _mensajeWhatsappCtrl.selection = TextSelection.collapsed(offset: pos + variable.length);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.green.withAlpha(20),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.green.withAlpha(60)),
+        ),
+        child: Text(
+          '$variable ($description)',
+          style: const TextStyle(color: Colors.green, fontSize: 11, fontFamily: 'monospace'),
+        ),
       ),
     );
   }

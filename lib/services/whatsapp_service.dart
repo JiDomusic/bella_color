@@ -66,6 +66,7 @@ class WhatsappService {
     String? senaCbu,
     String? senaAlias,
     String? senaTitular,
+    String? plantillaPersonalizada,
   }) async {
     final message = buildConfirmationMessage(
       nombreCliente: nombreCliente,
@@ -80,6 +81,7 @@ class WhatsappService {
       senaCbu: senaCbu,
       senaAlias: senaAlias,
       senaTitular: senaTitular,
+      plantillaPersonalizada: plantillaPersonalizada,
     );
     final url = _generateWhatsAppUrl(phone, message, countryCode: countryCode);
     await _openUrl(url);
@@ -110,6 +112,8 @@ class WhatsappService {
   }
 
   /// Construir mensaje de confirmación de turno
+  /// Si se pasa plantillaPersonalizada, usa esa plantilla reemplazando variables:
+  /// {nombre}, {servicio}, {profesional}, {fecha}, {hora}, {codigo}, {salon}, {direccion}
   static String buildConfirmationMessage({
     required String nombreCliente,
     required String servicio,
@@ -123,22 +127,48 @@ class WhatsappService {
     String? senaCbu,
     String? senaAlias,
     String? senaTitular,
+    String? plantillaPersonalizada,
   }) {
-    String message = '''\u2728 *${salonName.toUpperCase()}* \u2728
+    // Si hay plantilla personalizada, usarla
+    if (plantillaPersonalizada != null && plantillaPersonalizada.trim().isNotEmpty) {
+      String message = plantillaPersonalizada
+          .replaceAll('{nombre}', nombreCliente)
+          .replaceAll('{servicio}', servicio)
+          .replaceAll('{profesional}', profesional)
+          .replaceAll('{fecha}', fecha)
+          .replaceAll('{hora}', hora)
+          .replaceAll('{codigo}', codigo)
+          .replaceAll('{salon}', salonName)
+          .replaceAll('{direccion}', direccion ?? '');
 
-Hola $nombreCliente! Tu turno esta confirmado!
+      // Agregar seña si corresponde
+      if (montoSena != null && montoSena > 0) {
+        message += '\n\n💰 *SEÑA REQUERIDA:*\nMonto: ${formatPrecioConSigno(montoSena)}';
+        if (senaCbu != null && senaCbu.isNotEmpty) message += '\nCBU: $senaCbu';
+        if (senaAlias != null && senaAlias.isNotEmpty) message += '\nAlias: $senaAlias';
+        if (senaTitular != null && senaTitular.isNotEmpty) message += '\nTitular: $senaTitular';
+        message += '\n\nEnvia el comprobante de transferencia en este chat para confirmar tu turno.';
+      }
 
-\u2702 *DETALLES DE TU TURNO:*
-\u25B8 Servicio: $servicio
-\u25B8 Profesional: $profesional
-\u25B8 Fecha: $fecha
-\u25B8 Hora: $hora
-\u25B8 Codigo: *$codigo*''';
+      return message;
+    }
+
+    // Plantilla por defecto
+    String message = '''✨ *${salonName.toUpperCase()}* ✨
+
+Hola $nombreCliente! 🎉 Tu turno esta confirmado!
+
+💇 *DETALLES DE TU TURNO:*
+💈 Servicio: $servicio
+👩‍🎨 Profesional: $profesional
+📅 Fecha: $fecha
+🕐 Hora: $hora
+🔑 Codigo: *$codigo*''';
 
     if (montoSena != null && montoSena > 0) {
       message += '''
 
-\u25A0 *SE\u00D1A REQUERIDA:*
+💰 *SEÑA REQUERIDA:*
 Monto: ${formatPrecioConSigno(montoSena)}''';
       if (senaCbu != null && senaCbu.isNotEmpty) {
         message += '\nCBU: $senaCbu';
@@ -155,18 +185,18 @@ Monto: ${formatPrecioConSigno(montoSena)}''';
     if (direccion != null && direccion.isNotEmpty) {
       message += '''
 
-\u25C6 *UBICACION:*
+📍 *UBICACION:*
 $direccion''';
     }
 
     message += '''
 
-\u26A0 *IMPORTANTE:*
-\u2022 Llega 10 minutos antes de tu horario
-\u2022 Presenta tu codigo de confirmacion
-\u2022 Si no podes asistir, cancela con anticipacion
+⚡ *IMPORTANTE:*
+• 🕐 Llega 10 minutos antes de tu horario
+• 🔑 Presentá tu código de confirmación
+• ❌ Si no podés asistir, cancelá con anticipación
 
-_Hecho con amor en Argentina_
+🇦🇷 _Hecho con amor en Argentina_ 💜
 _Mensaje automatico de ${salonName}_''';
 
     return message;
@@ -184,24 +214,24 @@ _Mensaje automatico de ${salonName}_''';
   }) {
     return '''\u23F0 *RECORDATORIO DE TURNO*
 
-Hola $nombreCliente!
+Hola $nombreCliente! \uD83D\uDC4B
 
 Tu turno en *$salonName* es *MA\u00D1ANA*:
 
-\u25B8 Servicio: $servicio
-\u25B8 Profesional: $profesional
-\u25B8 Fecha: $fecha
-\u25B8 Hora: $hora
-\u25B8 Codigo: *$codigo*
+\uD83D\uDC88 Servicio: $servicio
+\uD83D\uDC69\u200D\uD83C\uDFA8 Profesional: $profesional
+\uD83D\uDCC5 Fecha: $fecha
+\uD83D\uDD50 Hora: $hora
+\uD83D\uDD11 C\u00F3digo: *$codigo*
 
-*RECORDA:*
-\u2022 Llegar 10 minutos antes
-\u2022 Traer tu codigo de confirmacion
-\u2022 Si necesitas cancelar, avisanos con tiempo
+*RECORD\u00C1:*
+\u2022 \u23F0 Llegar 10 minutos antes
+\u2022 \uD83D\uDD11 Traer tu c\u00F3digo de confirmaci\u00F3n
+\u2022 \u274C Si necesit\u00E1s cancelar, avisanos con tiempo
 
 Te esperamos! \u2728
 
-_${salonName}_''';
+\uD83C\uDDE6\uD83C\uDDF7 _${salonName}_''';
   }
 
   /// Mensaje de cancelación
@@ -213,21 +243,21 @@ _${salonName}_''';
     required String codigo,
     required String salonName,
   }) {
-    return '''\u2716 *TURNO CANCELADO*
+    return '''\u274C *TURNO CANCELADO*
 
 Hola $nombreCliente,
 
 Tu turno ha sido cancelado:
 
-\u25B8 Codigo: *$codigo*
-\u25B8 Servicio: $servicio
-\u25B8 Era para: $fecha a las $hora
+\uD83D\uDD11 C\u00F3digo: *$codigo*
+\uD83D\uDC88 Servicio: $servicio
+\uD83D\uDCC5 Era para: $fecha a las $hora
 
-Queres agendar un nuevo turno?
+\u00BFQuer\u00E9s agendar un nuevo turno? \uD83D\uDC87
 
-Esperamos verte pronto! \u2728
+\u00A1Esperamos verte pronto! \u2728
 
-_${salonName}_''';
+\uD83C\uDDE6\uD83C\uDDF7 _${salonName}_''';
   }
 
   /// Mensaje pidiendo confirmación al cliente
@@ -243,20 +273,20 @@ _${salonName}_''';
   }) {
     return '''\u2728 *${salonName.toUpperCase()}* \u2728
 
-Hola $nombreCliente! Recibimos tu solicitud de turno.
+Hola $nombreCliente! Recibimos tu solicitud de turno \uD83D\uDCCB
 
-\u2702 *DETALLES:*
-\u25B8 Servicio: $servicio
-\u25B8 Profesional: $profesional
-\u25B8 Fecha: $fecha
-\u25B8 Hora: $hora
+\uD83D\uDC87 *DETALLES:*
+\uD83D\uDC88 Servicio: $servicio
+\uD83D\uDC69\u200D\uD83C\uDFA8 Profesional: $profesional
+\uD83D\uDCC5 Fecha: $fecha
+\uD83D\uDD50 Hora: $hora
 
-\u25A0 *CONFIRMA TU TURNO:*
-Usa tu codigo: *$codigo*
+\uD83D\uDD11 *CONFIRM\u00C1 TU TURNO:*
+Us\u00E1 tu c\u00F3digo: *$codigo*
 
-\u26A0 Si no confirmas dentro de $confirmationWindowHours horas, el turno se cancelara automaticamente.
+\u26A0\uFE0F Si no confirm\u00E1s dentro de $confirmationWindowHours horas, el turno se cancelar\u00E1 autom\u00E1ticamente.
 
-_${salonName}_''';
+\uD83C\uDDE6\uD83C\uDDF7 _${salonName}_''';
   }
 
   /// Mensaje de lista de espera
@@ -267,19 +297,19 @@ _${salonName}_''';
     required String hora,
     required String salonName,
   }) {
-    return '''\u2605 *BUENAS NOTICIAS!*
+    return '''\uD83C\uDF89 *\u00A1BUENAS NOTICIAS!*
 
-Hola $nombreCliente!
+Hola $nombreCliente! \uD83D\uDC4B
 
-Se libero un lugar en *$salonName* para:
+Se liber\u00F3 un lugar en *$salonName* para:
 
-\u25B8 Servicio: $servicio
-\u25B8 Fecha: $fecha
-\u25B8 Hora: $hora
+\uD83D\uDC88 Servicio: $servicio
+\uD83D\uDCC5 Fecha: $fecha
+\uD83D\uDD50 Hora: $hora
 
-Queres que te reservemos? Respondenos rapido para asegurar tu lugar!
+\u00BFQuer\u00E9s que te reservemos? \u00A1Respondenos r\u00E1pido para asegurar tu lugar! \uD83C\uDFC3\u200D\u2640\uFE0F
 
-_${salonName}_''';
+\uD83C\uDDE6\uD83C\uDDF7 _${salonName}_''';
   }
 
   /// Enviar mensaje genérico

@@ -30,12 +30,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     final savedEmail = prefs.getString('admin_email') ?? '';
     final savedPass = prefs.getString('admin_pass') ?? '';
     final remember = prefs.getBool('admin_remember') ?? false;
-    if (remember && savedEmail.isNotEmpty) {
-      setState(() {
-        _emailCtrl.text = savedEmail;
-        _passCtrl.text = savedPass;
-        _remember = true;
-      });
+    if (remember && savedEmail.isNotEmpty && savedPass.isNotEmpty) {
+      _emailCtrl.text = savedEmail;
+      _passCtrl.text = savedPass;
+      _remember = true;
+      // Auto-login con credenciales guardadas
+      _login();
     }
   }
 

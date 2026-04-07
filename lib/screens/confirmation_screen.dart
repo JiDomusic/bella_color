@@ -350,6 +350,7 @@ class ConfirmationScreen extends StatelessWidget {
       senaCbu: tenant.senaCbu,
       senaAlias: tenant.senaAlias,
       senaTitular: tenant.senaTitular,
+      plantillaPersonalizada: tenant.mensajeWhatsappConfirmacion,
     );
   }
 
@@ -371,6 +372,7 @@ class ConfirmationScreen extends StatelessWidget {
       senaCbu: tenant?.senaCbu,
       senaAlias: tenant?.senaAlias,
       senaTitular: tenant?.senaTitular,
+      plantillaPersonalizada: tenant?.mensajeWhatsappConfirmacion,
     );
 
     WhatsappService.openChat(
