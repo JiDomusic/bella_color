@@ -3055,6 +3055,20 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
                   _variableChip('{direccion}', 'Dirección'),
                 ],
               ),
+              const SizedBox(height: 10),
+              const Text('Emojis:', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  _emojiButton('💇', 'Corte'),
+                  const SizedBox(width: 8),
+                  _emojiButton('💅', 'Uñas'),
+                  const SizedBox(width: 8),
+                  _emojiButton('✨', 'Brillo'),
+                  const SizedBox(width: 8),
+                  _emojiButton('💜', 'Corazon'),
+                ],
+              ),
               const SizedBox(height: 8),
               const Text(
                 'Si lo dejas vacio, se usa el mensaje por defecto.',
@@ -3274,6 +3288,35 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _emojiButton(String emoji, String label) {
+    return InkWell(
+      onTap: () {
+        final text = _mensajeWhatsappCtrl.text;
+        final selection = _mensajeWhatsappCtrl.selection;
+        final pos = selection.isValid ? selection.baseOffset : text.length;
+        final newText = text.substring(0, pos) + emoji + text.substring(pos);
+        _mensajeWhatsappCtrl.text = newText;
+        _mensajeWhatsappCtrl.selection = TextSelection.collapsed(offset: pos + emoji.length);
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: widget.accent.withAlpha(15),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: widget.accent.withAlpha(40)),
+        ),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 22)),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(color: Colors.white.withAlpha(120), fontSize: 9)),
+          ],
+        ),
       ),
     );
   }

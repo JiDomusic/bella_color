@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'config/app_config.dart';
 import 'screens/splash_screen.dart';
 import 'services/supabase_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es_ES', null);
 
   final tenantId = _resolveTenantId();
   SupabaseService.instance.setTenantId(tenantId);
