@@ -3145,6 +3145,26 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             style: TextStyle(color: AppConfig.colorTerciario, fontSize: 13, height: 1.5),
           ),
         ),
+        // Emojis y botón ejemplo
+        const SizedBox(height: 8),
+        const Text('Toca un emoji para agregarlo al mensaje:', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _emojiButton('💇', 'Corte'),
+            const SizedBox(width: 10),
+            _emojiButton('💅', 'Uñas'),
+            const SizedBox(width: 10),
+            _emojiButton('✨', 'Brillo'),
+            const SizedBox(width: 10),
+            _emojiButton('💜', 'Amor'),
+            const SizedBox(width: 10),
+            _emojiButton('⭐', 'Estrella'),
+            const SizedBox(width: 10),
+            _emojiButton('🌸', 'Flor'),
+          ],
+        ),
+        const SizedBox(height: 12),
         // Botón para cargar ejemplo
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
