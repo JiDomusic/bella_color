@@ -3138,65 +3138,53 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.green.withAlpha(30)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Personalizá el mensaje que se envia por WhatsApp cuando se confirma un turno. Podés usar emojis y estas variables:',
-                style: TextStyle(color: AppConfig.colorTerciario, fontSize: 12, height: 1.4),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  _variableChip('{nombre}', 'Nombre del cliente'),
-                  _variableChip('{servicio}', 'Servicio'),
-                  _variableChip('{profesional}', 'Profesional'),
-                  _variableChip('{fecha}', 'Fecha'),
-                  _variableChip('{hora}', 'Hora'),
-                  _variableChip('{codigo}', 'Código'),
-                  _variableChip('{salon}', 'Nombre del salón'),
-                  _variableChip('{direccion}', 'Dirección'),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text('Emojis:', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  _emojiButton('💇', 'Corte'),
-                  const SizedBox(width: 8),
-                  _emojiButton('💅', 'Uñas'),
-                  const SizedBox(width: 8),
-                  _emojiButton('✨', 'Brillo'),
-                  const SizedBox(width: 8),
-                  _emojiButton('💜', 'Corazon'),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Si lo dejas vacio, se usa el mensaje por defecto.',
-                style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11),
-              ),
-            ],
+          child: const Text(
+            'Aca podes escribir tu propio mensaje que se envia por WhatsApp cuando una clienta confirma un turno.\n\n'
+            'Si lo dejas vacio se usa uno bonito por defecto.\n\n'
+            'Toca "Usar ejemplo" para cargar un modelo listo que podes editar a tu gusto.',
+            style: TextStyle(color: AppConfig.colorTerciario, fontSize: 13, height: 1.5),
+          ),
+        ),
+        // Botón para cargar ejemplo
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: ElevatedButton.icon(
+            onPressed: () {
+              final salon = _nombreCtrl.text.isNotEmpty ? _nombreCtrl.text : 'Mi Salon';
+              setState(() {
+                _mensajeWhatsappCtrl.text =
+                    '*$salon*\n\n'
+                    'Hola {nombre}! Tu turno esta confirmado\n\n'
+                    '*Tu turno:*\n'
+                    'Servicio: {servicio}\n'
+                    'Profesional: {profesional}\n'
+                    'Fecha: {fecha}\n'
+                    'Hora: {hora}\n'
+                    'Codigo: *{codigo}*\n\n'
+                    'Te esperamos!';
+              });
+            },
+            icon: const Icon(Icons.auto_fix_high, size: 18),
+            label: const Text('Usar ejemplo'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.withAlpha(40),
+              foregroundColor: Colors.green,
+            ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: TextField(
             controller: _mensajeWhatsappCtrl,
-            style: const TextStyle(color: AppConfig.colorTexto, fontSize: 13),
-            maxLines: 10,
-            minLines: 5,
+            style: const TextStyle(color: AppConfig.colorTexto, fontSize: 14),
+            maxLines: 12,
+            minLines: 6,
             decoration: InputDecoration(
-              labelText: 'Mensaje personalizado',
-              hintText: 'Ej: Hola {nombre}! ✨ Tu turno de {servicio} con {profesional} el {fecha} a las {hora} esta confirmado. Tu codigo: {codigo}. Te esperamos en {salon}!',
-              hintStyle: TextStyle(color: Colors.white.withAlpha(50), fontSize: 12),
-              labelStyle: TextStyle(color: Colors.white.withAlpha(150)),
+              hintText: 'Escribi tu mensaje aca...\nO toca "Usar ejemplo" para empezar',
+              hintStyle: TextStyle(color: Colors.white.withAlpha(60), fontSize: 13),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.white.withAlpha(50)),
+                borderSide: BorderSide(color: Colors.green.withAlpha(60)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -3208,11 +3196,45 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
             ),
           ),
         ),
+        // Info de variables colapsable
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: const Text('Que son las palabras entre llaves?', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 13)),
+          iconColor: AppConfig.colorTextoSecundario,
+          collapsedIconColor: AppConfig.colorTextoSecundario,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Las palabras entre llaves se reemplazan solas por los datos del turno:\n\n'
+                '{nombre} = nombre de la clienta\n'
+                '{servicio} = el servicio que reservo\n'
+                '{profesional} = la profesional\n'
+                '{fecha} = la fecha del turno\n'
+                '{hora} = la hora del turno\n'
+                '{codigo} = el codigo de confirmacion\n'
+                '{salon} = el nombre de tu salon\n'
+                '{direccion} = tu direccion\n\n'
+                'Por ejemplo si escribis:\n'
+                '"Hola {nombre}! Tu turno de {servicio} es el {fecha}"\n\n'
+                'La clienta va a recibir:\n'
+                '"Hola María! Tu turno de Corte + Color es el 15/04/2026"',
+                style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12, height: 1.6),
+              ),
+            ),
+          ],
+        ),
+        // Botones Vista previa y Borrar
         Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {
+                onPressed: _mensajeWhatsappCtrl.text.trim().isEmpty ? null : () {
                   final preview = WhatsappService.buildConfirmationMessage(
                     nombreCliente: 'María',
                     servicio: 'Corte + Color',
@@ -3229,13 +3251,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
                     builder: (_) => AlertDialog(
                       backgroundColor: AppConfig.colorFondoCard,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: const Row(
-                        children: [
-                          Icon(Icons.visibility, color: Colors.green, size: 20),
-                          SizedBox(width: 8),
-                          Text('Vista previa', style: TextStyle(color: AppConfig.colorTexto)),
-                        ],
-                      ),
+                      title: const Text('Asi lo va a ver tu clienta', style: TextStyle(color: AppConfig.colorTexto, fontSize: 16)),
                       content: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -3254,7 +3270,7 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
                   );
                 },
                 icon: const Icon(Icons.visibility, size: 18),
-                label: const Text('Vista previa'),
+                label: const Text('Ver como queda'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.green,
                   side: const BorderSide(color: Colors.green),
@@ -3262,15 +3278,13 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => setState(() => _mensajeWhatsappCtrl.clear()),
-                icon: const Icon(Icons.restore, size: 18),
-                label: const Text('Usar default'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppConfig.colorTextoSecundario,
-                  side: BorderSide(color: Colors.white.withAlpha(50)),
-                ),
+            OutlinedButton.icon(
+              onPressed: _mensajeWhatsappCtrl.text.trim().isEmpty ? null : () => setState(() => _mensajeWhatsappCtrl.clear()),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: const Text('Borrar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: Colors.redAccent),
               ),
             ),
           ],
