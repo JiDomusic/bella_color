@@ -444,7 +444,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'Toca un dia para ver los bloqueos de ese dia',
                       'Toca "Bloquear" para cerrar ese dia o una hora',
                       'Dia completo: para feriados, vacaciones, etc',
-                      'Si no queres dia completo, desactiva el switch y pone la hora (ej: 14:00)',
+                      'Si no queres dia completo, desactiva el switch',
+                      'Elegí hora DESDE y hora HASTA para bloquear un rango',
+                      'Ej: de 14:00 a 17:00 bloquea todos los turnos en ese rango',
+                      'Si elegis la misma hora en ambos, se bloquea solo ese turno',
                       'Podes poner un motivo (opcional)',
                       'Para eliminar un bloqueo, toca el icono de basura',
                     ]),
@@ -1798,11 +1801,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     );
   }
 
+  /// Genera los slots horarios del día basado en los horarios configurados
+  List<String> _generateTimeSlots() {
+    final slots = <String>[];
+    for (final h in _hours) {
+      final startParts = h.horaInicio.split(':');
+      final endParts = h.horaFin.split(':');
+      if (startParts.length < 2 || endParts.length < 2) continue;
+      var current = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+      final end = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+      final interval = h.intervaloMinutos;
+      while (current < end) {
+        slots.add('${(current ~/ 60).toString().padLeft(2, '0')}:${(current % 60).toString().padLeft(2, '0')}');
+        current += interval;
+      }
+    }
+    if (slots.isEmpty) {
+      // Fallback: cada 30 min de 8 a 20
+      for (var m = 480; m < 1200; m += 30) {
+        slots.add('${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}');
+      }
+    }
+    return slots;
+  }
+
   void _addBlockForDate(DateTime date) {
-    String? blockHour;
     bool fullDay = true;
+    String? horaDesde;
+    String? horaHasta;
     final motivoCtrl = TextEditingController();
     final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final slots = _generateTimeSlots();
 
     showDialog(
       context: context,
@@ -1816,16 +1845,54 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             children: [
               SwitchListTile(
                 title: const Text('Dia completo', style: TextStyle(color: AppConfig.colorTexto)),
+                subtitle: const Text('Feriado, vacaciones, etc.', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
                 value: fullDay,
                 activeColor: _primary,
                 onChanged: (v) => setDState(() => fullDay = v),
               ),
-              if (!fullDay)
-                TextField(
-                  decoration: const InputDecoration(labelText: 'Hora (HH:MM)'),
-                  style: const TextStyle(color: AppConfig.colorTexto),
-                  onChanged: (v) => blockHour = v,
+              if (!fullDay) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: horaDesde,
+                        decoration: const InputDecoration(labelText: 'Desde', isDense: true),
+                        dropdownColor: AppConfig.colorFondoCard,
+                        style: const TextStyle(color: AppConfig.colorTexto, fontSize: 14),
+                        items: slots.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        onChanged: (v) => setDState(() {
+                          horaDesde = v;
+                          // Si "hasta" no está puesto o es menor, poner igual
+                          if (horaHasta == null || (horaHasta != null && horaHasta!.compareTo(v!) < 0)) {
+                            horaHasta = v;
+                          }
+                        }),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: horaHasta,
+                        decoration: const InputDecoration(labelText: 'Hasta', isDense: true),
+                        dropdownColor: AppConfig.colorFondoCard,
+                        style: const TextStyle(color: AppConfig.colorTexto, fontSize: 14),
+                        items: slots.where((s) => horaDesde == null || s.compareTo(horaDesde!) >= 0).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        onChanged: (v) => setDState(() => horaHasta = v),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  horaDesde != null && horaHasta != null && horaDesde == horaHasta
+                      ? 'Se bloquea solo el turno de las $horaDesde'
+                      : horaDesde != null && horaHasta != null
+                          ? 'Se bloquean todos los turnos de $horaDesde a $horaHasta'
+                          : 'Selecciona el rango de horas',
+                  style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11),
+                ),
+              ],
               const SizedBox(height: 8),
               TextField(controller: motivoCtrl, decoration: const InputDecoration(labelText: 'Motivo (opcional)'), style: const TextStyle(color: AppConfig.colorTexto)),
             ],
@@ -1835,12 +1902,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await _svc.createBlock({
-                    'fecha': dateStr,
-                    'hora': fullDay ? null : blockHour,
-                    'dia_completo': fullDay,
-                    'motivo': motivoCtrl.text.trim(),
-                  });
+                  if (fullDay) {
+                    await _svc.createBlock({
+                      'fecha': dateStr,
+                      'hora': null,
+                      'dia_completo': true,
+                      'motivo': motivoCtrl.text.trim(),
+                    });
+                  } else {
+                    if (horaDesde == null) return;
+                    // Crear un bloqueo por cada slot en el rango
+                    final motivo = motivoCtrl.text.trim();
+                    final slotsToBlock = slots.where((s) =>
+                        s.compareTo(horaDesde!) >= 0 && s.compareTo(horaHasta ?? horaDesde!) <= 0).toList();
+                    for (final slot in slotsToBlock) {
+                      await _svc.createBlock({
+                        'fecha': dateStr,
+                        'hora': slot,
+                        'dia_completo': false,
+                        'motivo': motivo,
+                      });
+                    }
+                  }
                   _blocks = await _svc.loadBlocks();
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) setState(() {});
