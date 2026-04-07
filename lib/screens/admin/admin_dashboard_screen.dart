@@ -280,9 +280,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       appBar: AppBar(
         title: Text(_tenant?.nombreSalon ?? 'Admin'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: AppConfig.colorPrimario),
-            tooltip: 'Guia de uso',
+          TextButton.icon(
+            icon: const Icon(Icons.menu_book, color: AppConfig.colorPrimario, size: 20),
+            label: const Text('Manual', style: TextStyle(color: AppConfig.colorPrimario, fontSize: 12)),
             onPressed: _showHelp,
           ),
           IconButton(
@@ -392,10 +392,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.favorite, color: Colors.pink.shade200, size: 28),
+                    Icon(Icons.menu_book, color: _accent, size: 28),
                     const SizedBox(width: 12),
                     const Expanded(
-                      child: Text('Guia de Uso', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppConfig.colorTexto)),
+                      child: Text('Manual de Uso', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppConfig.colorTexto)),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: AppConfig.colorTextoSecundario),
@@ -436,10 +436,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'No Show: si no vino',
                       'Cancelar: si cancela',
                     ]),
-                    _helpSection('Bloqueos', Icons.block, [
-                      'Anda a "Bloqueos" para cerrar dias u horas',
-                      'Dia completo: feriados, vacaciones',
-                      'Hora especifica: si necesitas cerrar un rato',
+                    _helpSection('Cerrar dias (Bloqueos)', Icons.block, [
+                      'Anda a la pestana "Cerrar dias"',
+                      'Vas a ver un calendario con todos los dias',
+                      'Los dias bloqueados aparecen en ROJO',
+                      'Las horas bloqueadas aparecen en NARANJA',
+                      'Toca un dia para ver los bloqueos de ese dia',
+                      'Toca "Bloquear" para cerrar ese dia o una hora',
+                      'Dia completo: para feriados, vacaciones, etc',
+                      'Si no queres dia completo, desactiva el switch y pone la hora (ej: 14:00)',
+                      'Podes poner un motivo (opcional)',
+                      'Para eliminar un bloqueo, toca el icono de basura',
+                    ]),
+                    _helpSection('Mensaje de WhatsApp', Icons.chat, [
+                      'Anda a "Mi Salon" y busca "Mensaje de WhatsApp"',
+                      'Ahi podes escribir tu propio mensaje de confirmacion',
+                      'Usa las variables para que se completen solas:',
+                      '{nombre} = nombre de la clienta',
+                      '{servicio} = servicio que reservo',
+                      '{profesional} = profesional asignada',
+                      '{fecha} = fecha del turno',
+                      '{hora} = hora del turno',
+                      '{codigo} = codigo de confirmacion',
+                      '{salon} = nombre de tu salon',
+                      'Toca los emojis (💇 💅 ✨ 💜) para agregarlos',
+                      'Toca "Vista previa" para ver como queda',
+                      'Si lo dejas vacio, se usa un mensaje lindo por defecto',
                     ]),
                     _helpSection('Lista de espera', Icons.people, [
                       'Cuando no hay turnos, las clientas se anotan',

@@ -153,18 +153,18 @@ class WhatsappService {
       return message;
     }
 
-    // Plantilla por defecto
-    String message = '*${salonName.toUpperCase()}*\n\n'
+    // Plantilla por defecto con emojis literales
+    String message = '✨ *${salonName.toUpperCase()}* ✨\n\n'
         'Hola $nombreCliente! Tu turno esta confirmado!\n\n'
-        '*DETALLES DE TU TURNO:*\n'
-        'Servicio: $servicio\n'
-        'Profesional: $profesional\n'
-        'Fecha: $fecha\n'
-        'Hora: $hora\n'
-        'Codigo: *$codigo*';
+        '💇 *DETALLES DE TU TURNO:*\n'
+        '💅 Servicio: $servicio\n'
+        '⭐ Profesional: $profesional\n'
+        '📅 Fecha: $fecha\n'
+        '⏰ Hora: $hora\n'
+        '🔑 Codigo: *$codigo*';
 
     if (montoSena != null && montoSena > 0) {
-      message += '\n\n*SE\u00D1A REQUERIDA:*\n'
+      message += '\n\n💰 *SEÑA REQUERIDA:*\n'
           'Monto: ${formatPrecioConSigno(montoSena)}';
       if (senaCbu != null && senaCbu.isNotEmpty) {
         message += '\nCBU: $senaCbu';
@@ -179,14 +179,14 @@ class WhatsappService {
     }
 
     if (direccion != null && direccion.isNotEmpty) {
-      message += '\n\n*UBICACION:*\n$direccion';
+      message += '\n\n📍 *UBICACION:*\n$direccion';
     }
 
-    message += '\n\n*IMPORTANTE:*\n'
-        'Llega 10 minutos antes de tu horario\n'
-        'Presenta tu codigo de confirmacion\n'
-        'Si no podes asistir, cancela con anticipacion\n\n'
-        '_Mensaje automatico de ${salonName}_';
+    message += '\n\n⚡ *IMPORTANTE:*\n'
+        '• Llega 10 minutos antes de tu horario\n'
+        '• Presenta tu codigo de confirmacion\n'
+        '• Si no podes asistir, cancela con anticipacion\n\n'
+        '💜 _Mensaje automatico de ${salonName}_';
 
     return message;
   }
