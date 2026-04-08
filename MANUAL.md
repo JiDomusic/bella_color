@@ -63,6 +63,7 @@ A partir de ahora entras con tu nueva contrasena.
 ### Pestana TURNOS
 Aca se ven los turnos del dia.
 
+- **Solapas de categoria**: filtra los turnos por tipo de servicio (Todos, Uñas, Cabello, etc.)
 - Selecciona una **fecha** tocando el calendario arriba
 - Cada turno muestra: hora, nombre del cliente, servicio, profesional, telefono, codigo, estado
 - **Botones de accion** en cada turno:
@@ -72,6 +73,7 @@ Aca se ven los turnos del dia.
   - **No Show**: si no vino
   - **Cancelar**: si cancela
   - **WhatsApp**: aparece si hay telefono; abre chat directo con la clienta
+  - **Comprobante**: aparece si la clienta subio comprobante de seña; tocalo para ver la imagen
 
 **Flujo normal de un turno:**
 ```
@@ -112,6 +114,8 @@ Las personas que atienden en tu salon.
 
 ### Pestana SERVICIOS
 Lo que ofrece tu salon.
+
+- **Solapas de categoria**: filtra los servicios por tipo (Todos, Uñas, Cabello, etc.). Solo aparecen las categorias que tienen servicios.
 
 1. Toca **"Agregar Servicio"**
 2. Llena:
@@ -158,15 +162,29 @@ Dias y horas que atiende tu salon.
 3. Selecciona los **dias** que abris (los chips azules). Ej: Lun a Sab
 4. Toca **"Guardar"**
 
-### Pestana BLOQUEOS
-Para bloquear dias o horarios especificos (feriados, vacaciones, etc).
+### Pestana CERRAR DIAS (Bloqueos por categoria)
+Bloquea dias u horarios especificos. Podes bloquear **por categoria** de servicio o **en general** para todo el salon.
 
-1. Toca **"Agregar Bloqueo"**
-2. Selecciona la **fecha**
-3. Si es todo el dia: activa **"Dia completo"**
-4. Si es un horario especifico: pone la hora (ej: "14:00")
-5. Pone el **motivo** (ej: "Feriado")
-6. Toca **"Crear"**
+**Solapas de categoria**: arriba del calendario ves las solapas (General, Uñas, Cabello, etc.). Solo aparecen las categorias que tienen servicios cargados.
+
+#### Bloquear todo el salon (feriado, vacaciones):
+1. Toca la solapa **"General"**
+2. Selecciona el dia en el calendario
+3. Toca **"Bloquear General"**
+4. Activa **"Dia completo"**
+5. Pone el motivo y toca **"Bloquear"**
+
+#### Bloquear solo una categoria (ej: Nati hace uñas de 14 a 16 y no puede hacer pestañas):
+1. Toca la solapa **"Pestañas"**
+2. Selecciona el dia en el calendario
+3. Toca **"Bloquear Pestañas"**
+4. Desactiva "Dia completo"
+5. Elegí **Desde: 14:00** y **Hasta: 16:00**
+6. Toca **"Bloquear"**
+
+**Resultado**: las clientas que quieran pestañas no ven esos horarios. Las que quieran masajes, cabello, etc. **si pueden reservar** en ese mismo horario.
+
+**Importante**: la clienta nunca ve que hay un bloqueo. Solo ve que el horario no esta disponible.
 
 ### Pestana ESPERA
 Lista de personas que quisieron turno pero no habia disponibilidad.
@@ -316,8 +334,14 @@ Tus clientas abren el link de tu salon y ven tu pagina con los servicios, profes
 Toca **"Confirmar Turno"**
 
 Despues de reservar recibe un **codigo de confirmacion** (6 letras/numeros) y puede:
-- **Confirmar por WhatsApp**: toca el boton verde para mandarte el mensaje por WhatsApp
+- **Confirmar por WhatsApp**: toca el boton verde para mandarte el mensaje por WhatsApp. Si subio comprobante, el mensaje **incluye el link a la imagen** del comprobante para que lo veas.
 - **Copiar el codigo**: toca el codigo para copiarlo
+
+### Ver comprobantes desde el panel admin
+
+Si una clienta subio comprobante de transferencia, en la pestana **Turnos** vas a ver un boton naranja **"Comprobante"** en ese turno. Tocalo para ver la imagen del comprobante y verificar que la transferencia es real.
+
+Tambien recibis el link del comprobante por WhatsApp cuando la clienta confirma su turno.
 
 ### Confirmar con codigo
 
