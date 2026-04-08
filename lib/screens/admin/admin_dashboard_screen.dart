@@ -1776,140 +1776,146 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
     return Column(
       children: [
-        _tabHint('🚫', 'Elegí una categoría para bloquear horarios solo para ese tipo de servicio, o "General" para cerrar el dia completo.'),
         _categoriaChips(
           selected: _bloqueosCategoriaFilter,
           onSelected: (cat) => setState(() => _bloqueosCategoriaFilter = cat),
           allLabel: 'General',
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: TableCalendar(
-            locale: 'es_ES',
-            firstDay: DateTime.now().subtract(const Duration(days: 30)),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: _calendarFocusedDay,
-            selectedDayPredicate: (day) => _calendarSelectedDay != null && isSameDay(_calendarSelectedDay!, day),
-            onDaySelected: (selected, focused) {
-              setState(() {
-                _calendarSelectedDay = selected;
-                _calendarFocusedDay = focused;
-              });
-            },
-            onPageChanged: (focused) => _calendarFocusedDay = focused,
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focused) {
-                final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-                final hasFullDay = _filteredBlocks.any((b) => b.fecha == dateStr && b.diaCompleto);
-                final hasPartial = _filteredBlocks.any((b) => b.fecha == dateStr && !b.diaCompleto);
-                if (hasFullDay) {
-                  return Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withAlpha(180),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text('${day.day}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  );
-                } else if (hasPartial) {
-                  return Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withAlpha(100),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text('${day.day}', style: const TextStyle(color: Colors.white)),
-                  );
-                }
-                return null;
-              },
-              todayBuilder: (context, day, focused) {
-                final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-                final hasBlock = _blockedDateStrings.contains(dateStr);
-                return Container(
-                  margin: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: hasBlock ? Colors.redAccent.withAlpha(180) : _primary.withAlpha(50),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _primary, width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text('${day.day}', style: TextStyle(color: hasBlock ? Colors.white : AppConfig.colorTexto, fontWeight: FontWeight.bold)),
-                );
-              },
-            ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: const TextStyle(color: AppConfig.colorTexto, fontSize: 16, fontWeight: FontWeight.w600),
-              leftChevronIcon: Icon(Icons.chevron_left, color: _primary),
-              rightChevronIcon: Icon(Icons.chevron_right, color: _primary),
-            ),
-            calendarStyle: CalendarStyle(
-              defaultTextStyle: const TextStyle(color: AppConfig.colorTexto),
-              weekendTextStyle: const TextStyle(color: AppConfig.colorTextoSecundario),
-              outsideTextStyle: TextStyle(color: Colors.white.withAlpha(40)),
-              selectedDecoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(8)),
-              todayDecoration: BoxDecoration(color: _primary.withAlpha(50), borderRadius: BorderRadius.circular(8)),
-            ),
-            daysOfWeekStyle: const DaysOfWeekStyle(
-              weekdayStyle: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
-              weekendStyle: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
-            ),
-          ),
-        ),
-
-        // Leyenda
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.redAccent.withAlpha(180), borderRadius: BorderRadius.circular(4))),
-              const SizedBox(width: 6),
-              Text('Dia cerrado ($catLabel)', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
-              const SizedBox(width: 16),
-              Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.orange.withAlpha(100), borderRadius: BorderRadius.circular(4))),
-              const SizedBox(width: 6),
-              Text('Hora bloqueada ($catLabel)', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
-            ],
-          ),
-        ),
-
-        // Botón agregar + bloques del día seleccionado
-        if (_calendarSelectedDay != null) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Column(
               children: [
-                Text(
-                  '${_calendarSelectedDay!.day}/${_calendarSelectedDay!.month}/${_calendarSelectedDay!.year}',
-                  style: const TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: () => _addBlockForDate(_calendarSelectedDay!),
-                  icon: const Icon(Icons.event_busy, size: 18),
-                  label: Text('Bloquear $catLabel'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withAlpha(180),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TableCalendar(
+                    locale: 'es_ES',
+                    firstDay: DateTime.now().subtract(const Duration(days: 30)),
+                    lastDay: DateTime.now().add(const Duration(days: 365)),
+                    focusedDay: _calendarFocusedDay,
+                    calendarFormat: CalendarFormat.twoWeeks,
+                    selectedDayPredicate: (day) => _calendarSelectedDay != null && isSameDay(_calendarSelectedDay!, day),
+                    onDaySelected: (selected, focused) {
+                      setState(() {
+                        _calendarSelectedDay = selected;
+                        _calendarFocusedDay = focused;
+                      });
+                    },
+                    onPageChanged: (focused) => _calendarFocusedDay = focused,
+                    calendarBuilders: CalendarBuilders(
+                      defaultBuilder: (context, day, focused) {
+                        final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                        final hasFullDay = _filteredBlocks.any((b) => b.fecha == dateStr && b.diaCompleto);
+                        final hasPartial = _filteredBlocks.any((b) => b.fecha == dateStr && !b.diaCompleto);
+                        if (hasFullDay) {
+                          return Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withAlpha(180),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text('${day.day}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          );
+                        } else if (hasPartial) {
+                          return Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withAlpha(100),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text('${day.day}', style: const TextStyle(color: Colors.white)),
+                          );
+                        }
+                        return null;
+                      },
+                      todayBuilder: (context, day, focused) {
+                        final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+                        final hasBlock = _blockedDateStrings.contains(dateStr);
+                        return Container(
+                          margin: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: hasBlock ? Colors.redAccent.withAlpha(180) : _primary.withAlpha(50),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: _primary, width: 2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text('${day.day}', style: TextStyle(color: hasBlock ? Colors.white : AppConfig.colorTexto, fontWeight: FontWeight.bold)),
+                        );
+                      },
+                    ),
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      titleTextStyle: const TextStyle(color: AppConfig.colorTexto, fontSize: 16, fontWeight: FontWeight.w600),
+                      leftChevronIcon: Icon(Icons.chevron_left, color: _primary),
+                      rightChevronIcon: Icon(Icons.chevron_right, color: _primary),
+                    ),
+                    calendarStyle: CalendarStyle(
+                      defaultTextStyle: const TextStyle(color: AppConfig.colorTexto),
+                      weekendTextStyle: const TextStyle(color: AppConfig.colorTextoSecundario),
+                      outsideTextStyle: TextStyle(color: Colors.white.withAlpha(40)),
+                      selectedDecoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(8)),
+                      todayDecoration: BoxDecoration(color: _primary.withAlpha(50), borderRadius: BorderRadius.circular(8)),
+                    ),
+                    daysOfWeekStyle: const DaysOfWeekStyle(
+                      weekdayStyle: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
+                      weekendStyle: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: selectedBlocks.isEmpty
-                ? Center(child: Text('Sin bloqueos de $catLabel este dia', style: const TextStyle(color: AppConfig.colorTextoSecundario)))
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    itemCount: selectedBlocks.length,
-                    itemBuilder: (_, i) {
-                      final b = selectedBlocks[i];
-                      return Card(
+
+                // Leyenda
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.redAccent.withAlpha(180), borderRadius: BorderRadius.circular(4))),
+                      const SizedBox(width: 6),
+                      Text('Dia cerrado ($catLabel)', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+                      const SizedBox(width: 16),
+                      Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.orange.withAlpha(100), borderRadius: BorderRadius.circular(4))),
+                      const SizedBox(width: 6),
+                      Text('Hora bloqueada ($catLabel)', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+                    ],
+                  ),
+                ),
+
+                // Botón agregar + bloques del día seleccionado
+                if (_calendarSelectedDay != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Text(
+                          '${_calendarSelectedDay!.day}/${_calendarSelectedDay!.month}/${_calendarSelectedDay!.year}',
+                          style: const TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const Spacer(),
+                        ElevatedButton.icon(
+                          onPressed: () => _addBlockForDate(_calendarSelectedDay!),
+                          icon: const Icon(Icons.event_busy, size: 18),
+                          label: Text('Bloquear $catLabel'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent.withAlpha(180),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (selectedBlocks.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text('Sin bloqueos de $catLabel este dia', style: const TextStyle(color: AppConfig.colorTextoSecundario)),
+                    )
+                  else
+                    ...selectedBlocks.map((b) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                      child: Card(
                         child: ListTile(
                           leading: Icon(b.diaCompleto ? Icons.block : Icons.access_time, color: Colors.redAccent),
                           title: Text(
@@ -1937,14 +1943,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                             },
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    )),
+                ] else
+                  const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text('Seleccioná un dia en el calendario', style: TextStyle(color: AppConfig.colorTextoSecundario)),
                   ),
+              ],
+            ),
           ),
-        ] else
-          const Expanded(
-            child: Center(child: Text('Seleccioná un dia en el calendario', style: TextStyle(color: AppConfig.colorTextoSecundario))),
-          ),
+        ),
       ],
     );
   }
