@@ -1,3 +1,4 @@
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
@@ -68,10 +69,22 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     try {
       await SupabaseService.instance.signIn(_emailCtrl.text.trim(), _passCtrl.text.trim());
       final tenantId = await SupabaseService.instance.getTenantIdForCurrentUser();
-      if (tenantId != null) {
-        SupabaseService.instance.setTenantId(tenantId);
-        await SupabaseService.instance.loadTenant();
+      if (tenantId == null) {
+        await SupabaseService.instance.signOut();
+        setState(() => _error = 'Este usuario no tiene un salon asignado');
+        return;
       }
+      // Si el usuario es admin de OTRO tenant → redirigir a su salon
+      final currentTenant = SupabaseService.instance.tenantId;
+      if (tenantId != currentTenant) {
+        await _saveCredentials();
+        final origin = html.window.location.origin;
+        html.window.location.href = '$origin/$tenantId';
+        return;
+      }
+      // Es admin de ESTE tenant → entrar al dashboard
+      SupabaseService.instance.setTenantId(tenantId);
+      await SupabaseService.instance.loadTenant();
       await _saveCredentials();
       if (mounted) {
         Navigator.of(context).pushReplacement(
