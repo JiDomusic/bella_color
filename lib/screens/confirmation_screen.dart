@@ -351,9 +351,8 @@ class ConfirmationScreen extends StatelessWidget {
   }
 
   void _sendToSalon(dynamic tenant, double? montoSena) {
-    WhatsappService.sendConfirmation(
-      phone: tenant.whatsappNumero,
-      countryCode: tenant.codigoPaisTelefono,
+    // Armar mensaje base
+    String message = WhatsappService.buildConfirmationMessage(
       nombreCliente: appointment.nombreCliente,
       servicio: appointment.servicioNombre ?? '',
       profesional: appointment.professionalNombre ?? '',
@@ -367,6 +366,17 @@ class ConfirmationScreen extends StatelessWidget {
       senaAlias: tenant.senaAlias,
       senaTitular: tenant.senaTitular,
       plantillaPersonalizada: tenant.mensajeWhatsappConfirmacion,
+    );
+
+    // Agregar link del comprobante si existe
+    if (comprobanteUrl != null) {
+      message += '\n\n🧾 *COMPROBANTE DE TRANSFERENCIA:*\n$comprobanteUrl';
+    }
+
+    WhatsappService.openChat(
+      phone: tenant.whatsappNumero,
+      countryCode: tenant.codigoPaisTelefono,
+      message: message,
     );
   }
 

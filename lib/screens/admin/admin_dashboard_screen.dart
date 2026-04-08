@@ -844,6 +844,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       message: 'Hola ${a.nombreCliente}, soy del salon ${_tenant?.nombreSalon ?? ''}.',
                     );
                   }),
+                if (a.comprobanteUrl != null)
+                  _stateBtn('Comprobante', Icons.receipt_long, Colors.orange, () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        backgroundColor: AppConfig.colorFondoCard,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.receipt_long, color: Colors.orange, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text('Comprobante de ${a.nombreCliente}', style: const TextStyle(color: AppConfig.colorTexto, fontWeight: FontWeight.w600))),
+                                  IconButton(icon: const Icon(Icons.close, color: AppConfig.colorTextoSecundario), onPressed: () => Navigator.pop(context)),
+                                ],
+                              ),
+                            ),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 400),
+                              child: InteractiveViewer(
+                                child: Image.network(a.comprobanteUrl!, fit: BoxFit.contain,
+                                  loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator()),
+                                  errorBuilder: (_, __, ___) => const Padding(padding: EdgeInsets.all(24), child: Text('No se pudo cargar la imagen', style: TextStyle(color: AppConfig.colorTextoSecundario))),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
               ],
             ),
           ],
