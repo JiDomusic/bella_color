@@ -600,6 +600,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  final ScrollController _servicesScrollCtrl = ScrollController();
+
   Widget _buildServicesGrid() {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 640;
@@ -616,21 +618,75 @@ class _HomeScreenState extends State<HomeScreen> {
           final sidePadding = contentWidth < maxWidth
               ? (maxWidth - contentWidth) / 2
               : 16.0;
+          final needsArrows = !isMobile && contentWidth > maxWidth;
 
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: sidePadding.clamp(16.0, 200.0)),
-            itemCount: _services.length,
-            separatorBuilder: (_, __) => const SizedBox(width: spacing),
-            itemBuilder: (_, i) => SizedBox(
-              width: itemWidth,
-              child: ServiceCard(
-                service: _services[i],
-                primary: _primary,
-                accent: _accent,
-                onTap: () => _openBooking(service: _services[i]),
+          return Stack(
+            children: [
+              ListView.separated(
+                controller: _servicesScrollCtrl,
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: sidePadding.clamp(16.0, 200.0)),
+                itemCount: _services.length,
+                separatorBuilder: (_, __) => const SizedBox(width: spacing),
+                itemBuilder: (_, i) => SizedBox(
+                  width: itemWidth,
+                  child: ServiceCard(
+                    service: _services[i],
+                    primary: _primary,
+                    accent: _accent,
+                    onTap: () => _openBooking(service: _services[i]),
+                  ),
+                ),
               ),
-            ),
+              if (needsArrows) ...[
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => _servicesScrollCtrl.animateTo(
+                        (_servicesScrollCtrl.offset - maxWidth * 0.6).clamp(0.0, _servicesScrollCtrl.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                      ),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(120),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => _servicesScrollCtrl.animateTo(
+                        (_servicesScrollCtrl.offset + maxWidth * 0.6).clamp(0.0, _servicesScrollCtrl.position.maxScrollExtent),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                      ),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(120),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           );
         },
       ),
