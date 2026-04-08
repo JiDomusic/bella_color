@@ -532,6 +532,11 @@ class SupabaseService {
       bytes,
       fileOptions: FileOptions(contentType: contentType, upsert: true),
     );
+    // Para comprobantes usar URL firmada (bucket es privado)
+    if (path.contains('comprobantes')) {
+      final signedUrl = await _client.storage.from(AppConfig.storageBucket).createSignedUrl(scopedPath, 60 * 60 * 24 * 365);
+      return signedUrl;
+    }
     return _client.storage.from(AppConfig.storageBucket).getPublicUrl(scopedPath);
   }
 
