@@ -884,8 +884,6 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
         const SizedBox(height: 12),
-        _bookingField(_emailController, 'Email (opcional)', Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-        const SizedBox(height: 12),
         _bookingField(_commentsController, 'Comentarios (opcional)', Icons.comment_outlined, maxLines: 3),
 
         // Sección seña + comprobante
