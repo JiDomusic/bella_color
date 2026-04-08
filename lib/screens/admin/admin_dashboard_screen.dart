@@ -687,7 +687,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     final turnosFiltrados = _filteredAppointments;
     return Column(
       children: [
-        _tabHint('📅', 'Filtrá por categoría para ver los turnos de cada tipo de servicio.'),
+        // Categoría + fecha + recordatorios compactos
         _categoriaChips(
           selected: _turnosCategoriaFilter,
           onSelected: (cat) => setState(() => _turnosCategoriaFilter = cat),
@@ -695,74 +695,66 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         ),
         // Date selector
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left),
+                icon: const Icon(Icons.chevron_left, size: 20),
                 color: _primary,
                 onPressed: () => _shiftDay(-1),
                 tooltip: 'Dia anterior',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
               ),
-              const SizedBox(width: 4),
               Expanded(
                 child: GestureDetector(
                   onTap: _pickDate,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppConfig.colorFondoCard,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: _primary.withAlpha(60)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.calendar_today, color: _primary, size: 18),
-                        const SizedBox(width: 8),
-                        Text(_selectedDate, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 15)),
-                        const SizedBox(width: 8),
-                        Icon(Icons.arrow_drop_down, color: _primary),
+                        Icon(Icons.calendar_today, color: _primary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(_selectedDate, style: const TextStyle(color: AppConfig.colorTexto, fontSize: 14)),
+                        Icon(Icons.arrow_drop_down, color: _primary, size: 20),
                       ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
               IconButton(
-                icon: const Icon(Icons.chevron_right),
+                icon: const Icon(Icons.chevron_right, size: 20),
                 color: _primary,
                 onPressed: () => _shiftDay(1),
                 tooltip: 'Dia siguiente',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
               ),
-              const SizedBox(width: 4),
               TextButton(
                 onPressed: () => _goToday(),
-                child: const Text('Hoy'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(40, 32),
+                ),
+                child: const Text('Hoy', style: TextStyle(fontSize: 13)),
+              ),
+              IconButton(
+                icon: Icon(Icons.notifications_active, size: 18, color: _accent),
+                onPressed: _showRemindersDialog,
+                tooltip: 'Enviar recordatorios de mañana',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
               ),
             ],
           ),
         ),
-        // Reminder button
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _showRemindersDialog,
-              icon: const Icon(Icons.notifications_active, size: 18),
-              label: const Text('Enviar recordatorios de mañana'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _accent,
-                side: BorderSide(color: _accent.withAlpha(100)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
         // Appointments list
         Expanded(
           child: turnosFiltrados.isEmpty

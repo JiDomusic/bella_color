@@ -102,11 +102,11 @@ class Service {
 
   static String categoriaLabel(String cat) {
     const labels = {
-      'unas': 'Unas',
+      'unas': 'Uñas',
       'maquillaje': 'Maquillaje',
       'masajes': 'Masajes',
-      'depilacion': 'Depilacion',
-      'pestanas': 'Pestanas',
+      'depilacion': 'Depilación',
+      'pestanas': 'Pestañas',
       'cejas': 'Cejas',
       'facial': 'Facial',
       'cabello': 'Cabello',
