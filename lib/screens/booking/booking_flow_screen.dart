@@ -490,6 +490,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
     return Scaffold(
       backgroundColor: PublicTheme.cream,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,

@@ -40,6 +40,7 @@ class ConfirmationScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
       body: PageBackground(child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
