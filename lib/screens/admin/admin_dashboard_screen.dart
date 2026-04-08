@@ -47,6 +47,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
   String _selectedDate = '';
 
+  // Filtros por categoría en las pestañas
+  String? _turnosCategoriaFilter;    // null = Todos
+  String? _serviciosCategoriaFilter; // null = Todos
+  String? _bloqueosCategoriaFilter;  // null = General (bloqueos globales)
+
+  /// Categorías que tienen al menos un servicio cargado
+  List<String> get _categoriasConServicios {
+    final cats = _services.map((s) => s.categoria).toSet().toList();
+    // Ordenar según el orden definido en Service.categorias
+    cats.sort((a, b) => Service.categorias.indexOf(a).compareTo(Service.categorias.indexOf(b)));
+    return cats;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -594,6 +607,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     );
   }
 
+  /// Solapas de categoría reutilizables para Turnos, Servicios y Cerrar días
+  Widget _categoriaChips({
+    required String? selected,
+    required ValueChanged<String?> onSelected,
+    String allLabel = 'Todos',
+  }) {
+    final cats = _categoriasConServicios;
+    return Container(
+      height: 42,
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: ChoiceChip(
+              label: Text(allLabel, style: TextStyle(fontSize: 12, color: selected == null ? Colors.white : AppConfig.colorTextoSecundario)),
+              selected: selected == null,
+              selectedColor: _primary,
+              backgroundColor: AppConfig.colorFondoCard,
+              side: BorderSide(color: selected == null ? _primary : Colors.white24),
+              onSelected: (_) => onSelected(null),
+            ),
+          ),
+          ...cats.map((cat) => Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: ChoiceChip(
+              label: Text(Service.categoriaLabel(cat), style: TextStyle(fontSize: 12, color: selected == cat ? Colors.white : AppConfig.colorTextoSecundario)),
+              selected: selected == cat,
+              selectedColor: _primary,
+              backgroundColor: AppConfig.colorFondoCard,
+              side: BorderSide(color: selected == cat ? _primary : Colors.white24),
+              onSelected: (_) => onSelected(cat),
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
   Widget _tabHint(String emoji, String text) {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -614,10 +667,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   }
 
   // ==== TAB 0: TURNOS ====
+
+  /// Obtiene la categoría de un turno buscando su servicio
+  String? _categoriaDeAppointment(Appointment a) {
+    if (a.servicioId == null) return null;
+    final svc = _services.cast<Service?>().firstWhere(
+      (s) => s!.id == a.servicioId,
+      orElse: () => null,
+    );
+    return svc?.categoria;
+  }
+
+  List<Appointment> get _filteredAppointments {
+    if (_turnosCategoriaFilter == null) return _appointments;
+    return _appointments.where((a) => _categoriaDeAppointment(a) == _turnosCategoriaFilter).toList();
+  }
+
   Widget _buildAppointmentsTab() {
+    final turnosFiltrados = _filteredAppointments;
     return Column(
       children: [
-        _tabHint('📅', 'Aca ves los turnos del dia. Podes confirmar, atender, completar o cancelar cada turno.'),
+        _tabHint('📅', 'Filtrá por categoría para ver los turnos de cada tipo de servicio.'),
+        _categoriaChips(
+          selected: _turnosCategoriaFilter,
+          onSelected: (cat) => setState(() => _turnosCategoriaFilter = cat),
+          allLabel: 'Todos',
+        ),
         // Date selector
         Padding(
           padding: const EdgeInsets.all(12),
@@ -690,12 +765,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         const SizedBox(height: 8),
         // Appointments list
         Expanded(
-          child: _appointments.isEmpty
-              ? Center(child: Text('Sin turnos para esta fecha', style: TextStyle(color: AppConfig.colorTextoSecundario)))
+          child: turnosFiltrados.isEmpty
+              ? Center(child: Text(
+                  _turnosCategoriaFilter != null
+                      ? 'Sin turnos de ${Service.categoriaLabel(_turnosCategoriaFilter!)} para esta fecha'
+                      : 'Sin turnos para esta fecha',
+                  style: const TextStyle(color: AppConfig.colorTextoSecundario)))
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: _appointments.length,
-                  itemBuilder: (_, i) => _appointmentCard(_appointments[i]),
+                  itemCount: turnosFiltrados.length,
+                  itemBuilder: (_, i) => _appointmentCard(turnosFiltrados[i]),
                 ),
         ),
       ],
@@ -1219,10 +1298,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   }
 
   // ==== TAB 2: SERVICIOS ====
+  List<Service> get _filteredServices {
+    if (_serviciosCategoriaFilter == null) return _services;
+    return _services.where((s) => s.categoria == _serviciosCategoriaFilter).toList();
+  }
+
   Widget _buildServicesTab() {
+    final serviciosFiltrados = _filteredServices;
     return Column(
       children: [
         _tabHint('💅', 'Agrega los servicios que ofrece tu salon: corte, color, manicura, etc. Pone el nombre, cuanto dura, el precio y una foto linda.'),
+        _categoriaChips(
+          selected: _serviciosCategoriaFilter,
+          onSelected: (cat) => setState(() => _serviciosCategoriaFilter = cat),
+          allLabel: 'Todos',
+        ),
         Padding(
           padding: const EdgeInsets.all(12),
           child: ElevatedButton.icon(
@@ -1238,9 +1328,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: _services.length,
+            itemCount: serviciosFiltrados.length,
             itemBuilder: (_, i) {
-              final s = _services[i];
+              final s = serviciosFiltrados[i];
               return Card(
                 child: ListTile(
                   onTap: () => _editServiceDialog(s),
@@ -1670,19 +1760,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   DateTime _calendarFocusedDay = DateTime.now();
   DateTime? _calendarSelectedDay;
 
-  Set<String> get _blockedDateStrings => _blocks.map((b) => b.fecha ?? '').toSet();
+  /// Bloques filtrados por la categoría seleccionada en la solapa
+  List<Block> get _filteredBlocks {
+    if (_bloqueosCategoriaFilter == null) {
+      // Solapa "General": solo bloqueos sin categoría (globales)
+      return _blocks.where((b) => b.categoria == null).toList();
+    }
+    return _blocks.where((b) => b.categoria == _bloqueosCategoriaFilter).toList();
+  }
+
+  Set<String> get _blockedDateStrings => _filteredBlocks.map((b) => b.fecha ?? '').toSet();
 
   List<Block> _blocksForDay(DateTime day) {
     final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-    return _blocks.where((b) => b.fecha == dateStr).toList();
+    return _filteredBlocks.where((b) => b.fecha == dateStr).toList();
   }
 
   Widget _buildBlocksTab() {
     final selectedBlocks = _calendarSelectedDay != null ? _blocksForDay(_calendarSelectedDay!) : <Block>[];
+    final catLabel = _bloqueosCategoriaFilter != null
+        ? Service.categoriaLabel(_bloqueosCategoriaFilter!)
+        : 'General';
 
     return Column(
       children: [
-        _tabHint('🚫', 'Tocá un día en el calendario para ver o agregar bloqueos. Los días bloqueados aparecen en rojo.'),
+        _tabHint('🚫', 'Elegí una categoría para bloquear horarios solo para ese tipo de servicio, o "General" para cerrar el dia completo.'),
+        _categoriaChips(
+          selected: _bloqueosCategoriaFilter,
+          onSelected: (cat) => setState(() => _bloqueosCategoriaFilter = cat),
+          allLabel: 'General',
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: TableCalendar(
@@ -1701,8 +1808,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             calendarBuilders: CalendarBuilders(
               defaultBuilder: (context, day, focused) {
                 final dateStr = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-                final hasFullDay = _blocks.any((b) => b.fecha == dateStr && b.diaCompleto);
-                final hasPartial = _blocks.any((b) => b.fecha == dateStr && !b.diaCompleto);
+                final hasFullDay = _filteredBlocks.any((b) => b.fecha == dateStr && b.diaCompleto);
+                final hasPartial = _filteredBlocks.any((b) => b.fecha == dateStr && !b.diaCompleto);
                 if (hasFullDay) {
                   return Container(
                     margin: const EdgeInsets.all(4),
@@ -1769,11 +1876,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
             children: [
               Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.redAccent.withAlpha(180), borderRadius: BorderRadius.circular(4))),
               const SizedBox(width: 6),
-              const Text('Dia cerrado', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+              Text('Dia cerrado ($catLabel)', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
               const SizedBox(width: 16),
               Container(width: 14, height: 14, decoration: BoxDecoration(color: Colors.orange.withAlpha(100), borderRadius: BorderRadius.circular(4))),
               const SizedBox(width: 6),
-              const Text('Hora bloqueada', style: TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
+              Text('Hora bloqueada ($catLabel)', style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 11)),
             ],
           ),
         ),
@@ -1792,7 +1899,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                 ElevatedButton.icon(
                   onPressed: () => _addBlockForDate(_calendarSelectedDay!),
                   icon: const Icon(Icons.event_busy, size: 18),
-                  label: const Text('Bloquear'),
+                  label: Text('Bloquear $catLabel'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent.withAlpha(180),
                     foregroundColor: Colors.white,
@@ -1804,7 +1911,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
           ),
           Expanded(
             child: selectedBlocks.isEmpty
-                ? const Center(child: Text('Sin bloqueos este dia', style: TextStyle(color: AppConfig.colorTextoSecundario)))
+                ? Center(child: Text('Sin bloqueos de $catLabel este dia', style: const TextStyle(color: AppConfig.colorTextoSecundario)))
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     itemCount: selectedBlocks.length,
@@ -1817,9 +1924,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                             b.diaCompleto ? 'Dia completo' : 'Hora: ${b.hora ?? ''}',
                             style: const TextStyle(color: AppConfig.colorTexto),
                           ),
-                          subtitle: b.motivo.isNotEmpty
-                              ? Text(b.motivo, style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12))
-                              : null,
+                          subtitle: Text(
+                            '${b.categoria != null ? Service.categoriaLabel(b.categoria!) : "General"}${b.motivo.isNotEmpty ? ' - ${b.motivo}' : ''}',
+                            style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
                             onPressed: () async {
@@ -1880,6 +1988,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     final motivoCtrl = TextEditingController();
     final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final slots = _generateTimeSlots();
+    final catLabel = _bloqueosCategoriaFilter != null
+        ? Service.categoriaLabel(_bloqueosCategoriaFilter!)
+        : 'General';
 
     showDialog(
       context: context,
@@ -1887,7 +1998,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         builder: (ctx, setDState) => AlertDialog(
           backgroundColor: AppConfig.colorFondoCard,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Bloquear ${date.day}/${date.month}/${date.year}', style: const TextStyle(color: AppConfig.colorTexto)),
+          title: Text('Bloquear $catLabel - ${date.day}/${date.month}/${date.year}', style: const TextStyle(color: AppConfig.colorTexto)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1956,6 +2067,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'hora': null,
                       'dia_completo': true,
                       'motivo': motivoCtrl.text.trim(),
+                      'categoria': _bloqueosCategoriaFilter,
                     });
                   } else {
                     if (horaDesde == null) return;
@@ -1969,6 +2081,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                         'hora': slot,
                         'dia_completo': false,
                         'motivo': motivo,
+                        'categoria': _bloqueosCategoriaFilter,
                       });
                     }
                   }

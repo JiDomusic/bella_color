@@ -6,6 +6,7 @@ class Block {
   final String? professionalId;
   final String motivo;
   final bool diaCompleto;
+  final String? categoria;
 
   Block({
     required this.id,
@@ -15,6 +16,7 @@ class Block {
     this.professionalId,
     this.motivo = '',
     this.diaCompleto = false,
+    this.categoria,
   });
 
   factory Block.fromJson(Map<String, dynamic> json) => Block(
@@ -25,6 +27,7 @@ class Block {
     professionalId: json['professional_id'],
     motivo: json['motivo'] ?? '',
     diaCompleto: json['dia_completo'] ?? false,
+    categoria: json['categoria'],
   );
 
   Map<String, dynamic> toJson() => {
@@ -35,5 +38,6 @@ class Block {
     'professional_id': professionalId,
     'motivo': motivo,
     'dia_completo': diaCompleto,
+    'categoria': categoria,
   };
 }
