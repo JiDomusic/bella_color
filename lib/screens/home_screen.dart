@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
+import '../config/brand_config.dart';
 import '../config/public_theme.dart';
 import '../models/tenant.dart';
 import '../models/service.dart';
@@ -198,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WhatsappService.openChat(
       phone: '3413363551',
       countryCode: '54',
-      message: 'Hola! Quiero probar Bella Color gratis por 15 dias. Me pasan el link?',
+      message: BrandConfig.instance.whatsappMensajeDemo,
     );
   }
 
@@ -317,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTopNav() {
-    final salonName = (_tenant?.nombreSalon ?? 'Bella Color').toUpperCase();
+    final salonName = (_tenant?.nombreSalon ?? BrandConfig.instance.nombre).toUpperCase();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       color: PublicTheme.nav,
@@ -414,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeroCopy(String headline, String bodyCopy, bool isWide) {
-    final name = _tenant?.nombreSalon ?? 'Bella Color';
+    final name = _tenant?.nombreSalon ?? BrandConfig.instance.nombre;
     final slogan = bodyCopy;
 
     return AnimatedSlide(
@@ -535,7 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: PublicTheme.stroke),
       ),
-      child: Icon(Icons.spa, size: 34, color: _primary),
+      child: Icon(BrandConfig.instance.iconoGenerico, size: 34, color: _primary),
     );
   }
 
@@ -750,7 +751,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('Reserva tu turno ahora', style: PublicTheme.heroTitle.copyWith(fontSize: 22)),
             const SizedBox(height: 10),
             Text(
-              'Elegí servicio, profesional y horario sin esperar en el salón.',
+              BrandConfig.instance.esBarberia
+                ? 'Elegí servicio, barbero y horario sin esperar.'
+                : 'Elegí servicio, profesional y horario sin esperar en el salón.',
               style: PublicTheme.heroSubtitle,
             ),
             const SizedBox(height: 18),

@@ -164,7 +164,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       // Check blocks
       for (final block in _blocks) {
         // Si el bloqueo es de una categoría específica, solo aplica a servicios de esa categoría
-        if (block.categoria != null && _selectedService != null && block.categoria != _selectedService!.categoria) {
+        final blockCat = Service.normalizeCategoria(block.categoria);
+        final svcCat = _selectedService != null ? _selectedService!.categoriaNormalizada : '';
+        if (blockCat.isNotEmpty && svcCat.isNotEmpty && blockCat != svcCat) {
           continue; // Este bloqueo no aplica al servicio seleccionado
         }
         if (block.diaCompleto) {

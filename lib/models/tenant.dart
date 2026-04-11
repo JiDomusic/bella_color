@@ -52,6 +52,9 @@ class Tenant {
   final String bannerTipo;
   final String colorCardProfesional;
   final String mensajeWhatsappConfirmacion;
+  final String categoria;
+
+  bool get esBarberia => categoria == 'barberia';
 
   Tenant({
     required this.id,
@@ -107,6 +110,7 @@ class Tenant {
     this.bannerTipo = 'texto',
     this.colorCardProfesional = '',
     this.mensajeWhatsappConfirmacion = '',
+    this.categoria = 'salon',
   });
 
   factory Tenant.fromJson(Map<String, dynamic> json) {
@@ -182,6 +186,7 @@ class Tenant {
       bannerTipo: json['banner_tipo'] ?? 'texto',
       colorCardProfesional: json['color_card_profesional'] ?? '',
       mensajeWhatsappConfirmacion: json['mensaje_whatsapp_confirmacion'] ?? '',
+      categoria: json['categoria'] ?? 'salon',
     );
   }
 
@@ -238,6 +243,7 @@ class Tenant {
     'banner_tipo': bannerTipo,
     'color_card_profesional': colorCardProfesional,
     'mensaje_whatsapp_confirmacion': mensajeWhatsappConfirmacion,
+    'categoria': categoria,
   };
 
   Tenant copyWith({

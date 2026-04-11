@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'config/app_config.dart';
+import 'config/brand_config.dart';
 import 'screens/splash_screen.dart';
 import 'services/supabase_service.dart';
 
@@ -60,7 +61,7 @@ class BellaColorApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Bella Color',
+      title: BrandConfig.instance.nombre,
       theme: theme,
       home: const SplashScreen(),
       builder: (context, child) {

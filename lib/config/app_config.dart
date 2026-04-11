@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'brand_config.dart';
 
 class AppConfig {
   // Supabase config (anon key para cliente; no uses service role en el front).
@@ -9,7 +10,7 @@ class AppConfig {
   static const String whatsappSoporte = '3413363551';
   static const String nombreEmpresa = 'Programacion JJ';
   static const String storageBucket = 'salon-images';
-  static const String publicBaseUrl = 'https://bella-color.web.app'; // dominio de Firebase Hosting
+  static String get publicBaseUrl => BrandConfig.instance.publicBaseUrl;
 
   // Colors — Paleta premium salon de belleza 2026
   static const Color colorPrimario = Color(0xFFE8A0BF);     // Rosa dorado

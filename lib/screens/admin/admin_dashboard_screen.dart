@@ -54,7 +54,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
   /// Categorías que tienen al menos un servicio cargado
   List<String> get _categoriasConServicios {
-    final cats = _services.map((s) => s.categoria).toSet().toList();
+    final cats = _services
+        .map((s) => s.categoriaNormalizada)
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList();
     // Ordenar según el orden definido en Service.categorias
     cats.sort((a, b) => Service.categorias.indexOf(a).compareTo(Service.categorias.indexOf(b)));
     return cats;
@@ -675,12 +679,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       (s) => s!.id == a.servicioId,
       orElse: () => null,
     );
-    return svc?.categoria;
+    return svc?.categoriaNormalizada;
   }
 
   List<Appointment> get _filteredAppointments {
     if (_turnosCategoriaFilter == null) return _appointments;
-    return _appointments.where((a) => _categoriaDeAppointment(a) == _turnosCategoriaFilter).toList();
+    return _appointments
+        .where((a) => Service.normalizeCategoria(_categoriaDeAppointment(a)) == Service.normalizeCategoria(_turnosCategoriaFilter))
+        .toList();
   }
 
   Widget _buildAppointmentsTab() {
@@ -1328,7 +1334,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
   // ==== TAB 2: SERVICIOS ====
   List<Service> get _filteredServices {
     if (_serviciosCategoriaFilter == null) return _services;
-    return _services.where((s) => s.categoria == _serviciosCategoriaFilter).toList();
+    return _services
+        .where((s) => s.categoriaNormalizada == Service.normalizeCategoria(_serviciosCategoriaFilter))
+        .toList();
   }
 
   Widget _buildServicesTab() {
@@ -1373,7 +1381,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     child: s.imagenUrl == null ? Icon(Icons.spa, color: _primary) : null,
                   ),
                   title: Text(s.nombre, style: const TextStyle(color: AppConfig.colorTexto)),
-                  subtitle: Text('${s.duracionMinutos} min - ${Service.categoriaLabel(s.categoria)}${s.precio != null ? ' - ${formatPrecioConSigno(s.precio!)}' : ''}',
+                  subtitle: Text('${s.duracionMinutos} min - ${Service.categoriaLabel(s.categoriaNormalizada)}${s.precio != null ? ' - ${formatPrecioConSigno(s.precio!)}' : ''}',
                       style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1790,11 +1798,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
 
   /// Bloques filtrados por la categoría seleccionada en la solapa
   List<Block> get _filteredBlocks {
-    if (_bloqueosCategoriaFilter == null) {
+    final selectedCat = _bloqueosCategoriaFilter != null ? Service.normalizeCategoria(_bloqueosCategoriaFilter) : '';
+    if (selectedCat.isEmpty) {
       // Solapa "General": solo bloqueos sin categoría (globales)
-      return _blocks.where((b) => b.categoria == null).toList();
+      return _blocks.where((b) => b.categoria == null || Service.normalizeCategoria(b.categoria).isEmpty).toList();
     }
-    return _blocks.where((b) => b.categoria == _bloqueosCategoriaFilter).toList();
+    return _blocks.where((b) => Service.normalizeCategoria(b.categoria) == selectedCat).toList();
   }
 
   Set<String> get _blockedDateStrings => _filteredBlocks.map((b) => b.fecha ?? '').toSet();
@@ -1959,7 +1968,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                             style: const TextStyle(color: AppConfig.colorTexto),
                           ),
                           subtitle: Text(
-                            '${b.categoria != null ? Service.categoriaLabel(b.categoria!) : "General"}${b.motivo.isNotEmpty ? ' - ${b.motivo}' : ''}',
+                            '${Service.normalizeCategoria(b.categoria).isNotEmpty ? Service.categoriaLabel(Service.normalizeCategoria(b.categoria)) : "General"}${b.motivo.isNotEmpty ? ' - ${b.motivo}' : ''}',
                             style: const TextStyle(color: AppConfig.colorTextoSecundario, fontSize: 12),
                           ),
                           trailing: IconButton(
@@ -2104,7 +2113,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'hora': null,
                       'dia_completo': true,
                       'motivo': motivoCtrl.text.trim(),
-                      'categoria': _bloqueosCategoriaFilter,
+                      'categoria': _bloqueosCategoriaFilter != null
+                          ? Service.normalizeCategoria(_bloqueosCategoriaFilter)
+                          : null,
                     });
                   } else {
                     if (horaDesde == null) return;
@@ -2118,7 +2129,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                         'hora': slot,
                         'dia_completo': false,
                         'motivo': motivo,
-                        'categoria': _bloqueosCategoriaFilter,
+                        'categoria': _bloqueosCategoriaFilter != null
+                            ? Service.normalizeCategoria(_bloqueosCategoriaFilter)
+                            : null,
                       });
                     }
                   }

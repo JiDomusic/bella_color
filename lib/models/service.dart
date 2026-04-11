@@ -115,4 +115,24 @@ class Service {
     };
     return labels[cat] ?? cat;
   }
+
+  /// Normaliza la categoría a un slug sin acentos/ñ para comparaciones y guardado.
+  static String normalizeCategoria(String? cat) {
+    if (cat == null) return '';
+    var c = cat.toLowerCase().trim();
+    // Reemplazos básicos para español
+    const replacements = {
+      'á': 'a',
+      'é': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ú': 'u',
+      'ü': 'u',
+      'ñ': 'n',
+    };
+    replacements.forEach((k, v) => c = c.replaceAll(k, v));
+    return c;
+  }
+
+  String get categoriaNormalizada => normalizeCategoria(categoria);
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
+import '../../config/brand_config.dart';
 import '../../models/tenant.dart';
 import '../../services/supabase_service.dart';
 
@@ -57,7 +58,12 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     return buf.toString();
   }
 
-  String _bookingLink(String tenantId) => '${AppConfig.publicBaseUrl}/$tenantId';
+  String _bookingLink(String tenantId, {String? tenantCategoria}) {
+    if (tenantCategoria == 'barberia') {
+      return 'https://juke-box-reserva.web.app/$tenantId';
+    }
+    return 'https://bella-color.web.app/$tenantId';
+  }
 
   InputDecoration _inputDecor(String label, IconData icon) {
     return InputDecoration(
@@ -70,60 +76,154 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     final nameCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController(text: _generateTempPassword());
+    String categoria = 'salon';
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppConfig.colorFondoCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.spa, color: AppConfig.colorPrimario, size: 24),
-            const SizedBox(width: 8),
-            const Text('Nuevo Salon', style: TextStyle(color: AppConfig.colorTexto)),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppConfig.colorFondoCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
             children: [
-              TextField(
-                controller: nameCtrl,
-                style: const TextStyle(color: AppConfig.colorTexto),
-                decoration: _inputDecor('Nombre del salon', Icons.store),
-                textCapitalization: TextCapitalization.words,
+              Icon(
+                categoria == 'barberia' ? Icons.content_cut : Icons.spa,
+                color: AppConfig.colorPrimario,
+                size: 24,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: emailCtrl,
-                style: const TextStyle(color: AppConfig.colorTexto),
-                decoration: _inputDecor('Email del admin', Icons.email),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: passwordCtrl,
-                style: const TextStyle(color: AppConfig.colorTexto),
-                decoration: _inputDecor('Contraseña temporal', Icons.lock),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(width: 8),
               Text(
-                'Se genera automaticamente. El admin puede cambiarla despues.',
-                style: TextStyle(fontSize: 11, color: AppConfig.colorTextoSecundario),
+                categoria == 'barberia' ? 'Nueva Barberia' : 'Nuevo Salon',
+                style: const TextStyle(color: AppConfig.colorTexto),
               ),
             ],
           ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Selector de categoria
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => categoria = 'salon'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: categoria == 'salon'
+                                ? const Color(0xFFE8A0BF).withAlpha(40)
+                                : Colors.white.withAlpha(8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: categoria == 'salon'
+                                  ? const Color(0xFFE8A0BF)
+                                  : Colors.white.withAlpha(30),
+                              width: categoria == 'salon' ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.spa, size: 28,
+                                  color: categoria == 'salon'
+                                      ? const Color(0xFFE8A0BF)
+                                      : Colors.white54),
+                              const SizedBox(height: 6),
+                              Text('Salon',
+                                  style: TextStyle(
+                                    color: categoria == 'salon'
+                                        ? const Color(0xFFE8A0BF)
+                                        : Colors.white54,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() => categoria = 'barberia'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: categoria == 'barberia'
+                                ? const Color(0xFF4CAF50).withAlpha(40)
+                                : Colors.white.withAlpha(8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: categoria == 'barberia'
+                                  ? const Color(0xFF4CAF50)
+                                  : Colors.white.withAlpha(30),
+                              width: categoria == 'barberia' ? 2 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.content_cut, size: 28,
+                                  color: categoria == 'barberia'
+                                      ? const Color(0xFF4CAF50)
+                                      : Colors.white54),
+                              const SizedBox(height: 6),
+                              Text('Barberia',
+                                  style: TextStyle(
+                                    color: categoria == 'barberia'
+                                        ? const Color(0xFF4CAF50)
+                                        : Colors.white54,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                  decoration: _inputDecor(
+                    categoria == 'barberia' ? 'Nombre de la barberia' : 'Nombre del salon',
+                    Icons.store,
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailCtrl,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                  decoration: _inputDecor('Email del admin', Icons.email),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordCtrl,
+                  style: const TextStyle(color: AppConfig.colorTexto),
+                  decoration: _inputDecor('Contraseña temporal', Icons.lock),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Se genera automaticamente. El admin puede cambiarla despues.',
+                  style: TextStyle(fontSize: 11, color: AppConfig.colorTextoSecundario),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(categoria == 'barberia' ? 'Crear Barberia' : 'Crear Salon'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Crear Salon'),
-          ),
-        ],
       ),
     );
 
@@ -147,6 +247,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
         password: password,
         tenantId: tenantId,
         salonName: name,
+        categoria: categoria,
       );
 
       // Guardar credenciales para consulta posterior
@@ -163,6 +264,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
           salonName: name,
           email: email,
           password: password,
+          categoria: categoria,
         );
       }
 
@@ -199,8 +301,11 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     required String salonName,
     required String email,
     required String password,
+    String categoria = 'salon',
   }) {
-    final link = _bookingLink(tenantId);
+    final link = _bookingLink(tenantId, tenantCategoria: categoria);
+    final esBarberia = categoria == 'barberia';
+    final tipoNombre = esBarberia ? 'Barberia' : 'Salon';
 
     showDialog(
       context: context,
@@ -211,7 +316,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
           children: [
             Icon(Icons.check_circle, color: AppConfig.colorAcento, size: 28),
             const SizedBox(width: 8),
-            const Text('Salon Creado', style: TextStyle(color: AppConfig.colorTexto)),
+            Text('$tipoNombre Creado', style: const TextStyle(color: AppConfig.colorTexto)),
           ],
         ),
         content: SingleChildScrollView(
@@ -219,7 +324,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _infoRow('Salon', salonName),
+              _infoRow(tipoNombre, salonName),
               _infoRow('Tenant ID', tenantId),
               _infoRow('Email admin', email),
               _infoRow('Contraseña', password),
@@ -254,11 +359,12 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Enviale estos datos al cliente por WhatsApp.\n'
                 'El cliente entra al link, se loguea con email y contraseña, '
-                'y configura todo desde el onboarding.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+                'y configura todo desde el onboarding.\n'
+                '${esBarberia ? "Link de barberia (juke-box-reserva)" : "Link de salon (bella-color)"}',
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
             ],
           ),
@@ -266,11 +372,12 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
         actions: [
           TextButton(
             onPressed: () {
+              final tipoMsg = esBarberia ? 'barberia' : 'salon';
               final text = 'Hola! Tu sistema de turnos esta listo.\n\n'
                   'Link: $link\n'
                   'Email: $email\n'
                   'Contraseña: $password\n\n'
-                  'Ingresa al link, logueate y configura tu salon.';
+                  'Ingresa al link, logueate y configura tu $tipoMsg.';
               Clipboard.setData(ClipboardData(text: text));
               ScaffoldMessenger.of(ctx).showSnackBar(
                 const SnackBar(content: Text('Mensaje copiado al portapapeles')),
@@ -431,7 +538,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
         onPressed: _createSalon,
         backgroundColor: AppConfig.colorAcento.withAlpha(90),
         icon: const Icon(Icons.add_business),
-        label: const Text('Nuevo Salon', style: TextStyle(fontWeight: FontWeight.w600)),
+        label: const Text('Nuevo', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator(color: AppConfig.colorPrimario))
@@ -457,7 +564,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
   }
 
   Widget _buildTenantCard(Tenant t) {
-    final link = _bookingLink(t.id);
+    final link = _bookingLink(t.id, tenantCategoria: t.categoria);
     final trialEnd = t.trialEndDate;
     final trialDays = trialEnd != null ? trialEnd.difference(DateTime.now()).inDays : t.trialDays;
     final trialExpired = trialDays < 0;
@@ -473,7 +580,11 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.spa, color: Color(0xFFD97FC2), size: 24),
+                Icon(
+                  t.esBarberia ? Icons.content_cut : Icons.spa,
+                  color: t.esBarberia ? const Color(0xFF4CAF50) : const Color(0xFFD97FC2),
+                  size: 24,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -525,7 +636,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                           Icon(
                             trialExpired ? Icons.timer_off : Icons.timer_outlined,
                             size: 12,
-                            color: trialExpired ? Colors.red : trialDays <= 3 ? Colors.orange : const Color(0xFFD97FC2),
+                            color: trialExpired ? Colors.red : trialDays <= 3 ? Colors.orange : (t.esBarberia ? const Color(0xFF4CAF50) : const Color(0xFFD97FC2)),
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -533,7 +644,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                                 ? 'Expirado${t.trialExtended ? " (ext)" : ""}'
                                 : '$trialDays dias${t.trialExtended ? " (ext)" : ""}',
                             style: TextStyle(
-                              color: trialExpired ? Colors.red : trialDays <= 3 ? Colors.orange : const Color(0xFFD97FC2),
+                              color: trialExpired ? Colors.red : trialDays <= 3 ? Colors.orange : (t.esBarberia ? const Color(0xFF4CAF50) : const Color(0xFFD97FC2)),
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -613,7 +724,8 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     }
     savedEmail ??= 'No guardado';
     final savedPass = prefs.getString('sa_cred_pass_$tenantId') ?? 'No guardado';
-    final link = _bookingLink(tenantId);
+    final link = _bookingLink(tenantId, tenantCategoria: t.categoria);
+    final tipoMsg = t.esBarberia ? 'barberia' : 'salon';
 
     if (!mounted) return;
     showDialog(
@@ -679,7 +791,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                         'Link: $link\n'
                         'Email: $savedEmail\n'
                         'Contrasena: $currentPass\n\n'
-                        'Ingresa al link, logueate y configura tu salon.';
+                        'Ingresa al link, logueate y configura tu $tipoMsg.';
                     Clipboard.setData(ClipboardData(text: text));
                     ScaffoldMessenger.of(ctx).showSnackBar(
                       const SnackBar(content: Text('Mensaje copiado para WhatsApp')),

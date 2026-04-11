@@ -494,6 +494,7 @@ class SupabaseService {
     required String password,
     required String tenantId,
     required String salonName,
+    String categoria = 'salon',
   }) async {
     // Paso 1: Crear usuario via Admin API (requiere SRK)
     final userId = await createAuthUser(email, password);
@@ -509,9 +510,10 @@ class SupabaseService {
         'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
         'p_trial_days': trialDays,
       });
-      // Setear trial_end_date
+      // Setear trial_end_date y categoria
       await _client.from('tenants').update({
         'trial_end_date': trialEndDate,
+        'categoria': categoria,
       }).eq('id', tenantId);
     } catch (e) {
       // Limpiar usuario auth huerfano

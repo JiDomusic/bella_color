@@ -2,6 +2,7 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../config/app_config.dart';
+import '../config/brand_config.dart';
 import '../services/supabase_service.dart';
 import '../services/subscription_service.dart';
 import '../services/whatsapp_service.dart';
@@ -234,6 +235,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Widget _buildGenericLogo() {
+    final brand = BrandConfig.instance;
+    if (brand.esBarberia) {
+      // Barberia: fondo negro solido, tijera/barber pole, sin gradientes suaves
+      return Container(
+        width: 140,
+        height: 140,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8), // Bordes rectos, estilo crudo
+          color: const Color(0xFF111111),
+          border: Border.all(color: const Color(0xFF4CAF50), width: 2),
+        ),
+        child: const Icon(Icons.content_cut, size: 64, color: Color(0xFF4CAF50)),
+      );
+    }
     return Container(
       width: 140,
       height: 140,
@@ -278,15 +293,22 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           width: 420,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF2A1520),
-                Color(0xFF8B2252),
-                Color(0xFFD4688E),
-                Color(0xFFF5A0B8),
-              ],
+              colors: BrandConfig.instance.esBarberia
+                  ? const [
+                      Color(0xFF1A1A1A),
+                      Color(0xFF2E7D32),
+                      Color(0xFF4CAF50),
+                      Color(0xFF81C784),
+                    ]
+                  : const [
+                      Color(0xFF2A1520),
+                      Color(0xFF8B2252),
+                      Color(0xFFD4688E),
+                      Color(0xFFF5A0B8),
+                    ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFFFD4E5).withAlpha(120), width: 1.2),
@@ -301,8 +323,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '💅 Tu salon, listo en minutos',
+              Text(
+                BrandConfig.instance.esBarberia
+                    ? 'Tu barberia, lista en minutos'
+                    : 'Tu salon, listo en minutos',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFFFFE8F0),
@@ -312,8 +336,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Entra al panel de admin, subi tu logo,\nelegí tus servicios y arma tu equipo.\nEs super facil, te guiamos en cada paso.',
+              Text(
+                BrandConfig.instance.esBarberia
+                    ? 'Entra al panel de admin, subi tu logo,\nelegí tus servicios y arma tu equipo.\nEs re facil, te guiamos en cada paso.'
+                    : 'Entra al panel de admin, subi tu logo,\nelegí tus servicios y arma tu equipo.\nEs super facil, te guiamos en cada paso.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFFFCE0EC),
@@ -323,8 +349,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Tené paciencia, selecciona los servicios\ny completa tu salon paso a paso.\nCuando termines, aca aparece tu logo!',
+              Text(
+                BrandConfig.instance.esBarberia
+                    ? 'Tené paciencia, selecciona los servicios\ny completa tu barberia paso a paso.\nCuando termines, aca aparece tu logo!'
+                    : 'Tené paciencia, selecciona los servicios\ny completa tu salon paso a paso.\nCuando termines, aca aparece tu logo!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFFFFF0F5),
@@ -342,8 +370,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFFFD700).withAlpha(80)),
                   ),
-                  child: const Text(
-                    'Este salon se esta configurando.\nProximamente estara disponible.',
+                  child: Text(
+                    BrandConfig.instance.esBarberia
+                        ? 'Esta barberia se esta configurando.\nProximamente estara disponible.'
+                        : 'Este salon se esta configurando.\nProximamente estara disponible.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color(0xFFFFE8A0),
@@ -379,21 +409,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           : null,
       body: Stack(
         children: [
-          // Fondo degradado rosa/negro estilo Netflix femenino
+          // Fondo degradado segun marca
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A0A14), // negro rosado arriba
-                  Color(0xFF0E0610), // negro violeta medio
-                  Color(0xFF140A10), // negro rosado abajo
-                ],
+                colors: BrandConfig.instance.gradienteSplash,
               ),
             ),
           ),
-          // Glow rosa sutil detrás del logo
+          // Glow sutil detras del logo
           Positioned(
             top: MediaQuery.of(context).size.height * 0.18,
             left: 0,
@@ -406,8 +432,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFD4A0A0).withAlpha(30),
-                      const Color(0xFFD4A0A0).withAlpha(10),
+                      BrandConfig.instance.colorSplashGlow.withAlpha(30),
+                      BrandConfig.instance.colorSplashGlow.withAlpha(10),
                       Colors.transparent,
                     ],
                   ),
@@ -436,7 +462,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                 color: Colors.white.withAlpha(10),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFFD4A0A0).withAlpha(40),
+                                    color: BrandConfig.instance.colorSplashPrimario.withAlpha(40),
                                     blurRadius: 60,
                                     spreadRadius: 20,
                                   ),
@@ -458,8 +484,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         children: [
                           Text(
                             _usarGenerico
-                                ? 'BELLA COLOR'
-                                : (tenant?.nombreSalon ?? 'BELLA COLOR').toUpperCase(),
+                                ? BrandConfig.instance.nombre
+                                : (tenant?.nombreSalon ?? BrandConfig.instance.nombre).toUpperCase(),
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w300,
@@ -468,7 +494,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             ),
                           ),
                           const SizedBox(height: 16),
-                          // Línea decorativa rosa
+                          // Línea decorativa
                           Container(
                             width: 80,
                             height: 1.5,
@@ -476,7 +502,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               gradient: LinearGradient(
                                 colors: [
                                   Colors.transparent,
-                                  const Color(0xFFD4A0A0).withAlpha(180),
+                                  BrandConfig.instance.colorSplashPrimario.withAlpha(180),
                                   Colors.transparent,
                                 ],
                               ),
@@ -485,12 +511,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           const SizedBox(height: 16),
                           Text(
                             _usarGenerico
-                                ? 'Sistema de turnos para salones de belleza'
+                                ? BrandConfig.instance.subtituloGenerico
                                 : (tenant?.subtitulo ?? ''),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w300,
-                              color: const Color(0xFFD4A0A0).withAlpha(180),
+                              color: BrandConfig.instance.colorSplashPrimario.withAlpha(180),
                               letterSpacing: 1.5,
                             ),
                           ),
@@ -561,7 +587,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
                         ),
                         onLongPress: _showSuperAdminAuth,
-                        child: const Text('Admin', style: TextStyle(fontSize: 14, color: Color(0xFFD4A0A0))),
+                        child: Text('Admin', style: TextStyle(fontSize: 14, color: BrandConfig.instance.colorSplashPrimario)),
                       )
                     // LOADING STATE - spinner elegante
                     else
@@ -574,20 +600,20 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             color: Colors.white.withAlpha(8),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFD4A0A0).withAlpha(40),
+                              color: BrandConfig.instance.colorSplashPrimario.withAlpha(40),
                               width: 1,
                             ),
                           ),
                           child: ClipOval(
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                              child: const Center(
+                              child: Center(
                                 child: SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 1.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4A0A0)),
+                                    valueColor: AlwaysStoppedAnimation<Color>(BrandConfig.instance.colorSplashPrimario),
                                   ),
                                 ),
                               ),

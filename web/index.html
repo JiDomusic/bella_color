@@ -20,6 +20,11 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Sistema de turnos online para salones de belleza">
 
+  <!-- Open Graph (WhatsApp, redes sociales) -->
+  <meta property="og:title" content="Bella Color">
+  <meta property="og:description" content="Sistema de turnos online para salones de belleza">
+  <meta property="og:type" content="website">
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -31,6 +36,21 @@
 
   <title>Bella Color</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Detectar marca por dominio y cambiar metas -->
+  <script>
+    (function() {
+      var h = window.location.hostname.toLowerCase();
+      if (h.indexOf('juke-box') !== -1 || h.indexOf('barber') !== -1) {
+        document.title = 'Juke-Box Reserva';
+        var desc = 'Sistema de turnos online para barberias';
+        document.querySelector('meta[name="description"]').content = desc;
+        document.querySelector('meta[property="og:title"]').content = 'Juke-Box Reserva';
+        document.querySelector('meta[property="og:description"]').content = desc;
+        document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'Juke-Box Reserva';
+      }
+    })();
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

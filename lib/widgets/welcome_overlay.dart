@@ -1,11 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../config/brand_config.dart';
 
-// Paleta rosas, lilas y lavandas
-const _colorPrimary = Color(0xFFD97FC2);   // Rosa/lila principal
-const _colorSecondary = Color(0xFFB18CFF); // Lila de apoyo
-const _colorAccent = Color(0xFFB7C2FF);    // Lavanda suave
+// Paleta salon
+const _colorPrimary = Color(0xFFD97FC2);
+const _colorSecondary = Color(0xFFB18CFF);
+const _colorAccent = Color(0xFFB7C2FF);
 const _textDark = Color(0xFF1A1A1A);
+// Paleta barberia
+const _colorPrimaryBarber = Color(0xFF4CAF50);
+const _colorSecondaryBarber = Color(0xFFFFB300);
+const _colorAccentBarber = Color(0xFFE53935);
 
 class WelcomeOverlay extends StatefulWidget {
   final VoidCallback onSubscribe;
@@ -32,6 +37,12 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
   late Animation<double> _shimmerAnimation;
 
   int _currentStep = 0; // 0 = welcome, 1 = features, 2 = how it works, 3 = CTA
+
+  bool get _esBarberia => BrandConfig.instance.esBarberia;
+  Color get _cp => _esBarberia ? _colorPrimaryBarber : _colorPrimary;
+  Color get _cs => _esBarberia ? _colorSecondaryBarber : _colorSecondary;
+  Color get _ca => _esBarberia ? _colorAccentBarber : _colorAccent;
+  Color get _text => _esBarberia ? Colors.white : _textDark;
 
   @override
   void initState() {
@@ -94,7 +105,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 600;
 
-    const bgColor = Colors.white;
+    final bgColor = _esBarberia ? const Color(0xFF1A1A1A) : Colors.white;
 
     return AnimatedBuilder(
       animation: _fadeAnimation,
@@ -105,15 +116,21 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
         );
       },
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF4E7FF), // lavanda clara
-              Color(0xFFFCE4F5), // rosa plush
-              Color(0xFFEAD7FF), // lila pastel
-            ],
+            colors: _esBarberia
+                ? const [
+                    Color(0xFF0D0D0D), // negro puro
+                    Color(0xFF1A1A0A), // negro con tinte verde
+                    Color(0xFF111111), // negro
+                  ]
+                : const [
+                    Color(0xFFF4E7FF), // lavanda clara
+                    Color(0xFFFCE4F5), // rosa plush
+                    Color(0xFFEAD7FF), // lila pastel
+                  ],
           ),
         ),
         child: Center(
@@ -130,11 +147,14 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               constraints: const BoxConstraints(maxWidth: 480, maxHeight: 680),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: _colorAccent, width: 3),
+                borderRadius: BorderRadius.circular(_esBarberia ? 8 : 28),
+                border: Border.all(
+                  color: _esBarberia ? const Color(0xFF4CAF50) : _colorAccent,
+                  width: _esBarberia ? 2 : 3,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: _colorSecondary.withValues(alpha: 0.22),
+                    color: (_esBarberia ? const Color(0xFF4CAF50) : _colorSecondary).withValues(alpha: 0.22),
                     blurRadius: 40,
                     spreadRadius: -10,
                   ),
@@ -167,7 +187,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                                       'Este salon se esta configurando.\nProximamente estara disponible.',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: _textDark.withAlpha(200),
+                                        color: _text.withAlpha(200),
                                         fontWeight: FontWeight.w600,
                                         height: 1.4,
                                       ),
@@ -233,17 +253,19 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               child: child,
             );
           },
-          child: Image.asset(
-            'assets/images/logo_chica.png',
-            width: isMobile ? 120 : 140,
-            height: isMobile ? 120 : 140,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Icon(
-              Icons.content_cut_rounded,
-              color: _colorPrimary,
-              size: isMobile ? 44 : 52,
-            ),
-          ),
+          child: _esBarberia
+              ? Icon(Icons.content_cut_rounded, color: _cp, size: isMobile ? 64 : 72)
+              : Image.asset(
+                  'assets/images/logo_chica.png',
+                  width: isMobile ? 120 : 140,
+                  height: isMobile ? 120 : 140,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.content_cut_rounded,
+                    color: _colorPrimary,
+                    size: isMobile ? 44 : 52,
+                  ),
+                ),
         ),
         SizedBox(height: isMobile ? 20 : 28),
         AnimatedBuilder(
@@ -254,7 +276,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                 return LinearGradient(
                   begin: Alignment(_shimmerAnimation.value - 1, 0),
                   end: Alignment(_shimmerAnimation.value, 0),
-                  colors: const [_colorPrimary, _colorAccent, _colorPrimary],
+                  colors: _esBarberia
+                      ? const [_colorPrimaryBarber, _colorSecondaryBarber, _colorPrimaryBarber]
+                      : const [_colorPrimary, _colorAccent, _colorPrimary],
                   stops: const [0.0, 0.5, 1.0],
                 ).createShader(rect);
               },
@@ -264,7 +288,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           child: Column(
             children: [
               Text(
-                'Bella Color',
+                _esBarberia ? 'Juke-Box Reserva' : 'Bella Color',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: isMobile ? 30 : 34,
@@ -276,7 +300,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               ),
               const SizedBox(height: 8),
               Text(
-                'Sistema de turnos para salones de belleza',
+                _esBarberia
+                    ? 'Sistema de turnos para barberias'
+                    : 'Sistema de turnos para salones de belleza',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: isMobile ? 14 : 16,
@@ -303,11 +329,11 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: _colorPrimary,
-            borderRadius: BorderRadius.circular(20),
+            color: _cp,
+            borderRadius: BorderRadius.circular(_esBarberia ? 4 : 20),
           ),
           child: Text(
-            'Sistema Bella Color',
+            _esBarberia ? 'Juke-Box Reserva' : 'Sistema Bella Color',
             style: TextStyle(
               fontSize: isMobile ? 13 : 15,
               color: Colors.white,
@@ -318,22 +344,26 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
         ),
         const SizedBox(height: 20),
         Text(
-          'El sistema de turnos mas completo\npara tu salon de belleza',
+          _esBarberia
+              ? 'El sistema de turnos mas completo\npara tu barberia'
+              : 'El sistema de turnos mas completo\npara tu salon de belleza',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: isMobile ? 15 : 17,
-            color: _textDark.withValues(alpha: 0.85),
+            color: _text.withValues(alpha: 0.85),
             fontWeight: FontWeight.w600,
             height: 1.4,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Organiza tu negocio, gestiona tus clientes\ny hace crecer tu salon',
+          _esBarberia
+              ? 'Organiza tu negocio, gestiona tus clientes\ny hace crecer tu barberia'
+              : 'Organiza tu negocio, gestiona tus clientes\ny hace crecer tu salon',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: isMobile ? 13 : 15,
-            color: _textDark.withValues(alpha: 0.65),
+            color: _text.withValues(alpha: 0.65),
             fontWeight: FontWeight.w500,
             height: 1.4,
           ),
@@ -350,11 +380,11 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Tu salon, tu estilo',
+            _esBarberia ? 'Tu barberia, tu estilo' : 'Tu salon, tu estilo',
             style: TextStyle(
               fontSize: isMobile ? 22 : 26,
               fontWeight: FontWeight.w700,
-              color: _textDark,
+              color: _text,
             ),
           ),
           SizedBox(height: isMobile ? 4 : 8),
@@ -362,7 +392,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             'Todo lo que necesitas para tu negocio',
             style: TextStyle(
               fontSize: isMobile ? 13 : 15,
-              color: _textDark.withValues(alpha: 0.7),
+              color: _text.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
               fontStyle: FontStyle.italic,
             ),
@@ -387,15 +417,19 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           _buildFeatureItem(
             icon: Icons.spa_rounded,
             title: 'Servicios y precios',
-            subtitle: 'Carga cortes, color, manicura, pestanas y mas',
+            subtitle: _esBarberia
+                ? 'Carga cortes, barba, afeitado, tintura y mas'
+                : 'Carga cortes, color, manicura, pestanas y mas',
             accentColor: _colorAccent.withValues(alpha: 0.9),
             isMobile: isMobile,
           ),
           SizedBox(height: isMobile ? 10 : 14),
           _buildFeatureItem(
             icon: Icons.people_rounded,
-            title: 'Profesionales',
-            subtitle: 'Agrega tu equipo con sus especialidades y horarios',
+            title: _esBarberia ? 'Barberos' : 'Profesionales',
+            subtitle: _esBarberia
+                ? 'Agrega tus barberos con sus especialidades y horarios'
+                : 'Agrega tu equipo con sus especialidades y horarios',
             accentColor: _colorSecondary.withValues(alpha: 0.9),
             isMobile: isMobile,
           ),
@@ -411,7 +445,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           _buildFeatureItem(
             icon: Icons.bar_chart_rounded,
             title: 'Reportes en vivo',
-            subtitle: 'Estadisticas, graficos y control total de tu salon',
+            subtitle: _esBarberia
+                ? 'Estadisticas, graficos y control total de tu barberia'
+                : 'Estadisticas, graficos y control total de tu salon',
             accentColor: _colorPrimary,
             isMobile: isMobile,
           ),
@@ -432,7 +468,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             style: TextStyle(
               fontSize: isMobile ? 22 : 26,
               fontWeight: FontWeight.w700,
-              color: _textDark,
+              color: _text,
             ),
           ),
           SizedBox(height: isMobile ? 4 : 8),
@@ -440,7 +476,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             'En 3 simples pasos',
             style: TextStyle(
               fontSize: isMobile ? 13 : 15,
-              color: _textDark.withValues(alpha: 0.75),
+              color: _text.withValues(alpha: 0.75),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -448,7 +484,9 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           _buildStepCard(
             number: '1',
             title: 'Contactanos por WhatsApp',
-            description: 'Te creamos tu salon en minutos y te damos tu link personalizado',
+            description: _esBarberia
+                ? 'Te creamos tu barberia en minutos y te damos tu link personalizado'
+                : 'Te creamos tu salon en minutos y te damos tu link personalizado',
             icon: Icons.chat_rounded,
             color: const Color(0xFF25D366),
             isMobile: isMobile,
@@ -456,8 +494,10 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           SizedBox(height: isMobile ? 12 : 16),
           _buildStepCard(
             number: '2',
-            title: 'Configura tu salon',
-            description: 'Subi logos, elegí colores, carga tus servicios, profesionales y horarios',
+            title: _esBarberia ? 'Configura tu barberia' : 'Configura tu salon',
+            description: _esBarberia
+                ? 'Subi logos, elegí colores, carga tus servicios, barberos y horarios'
+                : 'Subi logos, elegí colores, carga tus servicios, profesionales y horarios',
             icon: Icons.settings_rounded,
             color: _colorSecondary,
             isMobile: isMobile,
@@ -544,7 +584,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           style: TextStyle(
             fontSize: isMobile ? 24 : 28,
             fontWeight: FontWeight.w800,
-            color: _textDark,
+            color: _text,
             height: 1.2,
           ),
         ),
@@ -552,15 +592,15 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [_colorSecondary, _colorPrimary],
+            gradient: LinearGradient(
+              colors: [_cs, _cp],
             ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _colorAccent, width: 2),
+            borderRadius: BorderRadius.circular(_esBarberia ? 4 : 16),
+            border: Border.all(color: _ca, width: 2),
           ),
           child: Column(
             children: [
-              const Icon(Icons.card_giftcard_rounded, color: _colorPrimary, size: 28),
+              Icon(Icons.card_giftcard_rounded, color: _cp, size: 28),
               const SizedBox(height: 8),
               Text(
                 'Gratis por 15 dias',
@@ -586,7 +626,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           'Industria Nacional',
           style: TextStyle(
             fontSize: isMobile ? 11 : 12,
-            color: _textDark.withValues(alpha: 0.6),
+            color: _text.withValues(alpha: 0.6),
             letterSpacing: 2,
             fontWeight: FontWeight.w500,
           ),
@@ -640,14 +680,14 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                 style: TextStyle(
                   fontSize: isMobile ? 14 : 16,
                   fontWeight: FontWeight.w600,
-                  color: _textDark,
+                  color: _text,
                 ),
               ),
               Text(
                 subtitle,
                 style: TextStyle(
                   fontSize: isMobile ? 11 : 13,
-                  color: _textDark.withValues(alpha: 0.75),
+                  color: _text.withValues(alpha: 0.75),
                 ),
               ),
             ],
@@ -702,7 +742,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   style: TextStyle(
                     fontSize: isMobile ? 14 : 15,
                     fontWeight: FontWeight.w600,
-                    color: _textDark,
+                    color: _text,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -710,7 +750,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   description,
                   style: TextStyle(
                     fontSize: isMobile ? 11 : 12,
-                    color: _textDark.withValues(alpha: 0.75),
+                    color: _text.withValues(alpha: 0.75),
                   ),
                 ),
               ],
@@ -733,8 +773,8 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
           height: 8,
           decoration: BoxDecoration(
             color: isActive
-                ? _colorPrimary
-                : _textDark.withValues(alpha: 0.18),
+                ? _cp
+                : _text.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -755,13 +795,13 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
             padding: EdgeInsets.symmetric(vertical: isMobile ? 14 : 16),
             decoration: BoxDecoration(
               gradient: isLastStep
-                  ? const LinearGradient(colors: [_colorPrimary, _colorSecondary])
+                  ? LinearGradient(colors: [_cp, _cs])
                   : null,
-              color: isLastStep ? null : _colorAccent,
-              borderRadius: BorderRadius.circular(16),
+              color: isLastStep ? null : (_esBarberia ? const Color(0xFF2E7D32) : _colorAccent),
+              borderRadius: BorderRadius.circular(_esBarberia ? 4 : 16),
               border: isLastStep
                   ? null
-                  : Border.all(color: _colorSecondary.withValues(alpha: 0.3)),
+                  : Border.all(color: _cs.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -776,14 +816,14 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
                   style: TextStyle(
                     fontSize: isMobile ? 16 : 17,
                     fontWeight: isLastStep ? FontWeight.w700 : FontWeight.w600,
-                    color: isLastStep ? Colors.white : _textDark,
+                    color: isLastStep ? Colors.white : _text,
                     letterSpacing: 0.5,
                   ),
                 ),
                 if (!isLastStep)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Icon(Icons.arrow_forward_rounded, color: _textDark, size: 18),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(Icons.arrow_forward_rounded, color: _text, size: 18),
                   ),
               ],
             ),
@@ -797,7 +837,7 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               'Atras',
               style: TextStyle(
                 fontSize: 14,
-                color: _textDark.withValues(alpha: 0.65),
+                color: _text.withValues(alpha: 0.65),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -808,14 +848,23 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
   }
 
   List<Widget> _buildFloatingIcons() {
-    final icons = [
-      Icons.content_cut_rounded,
-      Icons.spa_rounded,
-      Icons.face_rounded,
-      Icons.brush_rounded,
-      Icons.auto_awesome_rounded,
-      Icons.favorite_rounded,
-    ];
+    final icons = _esBarberia
+        ? [
+            Icons.content_cut_rounded,
+            Icons.face_rounded,
+            Icons.local_bar_rounded,
+            Icons.star_rounded,
+            Icons.bolt_rounded,
+            Icons.whatshot_rounded,
+          ]
+        : [
+            Icons.content_cut_rounded,
+            Icons.spa_rounded,
+            Icons.face_rounded,
+            Icons.brush_rounded,
+            Icons.auto_awesome_rounded,
+            Icons.favorite_rounded,
+          ];
 
     return List.generate(icons.length, (i) {
       final random = math.Random(i * 42);
@@ -835,8 +884,11 @@ class _WelcomeOverlayState extends State<WelcomeOverlay>
               angle: (i * 0.5) + (_bounceAnimation.value * 0.02 * rotationOffset),
               child: Icon(
                 icons[i],
-                color: (i.isEven ? const Color(0xFFE53935) : const Color(0xFFFFD600))
-                    .withValues(alpha: opacity),
+                color: _esBarberia
+                    ? (i.isEven ? const Color(0xFF4CAF50) : const Color(0xFFFFB300))
+                        .withValues(alpha: opacity)
+                    : (i.isEven ? const Color(0xFFE53935) : const Color(0xFFFFD600))
+                        .withValues(alpha: opacity),
                 size: size,
               ),
             ),
