@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face {
+    font-family: 'Termina';
+    src: url('assets/fonts/termina-heavy.woff2') format('woff2'),
+         url('assets/fonts/termina-heavy.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Termina';
+    src: url('assets/fonts/termina-demi.woff2') format('woff2'),
+         url('assets/fonts/termina-demi.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'AntiqueOliveNord';
+    src: url('assets/fonts/antique-olive-nord-ita.otf') format('opentype');
+    font-weight: 700;
+    font-style: italic;
+  }
+
+  @page { margin: 2cm; size: A4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Termina', 'AntiqueOliveNord', 'Georgia', 'Times New Roman', serif;
+    color: #0c0a07;
+    line-height: 1.6;
+    background: #faf8f5;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+
+  /* PORTADA */
+  .cover {
+    page-break-after: always;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    color: #e8d5b7;
+    padding: 3cm;
+  }
+  .cover h1 {
+    font-family: 'Termina', 'AntiqueOliveNord', serif;
+    font-size: 44pt;
+    font-weight: 800;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: #f0c040;
+    text-shadow: 3px 3px 10px rgba(0,0,0,0.55);
+  }
+  .cover .subtitle {
+    font-family: 'AntiqueOliveNord', 'Termina', serif;
+    font-size: 16pt;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: #c4a35a;
+    margin-bottom: 40px;
+  }
+  .cover .barber-pole {
+    font-size: 60pt;
+    margin: 20px 0;
+  }
+  .cover .tagline {
+    font-family: 'AntiqueOliveNord', 'Termina', serif;
+    font-size: 13pt;
+    font-style: italic;
+    color: #c2b5a0;
+    margin-top: 30px;
+  }
+  .cover .version {
+    margin-top: 50px;
+    font-size: 10pt;
+    color: #9d8f7a;
+  }
+
+  /* PAGINAS */
+  .page { page-break-after: always; padding: 0.5cm 0; }
+  .page:last-child { page-break-after: avoid; }
+
+  h2 {
+    font-family: 'Termina', sans-serif;
+    font-size: 21pt;
+    color: #0b254a;
+    border-bottom: 4px solid #f0c040;
+    padding-bottom: 8px;
+    margin: 30px 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 800;
+  }
+  h3 {
+    font-family: 'Termina', sans-serif;
+    font-size: 15pt;
+    color: #1a1a2e;
+    margin: 20px 0 10px 0;
+    border-left: 5px solid #f0c040;
+    padding-left: 14px;
+    letter-spacing: 2px;
+    font-weight: 700;
+  }
+  p { margin: 8px 0; font-size: 11pt; }
+  ul, ol { margin: 10px 0 10px 25px; font-size: 11pt; }
+  li { margin: 5px 0; }
+
+  .highlight-box {
+    background: #f0e8d8;
+    border: 2px solid #c4a35a;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin: 15px 0;
+  }
+  .highlight-box strong { color: #0f3460; }
+
+  .tip-box {
+    background: #e8f4e8;
+    border-left: 5px solid #2d6a2d;
+    padding: 12px 18px;
+    margin: 15px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .tip-box::before { content: "TIP: "; font-weight: bold; color: #2d6a2d; }
+
+  .warning-box {
+    background: #fce8e8;
+    border-left: 5px solid #c0392b;
+    padding: 12px 18px;
+    margin: 15px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .warning-box::before { content: "IMPORTANTE: "; font-weight: bold; color: #c0392b; }
+
+  .step-number {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    background: #0f3460;
+    color: #f0c040;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-weight: bold;
+    font-size: 13pt;
+    margin-right: 8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 10pt;
+  }
+  th {
+    background: #0f3460;
+    color: #f0c040;
+    padding: 10px 12px;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #ddd;
+  }
+  tr:nth-child(even) { background: #f5f0e8; }
+
+  .toc { margin: 20px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc li { margin: 8px 0; font-size: 12pt; }
+
+  .footer-note {
+    text-align: center;
+    color: #888;
+    font-size: 9pt;
+    margin-top: 40px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- PORTADA -->
+<div class="cover">
+  <div class="barber-pole">&#x1F488;</div>
+  <h1>Juke-Box Reserva</h1>
+  <div class="subtitle">Sistema de Turnos para Barberias</div>
+  <div style="width:200px; height:3px; background: linear-gradient(90deg, #e53935, #fff, #1565c0, #fff, #e53935); margin: 20px auto;"></div>
+  <div class="tagline">"Tu barberia, organizada como un reloj"</div>
+  <div class="version">Manual de Usuario - Version 1.0<br>Abril 2026</div>
+</div>
+
+<!-- INDICE -->
+<div class="page">
+  <h2>Indice</h2>
+  <ol class="toc">
+    <li>Primeros pasos - Configurar tu barberia</li>
+    <li>Panel de administracion - Vista general</li>
+    <li>Turnos - Gestionar citas de clientes</li>
+    <li>Barberos - Tu equipo de trabajo</li>
+    <li>Servicios - Cortes, barba y mas</li>
+    <li>Horarios - Dias y horas de atencion</li>
+    <li>Bloqueos - Cerrar dias u horas</li>
+    <li>Lista de espera</li>
+    <li>Clientes - Base de datos de clientes</li>
+    <li>Stock - Productos e inventario</li>
+    <li>Reportes - Estadisticas del negocio</li>
+    <li>Mi Barberia - Configuracion general</li>
+    <li>Pagina publica - Como reservan tus clientes</li>
+    <li>Preguntas frecuentes</li>
+  </ol>
+</div>
+
+<!-- 1. PRIMEROS PASOS -->
+<div class="page">
+  <h2>1. Primeros Pasos</h2>
+  <p>Cuando recibas tu cuenta vas a tener:</p>
+  <ul>
+    <li><strong>Email de acceso</strong> (el que le diste al administrador del sistema)</li>
+    <li><strong>Contrasena temporal</strong> (la podes cambiar despues)</li>
+    <li><strong>Link de tu barberia</strong> (ej: juke-box-reserva.web.app/tu_barberia)</li>
+  </ul>
+
+  <h3>Primer inicio de sesion</h3>
+  <p><span class="step-number">1</span> Abri el link de tu barberia en el navegador</p>
+  <p><span class="step-number">2</span> Toca el texto <em>"Acceso admin"</em> en la parte inferior</p>
+  <p><span class="step-number">3</span> Ingresa tu email y contrasena</p>
+  <p><span class="step-number">4</span> Se abre el <strong>asistente de configuracion</strong> (onboarding)</p>
+
+  <h3>Asistente de configuracion</h3>
+  <p>La primera vez que entres, el sistema te guia paso a paso:</p>
+
+  <div class="highlight-box">
+    <p><strong>Paso 1 - Logo:</strong> Subi el logo de tu barberia (foto o imagen). Si no tenes uno, se muestra un logo generico de barberia.</p>
+    <p><strong>Paso 2 - Datos basicos:</strong> Nombre de la barberia, direccion, ciudad, slogan.</p>
+    <p><strong>Paso 3 - Contacto:</strong> Email, telefono, WhatsApp (para que los clientes te contacten).</p>
+    <p><strong>Paso 4 - Colores:</strong> Elegi los colores de tu pagina. Se asignan colores por defecto que podes cambiar cuando quieras.</p>
+  </div>
+
+  <div class="tip-box">Al completar la configuracion, tu barberia queda visible para el publico y arranca tu periodo de prueba gratuito.</div>
+</div>
+
+<!-- 2. PANEL DE ADMINISTRACION -->
+<div class="page">
+  <h2>2. Panel de Administracion</h2>
+  <p>El panel tiene <strong>10 secciones</strong> organizadas en pestanas. Accedes tocando cada pestana en la parte superior.</p>
+
+  <table>
+    <tr><th>Pestana</th><th>Funcion</th></tr>
+    <tr><td>Turnos</td><td>Ver y gestionar citas del dia</td></tr>
+    <tr><td>Barberos</td><td>Agregar y administrar tu equipo</td></tr>
+    <tr><td>Servicios</td><td>Cortes, barba, tintura, etc. con precios</td></tr>
+    <tr><td>Horarios</td><td>Dias y horas de atencion</td></tr>
+    <tr><td>Bloqueos</td><td>Cerrar dias, horas o barberos</td></tr>
+    <tr><td>Espera</td><td>Clientes esperando un turno</td></tr>
+    <tr><td>Clientes</td><td>Base de datos con historial</td></tr>
+    <tr><td>Stock</td><td>Productos, inventario, alertas</td></tr>
+    <tr><td>Reportes</td><td>Estadisticas y graficos</td></tr>
+    <tr><td>Mi Barberia</td><td>Logo, colores, sena, banner, datos</td></tr>
+  </table>
+
+  <div class="tip-box">Podes cambiar tu contrasena desde el icono de candado en la barra superior del panel.</div>
+</div>
+
+<!-- 3. TURNOS -->
+<div class="page">
+  <h2>3. Turnos</h2>
+  <p>Aca ves todas las citas del dia seleccionado y las gestionas.</p>
+
+  <h3>Ver turnos</h3>
+  <ul>
+    <li>Selecciona la fecha con el calendario o las flechas izquierda/derecha</li>
+    <li>Filtra por categoria de servicio (Todos, Corte, Barba, etc.)</li>
+    <li>Cada turno muestra: hora, cliente, servicio, barbero, telefono y codigo</li>
+  </ul>
+
+  <h3>Estados de un turno</h3>
+  <table>
+    <tr><th>Estado</th><th>Significado</th><th>Accion</th></tr>
+    <tr><td>Pendiente</td><td>El cliente reservo pero no confirmo</td><td>Esperar o contactar</td></tr>
+    <tr><td>Confirmada</td><td>El cliente confirmo la cita</td><td>Tocar "Atender" cuando llegue</td></tr>
+    <tr><td>En atencion</td><td>Se esta atendiendo al cliente</td><td>Tocar "Completar" al terminar</td></tr>
+    <tr><td>Completada</td><td>Turno finalizado</td><td>Listo</td></tr>
+    <tr><td>No Show</td><td>El cliente no vino</td><td>Marcar como No Show</td></tr>
+    <tr><td>Cancelada</td><td>Se cancelo la cita</td><td>-</td></tr>
+  </table>
+
+  <h3>Acciones rapidas</h3>
+  <ul>
+    <li><strong>Confirmar:</strong> marca el turno como confirmado</li>
+    <li><strong>Atender:</strong> el cliente llego, empieza la atencion</li>
+    <li><strong>Completar:</strong> se termino el servicio</li>
+    <li><strong>WhatsApp:</strong> abre chat directo con el cliente</li>
+    <li><strong>Cancelar:</strong> cancela el turno</li>
+    <li><strong>No Show:</strong> el cliente no se presento</li>
+  </ul>
+
+  <h3>Recordatorios</h3>
+  <p>El boton <strong>"Enviar recordatorios de manana"</strong> te genera un mensaje de WhatsApp para cada cliente que tiene turno al dia siguiente. Podes enviarlo con un solo toque por cada cliente.</p>
+
+  <div class="tip-box">Envia los recordatorios a la tarde/noche del dia anterior para reducir las inasistencias.</div>
+</div>
+
+<!-- 4. BARBEROS -->
+<div class="page">
+  <h2>4. Barberos (Equipo)</h2>
+  <p>Administra tu equipo de barberos.</p>
+
+  <h3>Agregar un barbero</h3>
+  <p><span class="step-number">1</span> Toca el boton <strong>"+ Agregar"</strong></p>
+  <p><span class="step-number">2</span> Completa: nombre, especialidad (ej: "Corte clasico y fade"), telefono</p>
+  <p><span class="step-number">3</span> Subi una foto del barbero (opcional pero recomendado)</p>
+  <p><span class="step-number">4</span> Guarda</p>
+
+  <h3>Turnos simultaneos</h3>
+  <p>Cada barbero tiene un campo <strong>"Max turnos simultaneos"</strong>. Por defecto es 1 (un cliente a la vez). Si un barbero puede atender mas de un cliente al mismo tiempo (ej: uno esperando que seque la tintura mientras corta a otro), subi ese numero.</p>
+
+  <h3>Activar / Desactivar</h3>
+  <p>Si un barbero se va de vacaciones o deja de trabajar, podes desactivarlo sin borrarlo. Sus datos y su historial se mantienen.</p>
+
+  <h3>Historial del barbero</h3>
+  <p>Toca <strong>"Ver historial"</strong> para ver estadisticas: total de turnos, completados, cancelados y no-show.</p>
+
+  <h3>Orden de aparicion</h3>
+  <p>Arrastra los barberos para cambiar el orden en que aparecen en la pagina publica.</p>
+</div>
+
+<!-- 5. SERVICIOS -->
+<div class="page">
+  <h2>5. Servicios</h2>
+  <p>Configura los servicios que ofrece tu barberia con precios diferenciados.</p>
+
+  <h3>Agregar un servicio</h3>
+  <p><span class="step-number">1</span> Toca <strong>"+ Agregar"</strong></p>
+  <p><span class="step-number">2</span> Completa los campos:</p>
+
+  <table>
+    <tr><th>Campo</th><th>Descripcion</th><th>Ejemplo</th></tr>
+    <tr><td>Nombre</td><td>Nombre del servicio</td><td>Corte clasico</td></tr>
+    <tr><td>Categoria</td><td>Tipo de servicio</td><td>Cabello, Barba, etc.</td></tr>
+    <tr><td>Duracion (min)</td><td>Tiempo que lleva</td><td>30</td></tr>
+    <tr><td>Precio efectivo</td><td>Precio al pagar en efectivo</td><td>$5.000</td></tr>
+    <tr><td>Precio tarjeta</td><td>Precio al pagar con tarjeta</td><td>$5.500</td></tr>
+    <tr><td>Descuento efectivo %</td><td>Descuento opcional</td><td>10%</td></tr>
+    <tr><td>Descuento tarjeta %</td><td>Descuento opcional</td><td>0%</td></tr>
+    <tr><td>Imagen</td><td>Foto del servicio</td><td>Opcional</td></tr>
+  </table>
+
+  <h3>Sena (pago anticipado)</h3>
+  <p>Si activas la sena para un servicio, el cliente debera subir un comprobante de transferencia al reservar. Configuras el porcentaje de sena y los datos de la cuenta en la seccion <strong>"Mi Barberia"</strong>.</p>
+
+  <h3>Solapamiento de servicios</h3>
+  <p>El toggle <strong>"Permite solapamiento"</strong> indica que este servicio se puede hacer mientras el barbero atiende otro turno al mismo tiempo (ej: un tratamiento capilar procesando mientras se hace otro corte).</p>
+
+  <h3>Precio por barbero</h3>
+  <p>Cuando vinculas un servicio a un barbero, podes poner un precio especial distinto al precio general. Tambien podes configurar el porcentaje de comision que se lleva el barbero por ese servicio.</p>
+</div>
+
+<!-- 6. HORARIOS -->
+<div class="page">
+  <h2>6. Horarios</h2>
+  <p>Configura los dias y horarios de atencion de tu barberia.</p>
+
+  <h3>Configurar horarios</h3>
+  <p><span class="step-number">1</span> Selecciona el dia de la semana</p>
+  <p><span class="step-number">2</span> Indica hora de apertura y hora de cierre</p>
+  <p><span class="step-number">3</span> Configura el intervalo de turnos (cada cuantos minutos hay un turno disponible, por defecto 30 min)</p>
+
+  <div class="highlight-box">
+    <p><strong>Ejemplo tipico de barberia:</strong></p>
+    <p>Lunes a viernes: 9:00 - 20:00 (intervalo 30 min)</p>
+    <p>Sabado: 9:00 - 14:00 (intervalo 30 min)</p>
+    <p>Domingo: cerrado</p>
+  </div>
+
+  <h3>Dia cerrado</h3>
+  <p>Si no agregas horario para un dia, ese dia aparece como cerrado. Los clientes no podran reservar turnos ese dia.</p>
+
+  <div class="tip-box">Si tu barberia tiene horario partido (ej: 9-13 y 16-20), agrega dos franjas horarias para el mismo dia.</div>
+</div>
+
+<!-- 7. BLOQUEOS -->
+<div class="page">
+  <h2>7. Bloqueos</h2>
+  <p>Cierra dias completos, horas especificas, o bloquea un barbero.</p>
+
+  <h3>Tipos de bloqueo</h3>
+  <table>
+    <tr><th>Tipo</th><th>Uso</th><th>Ejemplo</th></tr>
+    <tr><td>Dia completo</td><td>La barberia no atiende ese dia</td><td>Feriado, evento, vacaciones</td></tr>
+    <tr><td>Hora especifica</td><td>No hay turnos en esa hora</td><td>Reunion de equipo 14-15hs</td></tr>
+    <tr><td>Por barbero</td><td>Un barbero no esta disponible</td><td>Turno medico, dia libre</td></tr>
+    <tr><td>Por categoria</td><td>Una categoria de servicio no disponible</td><td>Sin colorimetria este viernes</td></tr>
+  </table>
+
+  <h3>Crear un bloqueo</h3>
+  <p><span class="step-number">1</span> Toca <strong>"+ Bloquear"</strong></p>
+  <p><span class="step-number">2</span> Selecciona la fecha</p>
+  <p><span class="step-number">3</span> Elige: dia completo o rango horario</p>
+  <p><span class="step-number">4</span> Opcionalmente selecciona barbero y/o categoria</p>
+  <p><span class="step-number">5</span> Escribe un motivo (opcional)</p>
+
+  <div class="warning-box">Los bloqueos no cancelan turnos ya reservados. Si bloqueas un dia que ya tiene turnos, debes cancelarlos manualmente desde la pestana Turnos.</div>
+</div>
+
+<!-- 8. LISTA DE ESPERA -->
+<div class="page">
+  <h2>8. Lista de Espera</h2>
+  <p>Cuando un cliente quiere un turno pero no hay disponibilidad, queda en la lista de espera.</p>
+
+  <h3>Como funciona</h3>
+  <ol>
+    <li>El cliente intenta reservar y no hay lugar</li>
+    <li>Se anota en la lista de espera con: fecha, hora deseada, servicio y barbero preferido</li>
+    <li>Cuando se cancela un turno, el sistema te avisa que hay gente en espera</li>
+    <li>Tocas el boton de <strong>notificar</strong> y se abre WhatsApp con un mensaje listo para enviar</li>
+  </ol>
+
+  <div class="tip-box">Revisa la lista de espera cada vez que se cancele un turno. Es plata que se estaba perdiendo.</div>
+</div>
+
+<!-- 9. CLIENTES -->
+<div class="page">
+  <h2>9. Clientes</h2>
+  <p>Base de datos de todos tus clientes con historial completo.</p>
+
+  <h3>Buscar clientes</h3>
+  <p>Busca por nombre o numero de telefono. El sistema identifica clientes automaticamente cuando reservan por primera vez.</p>
+
+  <h3>Ficha del cliente</h3>
+  <ul>
+    <li><strong>Nombre y telefono</strong></li>
+    <li><strong>Email</strong> (opcional)</li>
+    <li><strong>Notas</strong>: informacion general (ej: "siempre viene con cita", "amigo de Juan")</li>
+    <li><strong>Historial de turnos</strong>: todas las citas pasadas con fecha, servicio y estado</li>
+    <li><strong>Observaciones</strong>: notas por visita (ej: "le gusta el fade bien bajo", "alergia a tal producto")</li>
+  </ul>
+
+  <h3>Agregar observacion</h3>
+  <p><span class="step-number">1</span> Entra al perfil del cliente</p>
+  <p><span class="step-number">2</span> Toca <strong>"+ Observacion"</strong></p>
+  <p><span class="step-number">3</span> Selecciona fecha, barbero, servicio</p>
+  <p><span class="step-number">4</span> Escribe la nota (ej: "Corte degradado #2 a los lados, tijera arriba, barba contorno")</p>
+
+  <div class="tip-box">Las observaciones son clave para la fidelizacion. Cuando un cliente vuelve y el barbero sabe exactamente como le gusta el corte, eso genera confianza.</div>
+</div>
+
+<!-- 10. STOCK -->
+<div class="page">
+  <h2>10. Stock (Inventario)</h2>
+  <p>Controla los productos que usas y vendes en tu barberia.</p>
+
+  <h3>Agregar producto</h3>
+  <table>
+    <tr><th>Campo</th><th>Descripcion</th></tr>
+    <tr><td>Nombre</td><td>Nombre del producto (ej: "Pomada fijacion fuerte")</td></tr>
+    <tr><td>Marca</td><td>Marca del producto</td></tr>
+    <tr><td>Codigo de barras</td><td>Escanea el codigo con la camara o escribilo</td></tr>
+    <tr><td>Cantidad</td><td>Unidades en stock</td></tr>
+    <tr><td>Categoria</td><td>Tipo (cabello, barba, styling, etc.)</td></tr>
+    <tr><td>Stock minimo alerta</td><td>Cuando baje de esta cantidad, recibis un aviso</td></tr>
+    <tr><td>Precio costo</td><td>Lo que te costo</td></tr>
+    <tr><td>Precio venta</td><td>Lo que cobras</td></tr>
+  </table>
+
+  <h3>Movimientos de stock</h3>
+  <p>Cada vez que entra o sale un producto, queda registrado:</p>
+  <ul>
+    <li><strong>Ingreso:</strong> llego mercaderia nueva</li>
+    <li><strong>Egreso:</strong> se uso en un servicio</li>
+    <li><strong>Venta:</strong> se vendio al cliente</li>
+    <li><strong>Ajuste:</strong> correccion manual (faltante, rotura, etc.)</li>
+  </ul>
+
+  <h3>Alertas de stock bajo</h3>
+  <p>Cuando un producto baja del minimo que configuraste, aparece una alerta para que repongas antes de quedarte sin producto.</p>
+</div>
+
+<!-- 11. REPORTES -->
+<div class="page">
+  <h2>11. Reportes</h2>
+  <p>Estadisticas de tu barberia para tomar mejores decisiones.</p>
+
+  <h3>Que ves en los reportes</h3>
+  <ul>
+    <li><strong>Turnos por dia:</strong> grafico de barras con la cantidad de citas por fecha</li>
+    <li><strong>Ingresos:</strong> cuanto facturaste en el periodo, separado por efectivo y tarjeta</li>
+    <li><strong>Servicios mas pedidos:</strong> que cortes o servicios son los mas populares</li>
+    <li><strong>Ranking de barberos:</strong> quien atendio mas clientes</li>
+    <li><strong>Cancelaciones y no-shows:</strong> cuantos clientes cancelaron o no vinieron</li>
+  </ul>
+
+  <h3>Filtrar por fecha</h3>
+  <p>Por defecto ves los ultimos 30 dias. Podes seleccionar un rango personalizado con el selector de fechas.</p>
+
+  <div class="tip-box">Revisa los reportes al menos una vez por semana. Te van a ayudar a saber que barbero rinde mas, que servicio ofrecer en promo, y a que hora tenes mas demanda.</div>
+</div>
+
+<!-- 12. MI BARBERIA -->
+<div class="page">
+  <h2>12. Mi Barberia (Configuracion)</h2>
+  <p>Aca configuras todo lo que ve el publico y los ajustes internos.</p>
+
+  <h3>Datos del local</h3>
+  <ul>
+    <li>Nombre, subtitulo, slogan</li>
+    <li>Direccion, ciudad, provincia</li>
+    <li>Email, telefono, WhatsApp</li>
+    <li>Logo (tocalo para cambiarlo)</li>
+  </ul>
+
+  <h3>Colores</h3>
+  <p>Personaliza los colores de tu pagina publica:</p>
+  <ul>
+    <li><strong>Primario:</strong> color principal de la pagina</li>
+    <li><strong>Secundario:</strong> color complementario</li>
+    <li><strong>Terciario:</strong> fondos y detalles</li>
+    <li><strong>Acento:</strong> botones y elementos destacados</li>
+  </ul>
+
+  <h3>Sena (pago anticipado)</h3>
+  <p>Si queres que los clientes paguen una sena al reservar:</p>
+  <p><span class="step-number">1</span> Activa la sena</p>
+  <p><span class="step-number">2</span> Configura el porcentaje (ej: 50%)</p>
+  <p><span class="step-number">3</span> Ingresa CBU o Alias de tu cuenta</p>
+  <p><span class="step-number">4</span> Ingresa el nombre del titular</p>
+  <p>El cliente vera estos datos al reservar y debera subir un comprobante de transferencia.</p>
+
+  <h3>Banner promocional</h3>
+  <p>Podes mostrar un banner en tu pagina publica con:</p>
+  <ul>
+    <li><strong>Texto:</strong> un mensaje promocional (ej: "2x1 en corte + barba los martes")</li>
+    <li><strong>Video:</strong> subi un video corto de tu barberia</li>
+    <li><strong>Ambos:</strong> texto + video</li>
+  </ul>
+
+  <h3>Mensaje de WhatsApp</h3>
+  <p>Personaliza el mensaje que se genera cuando confirmas un turno por WhatsApp. Podes incluir la direccion, el horario y un saludo personalizado.</p>
+
+  <h3>Suscripcion</h3>
+  <p>Ves los dias restantes de prueba y la fecha de vencimiento. Contacta al soporte para renovar o hacer el pago mensual.</p>
+</div>
+
+<!-- 13. PAGINA PUBLICA -->
+<div class="page">
+  <h2>13. Pagina Publica (Como Reservan tus Clientes)</h2>
+  <p>Tu barberia tiene una pagina web publica donde los clientes reservan turnos sin necesidad de una app.</p>
+
+  <h3>Link de tu barberia</h3>
+  <div class="highlight-box">
+    <p><strong>juke-box-reserva.web.app/tu_barberia</strong></p>
+    <p>Comparte este link por WhatsApp, Instagram, Google Maps, tarjetas, o donde quieras.</p>
+  </div>
+
+  <h3>Que ve el cliente</h3>
+  <ol>
+    <li><strong>Pagina principal:</strong> logo, nombre, servicios, barberos</li>
+    <li><strong>Elige servicio:</strong> ve los servicios disponibles con precios (efectivo y tarjeta)</li>
+    <li><strong>Elige barbero:</strong> ve los barberos que hacen ese servicio</li>
+    <li><strong>Elige fecha y hora:</strong> calendario con horarios libres (solo muestra lo que esta disponible)</li>
+    <li><strong>Datos de contacto:</strong> nombre, telefono, email y comentarios</li>
+    <li><strong>Sena (si aplica):</strong> ve los datos bancarios y sube el comprobante de transferencia</li>
+    <li><strong>Confirmacion:</strong> recibe un codigo de confirmacion</li>
+  </ol>
+
+  <div class="tip-box">Pone el link de tu barberia en la bio de Instagram y en tu estado de WhatsApp. Eso solo ya genera reservas.</div>
+</div>
+
+<!-- 14. FAQ -->
+<div class="page">
+  <h2>14. Preguntas Frecuentes</h2>
+
+  <h3>Puedo usarlo desde el celular?</h3>
+  <p>Si. El sistema funciona desde cualquier navegador web, en celular, tablet o computadora. No necesitas instalar nada.</p>
+
+  <h3>Si se cae internet pierdo los turnos?</h3>
+  <p>No. Todos los datos estan guardados en la nube. Cuando vuelvas a conectarte, todo sigue igual.</p>
+
+  <h3>Puedo tener mas de un barbero?</h3>
+  <p>Si. No hay limite. Agrega todos los barberos que trabajan en tu local.</p>
+
+  <h3>Como cancelo un turno?</h3>
+  <p>Desde la pestana Turnos, busca el turno y toca "Cancelar". El cliente no recibe notificacion automatica, asi que avisale por WhatsApp (el boton esta al lado).</p>
+
+  <h3>Un barbero puede atender dos clientes a la vez?</h3>
+  <p>Si. Configura el campo "Max turnos simultaneos" del barbero. Si lo pones en 2, puede tener 2 citas al mismo horario.</p>
+
+  <h3>Puedo cobrar distinto en efectivo y tarjeta?</h3>
+  <p>Si. Cada servicio tiene precio efectivo y precio tarjeta por separado.</p>
+
+  <h3>Como cambio mi contrasena?</h3>
+  <p>Desde el panel admin, toca el icono de candado en la barra superior.</p>
+
+  <h3>Que pasa cuando vence la suscripcion?</h3>
+  <p>Tenes 5 dias de gracia despues del vencimiento. Si no renovas, el sistema se bloquea temporalmente hasta que hagas el pago. Tus datos NO se pierden.</p>
+
+  <h3>Donde veo el comprobante de sena?</h3>
+  <p>En la pestana Turnos, cada turno que tiene sena muestra un boton para "Ver comprobante".</p>
+
+  <h3>Necesito soporte?</h3>
+  <p>Contacta al equipo de soporte por WhatsApp. El numero esta en la pantalla de inicio del sistema.</p>
+
+  <div class="footer-note">
+    Juke-Box Reserva - Sistema de Turnos para Barberias<br>
+    Desarrollado por Programacion JJ - Industria Nacional<br>
+    WhatsApp soporte: 341-336-3551
+  </div>
+</div>
+
+</body>
+</html>

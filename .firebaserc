@@ -1,7 +1,6 @@
 {
   "projects": {
-    "default": "bella-color",
-    "barberia": "juke-box-reserva"
+    "default": "bella-color"
   },
   "targets": {},
   "etags": {}

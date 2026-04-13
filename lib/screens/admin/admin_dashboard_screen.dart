@@ -436,6 +436,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'Anda a la pestana "Servicios"',
                       'Toca "Agregar Servicio"',
                       'Pone nombre, categoria, duracion y precio',
+                      'La categoria agrupa los servicios (ej: Corte, Color, Unas)',
+                      'Las clientas ven los servicios organizados por categoria',
                       'Usa el switch para activar/desactivar',
                     ]),
                     _helpSection('Horarios', Icons.access_time, [
@@ -453,6 +455,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'No Show: si no vino',
                       'Cancelar: si cancela',
                     ]),
+                    _helpSection('Turnos simultaneos', Icons.people, [
+                      'Cada profesional puede atender varios clientes a la vez',
+                      'En "Profesionales", configura cuantos clientes atiende simultaneamente',
+                      'Ej: si pones 3, puede tener 3 turnos en el mismo horario',
+                      'El sistema controla automaticamente que no se pase del limite',
+                      'Si un horario esta lleno, no se puede reservar ahi',
+                    ]),
                     _helpSection('Cerrar dias (Bloqueos)', Icons.block, [
                       'Anda a la pestana "Cerrar dias"',
                       'Vas a ver un calendario con todos los dias',
@@ -467,6 +476,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                       'Si elegis la misma hora en ambos, se bloquea solo ese turno',
                       'Podes poner un motivo (opcional)',
                       'Para eliminar un bloqueo, toca el icono de basura',
+                      'Podes bloquear por categoria de servicio (ej: solo "Color")',
+                      'Si elegis una categoria, solo se bloquean esos servicios',
+                      'Los demas servicios siguen disponibles en ese horario',
                     ]),
                     _helpSection('Mensaje de WhatsApp', Icons.chat, [
                       'Anda a "Mi Salon" y busca "Mensaje de WhatsApp"',

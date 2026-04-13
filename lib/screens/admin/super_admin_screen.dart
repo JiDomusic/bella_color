@@ -76,7 +76,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     final nameCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController(text: _generateTempPassword());
-    String categoria = 'salon';
+    String categoria = BrandConfig.instance.esBarberia ? 'barberia' : 'salon';
 
     final result = await showDialog<bool>(
       context: context,
