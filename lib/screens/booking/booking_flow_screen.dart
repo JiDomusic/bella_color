@@ -33,6 +33,16 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
 
+  static String _sanitizeFileName(String name) {
+    const diacritics = 'áàäâãéèëêíìïîóòöôõúùüûñçÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇ';
+    const replacements = 'aaaaaeeeeiiiioooooouuuuncAAAAAEEEEIIIIOOOOOUUUUNC';
+    var result = name;
+    for (int i = 0; i < diacritics.length; i++) {
+      result = result.replaceAll(diacritics[i], replacements[i]);
+    }
+    return result.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
+  }
+
   List<Service> _services = [];
   List<Professional> _professionals = [];
   List<OperatingHours> _hours = [];
@@ -335,7 +345,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       String? comprobanteUrl;
       if (_comprobanteBytes != null && _comprobanteValido) {
         comprobanteUrl = await _svc.uploadImage(
-          'comprobantes/${DateTime.now().millisecondsSinceEpoch}_${_nameController.text.trim().replaceAll(' ', '_')}.jpg',
+          'comprobantes/${DateTime.now().millisecondsSinceEpoch}_${_sanitizeFileName(_nameController.text.trim())}.jpg',
           _comprobanteBytes!,
         );
       }
