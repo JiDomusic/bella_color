@@ -491,6 +491,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               fontWeight: FontWeight.w300,
                               color: Colors.white.withAlpha(230),
                               letterSpacing: 8,
+                              // Usar fuente del sistema para evitar cuadrados mientras carga Google Fonts
+                              fontFamily: 'Arial',
+                              fontFamilyFallback: const ['Helvetica', 'sans-serif'],
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -518,6 +521,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               fontWeight: FontWeight.w300,
                               color: BrandConfig.instance.colorSplashPrimario.withAlpha(180),
                               letterSpacing: 1.5,
+                              fontFamily: 'Arial',
+                              fontFamilyFallback: const ['Helvetica', 'sans-serif'],
                             ),
                           ),
                         ],

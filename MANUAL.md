@@ -313,11 +313,11 @@ Tus clientas abren el link de tu salon y ven tu pagina con los servicios, profes
 
 ### Reservar (4 pasos):
 
-**Paso 1** - Elige el servicio que quiere
+**Paso 1** - Elige uno o varios servicios. Si el salon tiene varias categorias (uñas, cabello, etc.) aparecen **chips de filtro** arriba para buscar mas rapido. Puede seleccionar multiples servicios y ver el resumen con la duracion y precio total antes de continuar.
 
 **Paso 2** - Elige una profesional (o "Sin preferencia")
 
-**Paso 3** - Elige fecha y hora disponible
+**Paso 3** - Elige fecha y hora disponible (la duracion se calcula sumando todos los servicios elegidos)
 
 **Paso 4** - Pone su nombre y telefono (WhatsApp para coordinar)
 

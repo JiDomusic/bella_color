@@ -49,10 +49,12 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   List<Block> _blocks = [];
   List<Appointment> _existingAppointments = [];
 
-  Service? _selectedService;
+  Service? _selectedService; // backward compat: primer servicio
+  List<Service> _selectedServices = [];
   Professional? _selectedProfessional;
   DateTime? _selectedDate;
   String? _selectedTime;
+  String? _filtroCategoria; // null = "Todos"
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -75,6 +77,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   void initState() {
     super.initState();
     _selectedService = widget.preselectedService;
+    if (widget.preselectedService != null) {
+      _selectedServices = [widget.preselectedService!];
+    }
     _selectedProfessional = widget.preselectedProfessional;
     _loadInitial();
   }
@@ -173,11 +178,11 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
       // Check blocks
       for (final block in _blocks) {
-        // Si el bloqueo es de una categoría específica, solo aplica a servicios de esa categoría
+        // Si el bloqueo es de una categoría específica, solo aplica si algún servicio seleccionado es de esa categoría
         final blockCat = Service.normalizeCategoria(block.categoria);
-        final svcCat = _selectedService != null ? _selectedService!.categoriaNormalizada : '';
-        if (blockCat.isNotEmpty && svcCat.isNotEmpty && blockCat != svcCat) {
-          continue; // Este bloqueo no aplica al servicio seleccionado
+        if (blockCat.isNotEmpty && _selectedServices.isNotEmpty) {
+          final aplicaAlguno = _selectedServices.any((s) => s.categoriaNormalizada == blockCat);
+          if (!aplicaAlguno) continue; // Este bloqueo no aplica a ningún servicio seleccionado
         }
         if (block.diaCompleto) {
           available = false;
@@ -192,9 +197,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
       }
 
       // Check existing appointments (duration-aware + solapamiento)
-      if (available && _selectedService != null) {
+      if (available && _selectedServices.isNotEmpty) {
         final slotMinutes = _parseTime(slot);
-        final newDuration = _selectedService!.duracionMinutos;
+        final newDuration = _duracionTotal;
 
         // Helper: verifica si un turno existente se solapa en tiempo con el nuevo
         bool overlaps(Appointment a) {
@@ -204,10 +209,13 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           return slotMinutes < aEnd && aStart < newEnd;
         }
 
-        // 1. maxTurnosDia: limite total del servicio en el dia
-        final totalForService = _existingAppointments.where((a) => a.servicioId == _selectedService!.id).length;
-        if (totalForService >= _selectedService!.maxTurnosDia) {
-          available = false;
+        // 1. maxTurnosDia: limite total de cada servicio en el dia
+        for (final svc in _selectedServices) {
+          final totalForService = _existingAppointments.where((a) => a.servicioId == svc.id).length;
+          if (totalForService >= svc.maxTurnosDia) {
+            available = false;
+            break;
+          }
         }
 
         // 2. Check profesional seleccionado (duration-aware + simultaneos)
@@ -224,8 +232,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
               available = false;
             } else {
               // Tiene capacidad, verificar permisos de solapamiento:
-              // El servicio nuevo Y todos los existentes deben permitir solapamiento
-              final newAllows = _selectedService!.permiteSolapamiento;
+              // Todos los servicios nuevos Y todos los existentes deben permitir solapamiento
+              final newAllows = _selectedServices.every((s) => s.permiteSolapamiento);
               final allExistingAllow = overlapping.every((a) {
                 final svc = a.servicioId != null ? serviceMap[a.servicioId!] : null;
                 return svc?.permiteSolapamiento ?? false;
@@ -248,7 +256,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
             if (profOverlapping.isEmpty) return true;
             if (profOverlapping.length >= prof.maxTurnosSimultaneos) return false;
 
-            final newAllows = _selectedService!.permiteSolapamiento;
+            final newAllows = _selectedServices.every((s) => s.permiteSolapamiento);
             final allAllow = profOverlapping.every((a) {
               final svc = a.servicioId != null ? serviceMap[a.servicioId!] : null;
               return svc?.permiteSolapamiento ?? false;
@@ -279,12 +287,14 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   bool get _requiereSena {
     final tenant = _svc.currentTenant;
-    return tenant != null &&
-        tenant.senaHabilitada &&
-        _selectedService != null &&
+    if (tenant == null || !tenant.senaHabilitada || tenant.senaPorcentaje <= 0) return false;
+    // Con multi-servicio: seña requerida si ALGÚN servicio la requiere
+    if (_selectedServices.isNotEmpty) {
+      return _selectedServices.any((s) => s.requiereSena && (s.precioEfectivoFinal ?? 0) > 0);
+    }
+    return _selectedService != null &&
         _selectedService!.requiereSena &&
-        ((_selectedService!.precioEfectivoFinal ?? 0) > 0) &&
-        tenant.senaPorcentaje > 0;
+        ((_selectedService!.precioEfectivoFinal ?? 0) > 0);
   }
 
   Future<void> _seleccionarComprobante() async {
@@ -326,7 +336,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
   }
 
   Future<void> _submit() async {
-    if (_selectedService == null || _selectedDate == null || _selectedTime == null) return;
+    if (_selectedServices.isEmpty || _selectedDate == null || _selectedTime == null) return;
     if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
       _showError('Por favor completa nombre y telefono');
       return;
@@ -350,29 +360,46 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         );
       }
 
+      // Backward compat: primer servicio en campos clásicos, nombres concatenados
+      final primerServicio = _selectedServices.first;
       final appointment = await _svc.createAppointment({
         'fecha': dateStr,
         'hora': _selectedTime,
-        'duracion_minutos': _selectedService!.duracionMinutos,
+        'duracion_minutos': _duracionTotal,
         'nombre_cliente': _nameController.text.trim(),
         'telefono': _phoneController.text.trim(),
         'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-        'servicio_id': _selectedService!.id,
-        'servicio_nombre': _selectedService!.nombre,
+        'servicio_id': primerServicio.id,
+        'servicio_nombre': _nombresServicios,
         'professional_id': _selectedProfessional?.id,
         'professional_nombre': _selectedProfessional?.nombre,
         'codigo_confirmacion': code,
         'comentarios': _commentsController.text.trim().isEmpty ? null : _commentsController.text.trim(),
-        'precio': _selectedService!.precioEfectivoFinal ?? _selectedService!.precioTarjetaFinal,
+        'precio': _precioTotal,
         if (comprobanteUrl != null) 'comprobante_url': comprobanteUrl,
       });
+
+      // Insertar detalle en appointment_services (multi-servicio)
+      if (_selectedServices.length > 1) {
+        for (int i = 0; i < _selectedServices.length; i++) {
+          final s = _selectedServices[i];
+          await _svc.insertAppointmentService({
+            'appointment_id': appointment.id,
+            'service_id': s.id,
+            'servicio_nombre': s.nombre,
+            'duracion_minutos': s.duracionMinutos,
+            'precio': s.precioEfectivoFinal ?? s.precioTarjetaFinal,
+            'orden': i,
+          });
+        }
+      }
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => ConfirmationScreen(
             appointment: appointment,
-            precioServicio: _selectedService!.precioEfectivoFinal,
-            requiereSena: _selectedService!.requiereSena,
+            precioServicio: _precioTotal,
+            requiereSena: _requiereSena,
             comprobanteUrl: comprobanteUrl,
           )),
         );
@@ -531,25 +558,145 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     );
   }
 
+  // Helpers multi-servicio
+  int get _duracionTotal => _selectedServices.isEmpty
+      ? (_selectedService?.duracionMinutos ?? 60)
+      : _selectedServices.fold(0, (sum, s) => sum + s.duracionMinutos);
+  double get _precioTotal => _selectedServices.isEmpty
+      ? (_selectedService?.precioEfectivoFinal ?? 0)
+      : _selectedServices.fold<double>(0, (sum, s) => sum + (s.precioEfectivoFinal ?? 0));
+  String get _nombresServicios => _selectedServices.isEmpty
+      ? (_selectedService?.nombre ?? '')
+      : _selectedServices.map((s) => s.nombre).join(' + ');
+
+  void _toggleService(Service s) {
+    setState(() {
+      final idx = _selectedServices.indexWhere((x) => x.id == s.id);
+      if (idx >= 0) {
+        _selectedServices.removeAt(idx);
+      } else {
+        _selectedServices.add(s);
+      }
+      // Mantener _selectedService como el primero (backward compat)
+      _selectedService = _selectedServices.isNotEmpty ? _selectedServices.first : null;
+    });
+  }
+
   // Page 0: Select Service
   Widget _buildServicePage() {
+    // Categorías presentes en los servicios activos del salón (no mostrar las que no usa)
+    final categoriasDisponibles = _services.map((s) => s.categoria).toSet().toList()
+      ..sort((a, b) => Service.categorias.indexOf(a).compareTo(Service.categorias.indexOf(b)));
+
+    final serviciosFiltrados = _filtroCategoria == null
+        ? _services
+        : _services.where((s) => s.categoria == _filtroCategoria).toList();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Elige tu servicio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
-        const SizedBox(height: 16),
-        ..._services.map((s) => _selectionTile(
-          title: s.nombre,
-          subtitle: '${s.duracionMinutos} min${s.precioEfectivoFinal != null ? ' - Efect. ${formatPrecioConSigno(s.precioEfectivoFinal!)}' : ''}${s.precioTarjetaFinal != null ? ' / Tarj. ${formatPrecioConSigno(s.precioTarjetaFinal!)}' : ''}',
-          icon: Icons.spa,
-          selected: _selectedService?.id == s.id,
-          imageUrl: s.imagenUrl,
-          onTap: () {
-            setState(() => _selectedService = s);
-            _goToPage(1);
-          },
-        )),
+        Text('Elige tus servicios', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
+        const SizedBox(height: 4),
+        Text('Podes elegir uno o varios', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+        const SizedBox(height: 12),
+        // Filtro de categorías — solo si hay más de 1 categoría
+        if (categoriasDisponibles.length > 1) ...[
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _categoryChip(null, 'Todos'),
+                ...categoriasDisponibles.map((cat) => _categoryChip(cat, Service.categoriaLabel(cat))),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        ...serviciosFiltrados.map((s) {
+          final isSelected = _selectedServices.any((x) => x.id == s.id);
+          return _selectionTile(
+            title: s.nombre,
+            subtitle: '${s.duracionMinutos} min${s.precioEfectivoFinal != null ? ' - Efect. ${formatPrecioConSigno(s.precioEfectivoFinal!)}' : ''}${s.precioTarjetaFinal != null ? ' / Tarj. ${formatPrecioConSigno(s.precioTarjetaFinal!)}' : ''}',
+            icon: isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+            selected: isSelected,
+            imageUrl: s.imagenUrl,
+            onTap: () => _toggleService(s),
+          );
+        }),
+        if (serviciosFiltrados.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text('No hay servicios en esta categoría', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+            ),
+          ),
+        // Carrito / resumen + botón continuar
+        if (_selectedServices.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _primary.withAlpha(15),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _primary.withAlpha(50)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_selectedServices.length} servicio${_selectedServices.length > 1 ? 's' : ''} seleccionado${_selectedServices.length > 1 ? 's' : ''}',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _primary),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$_nombresServicios  -  ${_duracionTotal} min  -  ${formatPrecioConSigno(_precioTotal)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _goToPage(1),
+              icon: const Icon(Icons.arrow_forward, size: 18),
+              label: const Text('Continuar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _categoryChip(String? categoria, String label) {
+    final selected = _filtroCategoria == categoria;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => setState(() => _filtroCategoria = categoria),
+        selectedColor: _primary.withAlpha(30),
+        backgroundColor: Colors.white,
+        labelStyle: TextStyle(
+          color: selected ? _primary : Colors.grey[600],
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          fontSize: 13,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: selected ? _primary.withAlpha(100) : Colors.grey.shade300),
+        ),
+        showCheckmark: false,
+      ),
     );
   }
 
@@ -877,7 +1024,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _summaryRow(Icons.spa, _selectedService?.nombre ?? ''),
+              _summaryRow(Icons.spa, _nombresServicios),
+              if (_selectedServices.length > 1) _summaryRow(Icons.timer, '${_duracionTotal} min - ${formatPrecioConSigno(_precioTotal)}'),
               if (_selectedProfessional != null) _summaryRow(Icons.person, _selectedProfessional!.nombre),
               _summaryRow(Icons.calendar_today, '${_selectedDate?.day}/${_selectedDate?.month}/${_selectedDate?.year}'),
               _summaryRow(Icons.access_time, _selectedTime ?? ''),
@@ -933,7 +1081,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   Widget _buildSenaCard() {
     final tenant = _svc.currentTenant!;
-    final precio = _selectedService!.precioEfectivoFinal ?? 0;
+    final precio = _precioTotal;
     final montoSena = precio * tenant.senaPorcentaje / 100;
     final esPagoTotal = tenant.senaPorcentaje == 100;
 

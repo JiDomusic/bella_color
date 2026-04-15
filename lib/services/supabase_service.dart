@@ -342,6 +342,10 @@ class SupabaseService {
     return Appointment.fromJson(res);
   }
 
+  Future<void> insertAppointmentService(Map<String, dynamic> data) async {
+    await _client.from('appointment_services').insert(data);
+  }
+
   Future<void> updateAppointmentStatus(String id, String estado) async {
     final update = <String, dynamic>{'estado': estado};
     if (estado == 'confirmada') {

@@ -2,6 +2,7 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
+import '../../config/brand_config.dart';
 import '../../services/supabase_service.dart';
 import 'admin_dashboard_screen.dart';
 
@@ -100,13 +101,26 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final brand = BrandConfig.instance;
+
+    // Barbería: fondo oscuro, verde químico, estética cruda
+    // Salón: fondo rosa claro, rosa suave, estética elegante
+    final bgColor = brand.esBarberia ? const Color(0xFF111111) : const Color(0xFFFFF0F3);
+    final accentColor = brand.esBarberia ? const Color(0xFF4CAF50) : const Color(0xFFD4A0A0);
+    final labelColor = brand.esBarberia ? const Color(0xFF9E9E9E) : const Color(0xFF8B6B6B);
+    final textColor = brand.esBarberia ? Colors.white : const Color(0xFF4A3535);
+    final inputFill = brand.esBarberia ? const Color(0xFF1E1E1E) : Colors.white;
+    final borderColor = brand.esBarberia ? const Color(0xFF4CAF50).withAlpha(80) : const Color(0xFFD4A0A0).withAlpha(80);
+    final borderFocused = brand.esBarberia ? const Color(0xFF4CAF50) : const Color(0xFFD4A0A0);
+    final iconData = brand.esBarberia ? Icons.content_cut : Icons.spa;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0F3),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF0F3),
-        foregroundColor: const Color(0xFF8B6B6B),
+        backgroundColor: bgColor,
+        foregroundColor: labelColor,
         elevation: 0,
-        title: const Text('Administración', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        title: Text('Administración', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: labelColor)),
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -114,55 +128,55 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.spa, size: 56, color: Color(0xFFD4A0A0)),
+              Icon(iconData, size: 56, color: accentColor),
               const SizedBox(height: 28),
               TextField(
                 controller: _emailCtrl,
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  labelStyle: const TextStyle(color: Color(0xFF8B6B6B), fontSize: 16),
-                  prefixIcon: const Icon(Icons.email, color: Color(0xFFD4A0A0)),
+                  labelStyle: TextStyle(color: labelColor, fontSize: 16),
+                  prefixIcon: Icon(Icons.email, color: accentColor),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: inputFill,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: const Color(0xFFD4A0A0).withAlpha(80)),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFFD4A0A0), width: 2),
+                    borderSide: BorderSide(color: borderFocused, width: 2),
                   ),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: Color(0xFF4A3535), fontSize: 16),
+                style: TextStyle(color: textColor, fontSize: 16),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passCtrl,
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
-                  labelStyle: const TextStyle(color: Color(0xFF8B6B6B), fontSize: 16),
-                  prefixIcon: const Icon(Icons.lock, color: Color(0xFFD4A0A0)),
+                  labelStyle: TextStyle(color: labelColor, fontSize: 16),
+                  prefixIcon: Icon(Icons.lock, color: accentColor),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscure ? Icons.visibility_off : Icons.visibility,
-                      color: const Color(0xFFB89999),
+                      color: accentColor.withAlpha(160),
                     ),
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: inputFill,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: const Color(0xFFD4A0A0).withAlpha(80)),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFFD4A0A0), width: 2),
+                    borderSide: BorderSide(color: borderFocused, width: 2),
                   ),
                 ),
                 obscureText: _obscure,
-                style: const TextStyle(color: Color(0xFF4A3535), fontSize: 16),
+                style: TextStyle(color: textColor, fontSize: 16),
               ),
               const SizedBox(height: 12),
               Row(
@@ -173,15 +187,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     child: Checkbox(
                       value: _remember,
                       onChanged: (v) => setState(() => _remember = v ?? false),
-                      activeColor: const Color(0xFFD4A0A0),
+                      activeColor: accentColor,
+                      checkColor: brand.esBarberia ? Colors.black : Colors.white,
                     ),
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => setState(() => _remember = !_remember),
-                    child: const Text(
+                    child: Text(
                       'Recordar contraseña',
-                      style: TextStyle(color: Color(0xFF8B6B6B), fontSize: 14),
+                      style: TextStyle(color: labelColor, fontSize: 14),
                     ),
                   ),
                 ],
@@ -197,8 +212,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4A0A0),
-                    foregroundColor: Colors.white,
+                    backgroundColor: accentColor,
+                    foregroundColor: brand.esBarberia ? Colors.black : Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
