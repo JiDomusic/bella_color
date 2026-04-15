@@ -503,8 +503,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     _helpSection('Tu suscripcion', Icons.favorite, [
                       'Tenes 15 dias gratis para probar',
                       'Despues, el pago se vence el dia ${_tenant?.subscriptionDueDay ?? 18} de cada mes',
-                      'Si no pagas, tenes 5 dias de gracia',
-                      'Pasados los 5 dias, el sistema se bloquea',
+                      'Si no pagas el dia de vencimiento, el sistema se bloquea automaticamente',
                       'Contacta a soporte para reactivar',
                     ]),
                     const SizedBox(height: 16),
@@ -589,6 +588,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
       return const SizedBox.shrink();
     }
 
+    // Mostrar datos de pago cuando está por vencer o vencido
+    final mostrarDatosPago = status.daysRemaining <= 3 || !status.isActive;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -596,28 +598,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
         color: bannerColor.withAlpha(25),
         border: Border(bottom: BorderSide(color: bannerColor.withAlpha(60))),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: bannerColor, size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              status.message,
-              style: TextStyle(color: bannerColor, fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ),
-          if (!status.isActive)
-            GestureDetector(
-              onTap: () => WhatsappService.openSupport(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF25D366).withAlpha(30),
-                  borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Icon(icon, color: bannerColor, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  status.message,
+                  style: TextStyle(color: bannerColor, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
-                child: const Text('Soporte', style: TextStyle(color: Color(0xFF25D366), fontSize: 11, fontWeight: FontWeight.w600)),
+              ),
+              GestureDetector(
+                onTap: () => WhatsappService.openChat(
+                  phone: '3413363551',
+                  countryCode: '54',
+                  message: 'Hola! Soy de ${_tenant?.nombreSalon ?? 'mi salon'}. Ya hice la transferencia para la suscripcion mensual.',
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF25D366).withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Contactar', style: TextStyle(color: Color(0xFF25D366), fontSize: 11, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+          if (mostrarDatosPago) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(10),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: bannerColor.withAlpha(40)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Transferi a este alias y envia el comprobante por WhatsApp:',
+                    style: TextStyle(color: Colors.white.withAlpha(180), fontSize: 11),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.account_balance, color: bannerColor, size: 14),
+                      const SizedBox(width: 6),
+                      SelectableText(
+                        'Alias: programacion.jj',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
+          ],
         ],
       ),
     );

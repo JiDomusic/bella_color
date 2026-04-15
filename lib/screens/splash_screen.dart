@@ -561,14 +561,45 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                     style: const TextStyle(fontSize: 13, color: AppConfig.colorTextoSecundario),
                                     textAlign: TextAlign.center,
                                   ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withAlpha(8),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.orange.withAlpha(60)),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          'Para reactivar, transferi y envia el comprobante:',
+                                          style: TextStyle(fontSize: 12, color: Colors.white.withAlpha(180)),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SelectableText(
+                                          'Alias: programacion.jj',
+                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
-                              onPressed: () => WhatsappService.openSupport(),
+                              onPressed: () {
+                                final salonName = SupabaseService.instance.currentTenant?.nombreSalon ?? 'mi salon';
+                                WhatsappService.openChat(
+                                  phone: '3413363551',
+                                  countryCode: '54',
+                                  message: 'Hola! Soy de $salonName. Ya hice la transferencia para reactivar el sistema.',
+                                );
+                              },
                               icon: const Icon(Icons.chat, size: 18),
-                              label: const Text('Contactar Soporte'),
+                              label: const Text('Enviar comprobante por WhatsApp'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF25D366),
                                 minimumSize: const Size(double.infinity, 48),

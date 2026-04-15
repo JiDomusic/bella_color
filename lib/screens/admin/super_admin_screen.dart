@@ -27,7 +27,14 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
 
   Future<void> _loadTenants() async {
     try {
-      final tenants = await _svc.loadAllTenants();
+      final allTenants = await _svc.loadAllTenants();
+      // Filtrar por marca: en Juke-Box solo barberías, en Bella Color solo salones
+      final brand = BrandConfig.instance;
+      final tenants = allTenants.where((t) {
+        if (t.id == 'demo') return true; // demo siempre visible
+        if (brand.esBarberia) return t.esBarberia;
+        return !t.esBarberia; // salon
+      }).toList();
       if (mounted) setState(() { _tenants = tenants; _loading = false; });
     } catch (e) {
       if (mounted) setState(() => _loading = false);

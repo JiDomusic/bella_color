@@ -505,7 +505,10 @@ class SupabaseService {
 
     // Paso 2: Crear tenant via funcion SECURITY DEFINER
     final trialDays = 15;
-    final trialEndDate = DateTime.now().add(Duration(days: trialDays)).toIso8601String();
+    final trialEnd = DateTime.now().add(Duration(days: trialDays));
+    final trialEndDate = trialEnd.toIso8601String();
+    // El día de pago mensual = día del mes en que termina el trial
+    final dueDay = trialEnd.day;
     try {
       await _client.rpc('create_tenant', params: {
         'p_id': tenantId,
@@ -514,10 +517,11 @@ class SupabaseService {
         'p_subscription_start_date': DateTime.now().toIso8601String().substring(0, 10),
         'p_trial_days': trialDays,
       });
-      // Setear trial_end_date y categoria
+      // Setear trial_end_date, categoria y dia de pago
       await _client.from('tenants').update({
         'trial_end_date': trialEndDate,
         'categoria': categoria,
+        'subscription_due_day': dueDay,
       }).eq('id', tenantId);
     } catch (e) {
       // Limpiar usuario auth huerfano

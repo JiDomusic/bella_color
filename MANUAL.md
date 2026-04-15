@@ -361,10 +361,11 @@ Si la clienta ya tiene su codigo, puede tocarlo desde la pagina principal:
 ## SUSCRIPCION
 
 - Tenes **15 dias gratis** para probar el sistema
-- Despues de los 15 dias, el pago es mensual
-- Vas a ver un aviso en tu panel cuando se acerque el vencimiento
-- Si el pago se atrasa, el sistema se suspende automaticamente despues de 5 dias de gracia
-- Para reactivar, contactanos por WhatsApp
+- Despues de los 15 dias, el pago es mensual (se vence el mismo dia del mes en que termino tu prueba)
+- Vas a ver un aviso en tu panel cuando se acerque el vencimiento, con el alias para transferir
+- **El dia de vencimiento el sistema te avisa que vence HOY**
+- Si no pagas, **al dia siguiente el sistema se suspende automaticamente**
+- Para reactivar: transferi a **programacion.jj** y envia el comprobante por WhatsApp
 
 ---
 

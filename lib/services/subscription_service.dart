@@ -56,7 +56,8 @@ class SubscriptionService {
     }
 
     final now = DateTime.now();
-    final trialEnd = startDate.add(Duration(days: tenant.trialDays));
+    // El trial incluye el día completo del vencimiento (se bloquea recién al día siguiente)
+    final trialEnd = startDate.add(Duration(days: tenant.trialDays + 1));
 
     // Periodo de prueba
     if (now.isBefore(trialEnd)) {
@@ -66,49 +67,43 @@ class SubscriptionService {
         isBlocked: false,
         isTrial: true,
         daysRemaining: remaining,
-        message: remaining <= 3
-            ? 'Tu prueba gratis vence en $remaining dia${remaining == 1 ? '' : 's'}!'
-            : 'Prueba gratis: $remaining dias restantes',
+        message: remaining <= 0
+            ? 'Tu prueba gratis vence HOY! Transferi para no perder el acceso.'
+            : remaining <= 3
+                ? 'Tu prueba gratis vence en $remaining dia${remaining == 1 ? '' : 's'}!'
+                : 'Prueba gratis: $remaining dias restantes',
       );
     }
 
     // Despues del trial: calcular vencimiento mensual
     final dueDay = tenant.subscriptionDueDay;
-    var nextDue = DateTime(now.year, now.month, dueDay);
-    if (nextDue.isBefore(now)) {
-      // Ya paso el dia de vencimiento este mes
-      final daysPastDue = now.difference(nextDue).inDays;
-      if (daysPastDue > 5) {
-        // Mas de 5 dias de gracia -> AUTO-BLOQUEAR
-        return SubscriptionStatus(
-          isActive: false,
-          isBlocked: false,
-          isTrial: false,
-          shouldAutoBlock: true,
-          daysRemaining: -daysPastDue,
-          message: 'Pago vencido hace $daysPastDue dias. Sistema suspendido automaticamente.',
-        );
-      } else {
-        // Periodo de gracia
-        final graceDays = 5 - daysPastDue;
-        return SubscriptionStatus(
-          isActive: true,
-          isBlocked: false,
-          isTrial: false,
-          daysRemaining: graceDays,
-          message: 'Tu pago vencio el $dueDay de este mes. Tenes $graceDays dia${graceDays == 1 ? '' : 's'} de gracia.',
-        );
-      }
+    // Comparar solo por fecha (sin hora) para que el día completo de vencimiento sea válido
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDateThisMonth = DateTime(now.year, now.month, dueDay);
+
+    if (today.isAfter(dueDateThisMonth)) {
+      // Ya paso el dia de vencimiento -> AUTO-BLOQUEAR al día siguiente
+      final daysPastDue = today.difference(dueDateThisMonth).inDays;
+      return SubscriptionStatus(
+        isActive: false,
+        isBlocked: false,
+        isTrial: false,
+        shouldAutoBlock: true,
+        daysRemaining: -daysPastDue,
+        message: 'Pago vencido hace $daysPastDue dia${daysPastDue == 1 ? '' : 's'}. Sistema suspendido automaticamente.',
+      );
     } else {
-      // Aun no llego el dia de vencimiento
-      final daysUntilDue = nextDue.difference(now).inDays;
+      // Hoy es el dia de vencimiento o aún no llegó
+      final daysUntilDue = dueDateThisMonth.difference(today).inDays;
       return SubscriptionStatus(
         isActive: true,
         isBlocked: false,
         isTrial: false,
         daysRemaining: daysUntilDue,
         message: daysUntilDue <= 5
-            ? 'Tu pago vence en $daysUntilDue dia${daysUntilDue == 1 ? '' : 's'} (dia $dueDay)'
+            ? daysUntilDue == 0
+                ? 'Tu pago vence HOY (dia $dueDay)'
+                : 'Tu pago vence en $daysUntilDue dia${daysUntilDue == 1 ? '' : 's'} (dia $dueDay)'
             : '',
       );
     }
