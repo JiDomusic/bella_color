@@ -502,9 +502,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                     ]),
                     _helpSection('Tu suscripcion', Icons.favorite, [
                       'Tenes 15 dias gratis para probar',
-                      'Despues, el pago se vence el dia ${_tenant?.subscriptionDueDay ?? 18} de cada mes',
+                      'Al cumplirse los 15 dias, ese dia del mes sera tu fecha de pago todos los meses',
                       'Si no pagas el dia de vencimiento, el sistema se bloquea automaticamente',
-                      'Contacta a soporte para reactivar',
+                      'Para pagar: transferi a programacion.jj y envia el comprobante por WhatsApp',
                     ]),
                     const SizedBox(height: 16),
                     const Divider(color: Colors.white12),
@@ -2558,15 +2558,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
                         'onboarding_completed': true,
                       });
 
-                      // Bonus: +5 días de prueba por completar onboarding
-                      final wasFirst = !(_tenant?.trialExtended ?? false);
-                      if (wasFirst) {
-                        final extended = await SupabaseService.instance.extendTrialForOnboarding();
-                        if (extended && ctx.mounted) {
-                          _showTrialGiftDialog(ctx);
-                        }
-                      }
-
                       setState(() => _loading = true);
                       await _loadAll();
                     } catch (e) {
@@ -3131,14 +3122,8 @@ class _SalonConfigTabState extends State<_SalonConfigTab> {
         'onboarding_completed': true,
       });
 
-      // Bonus: +5 días de prueba por completar onboarding
-      final extended = await SupabaseService.instance.extendTrialForOnboarding();
-
       widget.onSaved();
       if (mounted) {
-        if (extended) {
-          _showTrialGiftDialog(context);
-        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: const Text('Configuracion guardada'), backgroundColor: widget.accent),
         );

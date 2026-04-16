@@ -1008,7 +1008,10 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
 
   // Page 3: Client Data
   Widget _buildDataPage() {
-    return ListView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Text('Tus datos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: _primary)),
@@ -1076,6 +1079,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
           ],
         ),
       ],
+    ),
+    ),
     );
   }
 
@@ -1269,7 +1274,9 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
         children: [
           Icon(icon, size: 16, color: _primary),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(fontSize: 13, color: Colors.grey.shade800)),
+          Expanded(
+            child: Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+          ),
         ],
       ),
     );
