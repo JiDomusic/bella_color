@@ -76,28 +76,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       // Check subscription
       final status = SubscriptionService.check(tenant);
 
-      // Auto-bloqueo: si vencio el periodo de gracia, bloquear automaticamente
+      // Auto-bloqueo: si vencio el periodo de gracia, marcar tenant bloqueado
+      // (esto NO corta las reservas públicas, solo el admin dashboard)
       if (status.shouldAutoBlock && !tenant.isBlocked) {
         await svc.blockTenant(tenant.id, 'Bloqueado automaticamente por falta de pago');
-        if (tenant.whatsappNumero.isNotEmpty) {
-          WhatsappService.openChat(
-            phone: tenant.whatsappNumero,
-            countryCode: tenant.codigoPaisTelefono,
-            message: 'Hola ${tenant.nombreSalon}! Tu sistema de turnos fue suspendido por falta de pago. '
-                'Contacta a ${AppConfig.nombreEmpresa} al ${AppConfig.whatsappSoporte} para reactivarlo.',
-          );
-        }
       }
 
-      if (!status.isActive || tenant.isBlocked || status.shouldAutoBlock) {
-        setState(() {
-          _blocked = true;
-          _blockMessage = status.message.isNotEmpty
-              ? status.message
-              : 'Sistema bloqueado. Contacta a soporte para reactivar.';
-        });
-        return;
-      }
+      final tenantBloqueado = !status.isActive || tenant.isBlocked || status.shouldAutoBlock;
 
       // Verificar que el usuario logueado sea el admin de ESTE tenant
       var isAdmin = false;
@@ -115,6 +100,27 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           await svc.signOut();
         }
       }
+
+      // Si el tenant está bloqueado, solo bloquear el acceso ADMIN.
+      // Las reservas públicas siguen entrando con normalidad.
+      if (tenantBloqueado && isAdmin) {
+        if (status.shouldAutoBlock && tenant.whatsappNumero.isNotEmpty) {
+          WhatsappService.openChat(
+            phone: tenant.whatsappNumero,
+            countryCode: tenant.codigoPaisTelefono,
+            message: 'Hola ${tenant.nombreSalon}! Tu sistema de turnos fue suspendido por falta de pago. '
+                'Contacta a ${AppConfig.nombreEmpresa} al ${AppConfig.whatsappSoporte} para reactivarlo.',
+          );
+        }
+        setState(() {
+          _blocked = true;
+          _blockMessage = status.message.isNotEmpty
+              ? status.message
+              : 'Sistema bloqueado. Contacta a soporte para reactivar.';
+        });
+        return;
+      }
+
       final destination = isAdmin ? const AdminDashboardScreen() : const HomeScreen();
 
       Navigator.of(context).pushReplacement(

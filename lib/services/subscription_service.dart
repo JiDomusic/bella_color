@@ -74,8 +74,10 @@ class SubscriptionService {
         isBlocked: false,
         isTrial: false,
         daysRemaining: daysUntilDue,
-        message: daysUntilDue <= 6
-            ? 'Tu proximo pago vence en $daysUntilDue dia${daysUntilDue == 1 ? '' : 's'} (dia $dueDay)'
+        message: daysUntilDue <= 1
+            ? daysUntilDue == 0
+                ? 'Tu pago vence HOY (dia $dueDay). Transferi antes de mañana.'
+                : 'Tu pago vence mañana (dia $dueDay). Transferi para no perder el acceso.'
             : '',
       );
     }
@@ -142,10 +144,10 @@ class SubscriptionService {
         isBlocked: false,
         isTrial: false,
         daysRemaining: daysUntilDue,
-        message: daysUntilDue <= 6
+        message: daysUntilDue <= 1
             ? daysUntilDue == 0
-                ? 'Tu pago vence HOY (dia $dueDay)'
-                : 'Tu pago vence en $daysUntilDue dia${daysUntilDue == 1 ? '' : 's'} (dia $dueDay)'
+                ? 'Tu pago vence HOY (dia $dueDay). Transferi antes de mañana.'
+                : 'Tu pago vence mañana (dia $dueDay). Transferi para no perder el acceso.'
             : '',
       );
     }

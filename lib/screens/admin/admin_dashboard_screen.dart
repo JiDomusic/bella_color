@@ -581,7 +581,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     } else if (status.isTrial) {
       bannerColor = Colors.amber;
       icon = Icons.card_giftcard;
-    } else if (status.daysRemaining <= 5) {
+    } else if (status.daysRemaining <= 1) {
       bannerColor = Colors.orange;
       icon = Icons.warning_amber;
     } else {
@@ -589,7 +589,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Ticker
     }
 
     // Mostrar datos de pago cuando está por vencer o vencido
-    final mostrarDatosPago = status.daysRemaining <= 3 || !status.isActive;
+    final mostrarDatosPago = status.daysRemaining <= 1 || !status.isActive;
 
     return Container(
       width: double.infinity,
