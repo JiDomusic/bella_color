@@ -57,7 +57,28 @@ class SubscriptionService {
 
     final now = DateTime.now();
     // El trial incluye el día completo del vencimiento (se bloquea recién al día siguiente)
-    final trialEnd = startDate.add(Duration(days: tenant.trialDays + 1));
+    final trialEnd = startDate.add(Duration(days: tenant.trialDays + 2));
+
+    // Si el super admin ya registró un pago, salteamos el trial: el cliente pagó
+    // y ya no necesita ver el aviso de "prueba gratis".
+    if (tenant.lastPaymentDate != null && now.isBefore(trialEnd)) {
+      final dueDay = tenant.subscriptionDueDay;
+      final today = DateTime(now.year, now.month, now.day);
+      DateTime nextDue = DateTime(now.year, now.month, dueDay);
+      if (!nextDue.isAfter(today)) {
+        nextDue = DateTime(now.year, now.month + 1, dueDay);
+      }
+      final daysUntilDue = nextDue.difference(today).inDays;
+      return SubscriptionStatus(
+        isActive: true,
+        isBlocked: false,
+        isTrial: false,
+        daysRemaining: daysUntilDue,
+        message: daysUntilDue <= 6
+            ? 'Tu proximo pago vence en $daysUntilDue dia${daysUntilDue == 1 ? '' : 's'} (dia $dueDay)'
+            : '',
+      );
+    }
 
     // Periodo de prueba
     if (now.isBefore(trialEnd)) {
@@ -82,7 +103,28 @@ class SubscriptionService {
     final dueDateThisMonth = DateTime(now.year, now.month, dueDay);
 
     if (today.isAfter(dueDateThisMonth)) {
-      // Ya paso el dia de vencimiento -> AUTO-BLOQUEAR al día siguiente
+      // Ya paso el dia de vencimiento. Si el super admin ya registró el pago
+      // (last_payment_date >= dueDateThisMonth), tratar como pago al día:
+      // activo hasta el vencimiento del PRÓXIMO mes.
+      final lastPayment = tenant.lastPaymentDate;
+      if (lastPayment != null) {
+        final lastPaymentDay = DateTime(lastPayment.year, lastPayment.month, lastPayment.day);
+        if (!lastPaymentDay.isBefore(dueDateThisMonth)) {
+          final nextMonth = DateTime(now.year, now.month + 1, dueDay);
+          final daysUntilNext = nextMonth.difference(today).inDays;
+          return SubscriptionStatus(
+            isActive: true,
+            isBlocked: false,
+            isTrial: false,
+            daysRemaining: daysUntilNext,
+            message: daysUntilNext <= 6
+                ? 'Tu proximo pago vence en $daysUntilNext dia${daysUntilNext == 1 ? '' : 's'} (dia $dueDay)'
+                : '',
+          );
+        }
+      }
+
+      // Ya paso el dia de vencimiento y no hay pago registrado -> AUTO-BLOQUEAR
       final daysPastDue = today.difference(dueDateThisMonth).inDays;
       return SubscriptionStatus(
         isActive: false,
@@ -100,7 +142,7 @@ class SubscriptionService {
         isBlocked: false,
         isTrial: false,
         daysRemaining: daysUntilDue,
-        message: daysUntilDue <= 5
+        message: daysUntilDue <= 6
             ? daysUntilDue == 0
                 ? 'Tu pago vence HOY (dia $dueDay)'
                 : 'Tu pago vence en $daysUntilDue dia${daysUntilDue == 1 ? '' : 's'} (dia $dueDay)'

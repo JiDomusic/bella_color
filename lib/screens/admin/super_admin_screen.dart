@@ -441,6 +441,59 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     }
   }
 
+  _SubInfo _subscriptionInfo(Tenant t) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startDateStr = t.subscriptionStartDate;
+    final startDate = (startDateStr != null && startDateStr.isNotEmpty)
+        ? DateTime.tryParse(startDateStr)
+        : null;
+    final trialEnd = startDate?.add(Duration(days: t.trialDays + 2));
+    final dueDay = t.subscriptionDueDay;
+    final lastPayment = t.lastPaymentDate;
+
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+    String vencimientoLabel;
+    String vencimientoTexto;
+    Color vencimientoColor;
+
+    // En trial sin pago registrado → mostrar fin de prueba
+    if (lastPayment == null && trialEnd != null && now.isBefore(trialEnd)) {
+      final dias = trialEnd.difference(now).inDays;
+      vencimientoLabel = 'Fin prueba:';
+      vencimientoTexto = '${fmt(trialEnd)} ($dias d)';
+      vencimientoColor = dias <= 3 ? Colors.orange : Colors.white;
+    } else {
+      // Post-trial o con pago registrado → próximo vencimiento mensual
+      DateTime nextDue = DateTime(now.year, now.month, dueDay);
+      if (!nextDue.isAfter(today)) {
+        // Si ya pasó este mes Y hay pago registrado de este ciclo, el próximo es el mes siguiente
+        final pagoThisCycle = lastPayment != null &&
+            !DateTime(lastPayment.year, lastPayment.month, lastPayment.day).isBefore(nextDue);
+        if (pagoThisCycle) {
+          nextDue = DateTime(now.year, now.month + 1, dueDay);
+        }
+      }
+      final dias = nextDue.difference(today).inDays;
+      vencimientoLabel = 'Vence:';
+      vencimientoTexto = '${fmt(nextDue)} ($dias d)';
+      vencimientoColor = dias < 0
+          ? Colors.red
+          : dias <= 3
+              ? Colors.orange
+              : Colors.white;
+    }
+
+    return _SubInfo(
+      vencimientoLabel: vencimientoLabel,
+      vencimientoTexto: vencimientoTexto,
+      vencimientoColor: vencimientoColor,
+      ultimoPagoTexto: lastPayment != null ? fmt(lastPayment) : '—',
+    );
+  }
+
   Future<void> _toggleBlock(Tenant t) async {
     if (t.isBlocked) {
       // Desbloquear
@@ -575,6 +628,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
     final trialEnd = t.trialEndDate;
     final trialDays = trialEnd != null ? trialEnd.difference(DateTime.now()).inDays : t.trialDays;
     final trialExpired = trialDays < 0;
+    final subInfo = _subscriptionInfo(t);
 
     return Card(
       color: AppConfig.colorFondoCard,
@@ -687,6 +741,53 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+            // Fechas de suscripción
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(8),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withAlpha(15)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.event_available, size: 14, color: Colors.white.withAlpha(140)),
+                      const SizedBox(width: 6),
+                      Text(subInfo.vencimientoLabel, style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 11)),
+                      const SizedBox(width: 4),
+                      Text(
+                        subInfo.vencimientoTexto,
+                        style: TextStyle(
+                          color: subInfo.vencimientoColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 14, color: Colors.white.withAlpha(140)),
+                      const SizedBox(width: 6),
+                      Text('Último pago: ', style: TextStyle(color: Colors.white.withAlpha(160), fontSize: 11)),
+                      Text(
+                        subInfo.ultimoPagoTexto,
+                        style: TextStyle(
+                          color: t.lastPaymentDate != null ? Colors.green.shade300 : Colors.white.withAlpha(120),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 8),
             // Action buttons
             Row(
@@ -698,6 +799,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
                     color: t.isBlocked ? Colors.pink.shade300 : Colors.green,
                     size: 20,
                   ),
+                  tooltip: t.isBlocked ? 'Desbloquear (registrar pago)' : 'Bloquear (falta de pago)',
                   onPressed: () => _toggleBlock(t),
                 ),
                 TextButton.icon(
@@ -839,4 +941,18 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> {
       ],
     );
   }
+}
+
+class _SubInfo {
+  final String vencimientoLabel;
+  final String vencimientoTexto;
+  final Color vencimientoColor;
+  final String ultimoPagoTexto;
+
+  _SubInfo({
+    required this.vencimientoLabel,
+    required this.vencimientoTexto,
+    required this.vencimientoColor,
+    required this.ultimoPagoTexto,
+  });
 }

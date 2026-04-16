@@ -142,6 +142,7 @@ class SupabaseService {
         'is_blocked': false,
         'blocked_at': null,
         'block_reason': '',
+        'last_payment_date': DateTime.now().toIso8601String().substring(0, 10),
       }).eq('id', id);
     }
   }

@@ -32,6 +32,7 @@ class Tenant {
   final String? adminUserId;
   final String? subscriptionStartDate;
   final int subscriptionDueDay;
+  final DateTime? lastPaymentDate;
   final bool isBlocked;
   final DateTime? blockedAt;
   final String blockReason;
@@ -90,6 +91,7 @@ class Tenant {
     this.adminUserId,
     this.subscriptionStartDate,
     this.subscriptionDueDay = 18,
+    this.lastPaymentDate,
     this.isBlocked = false,
     this.blockedAt,
     this.blockReason = '',
@@ -166,6 +168,7 @@ class Tenant {
       adminUserId: json['admin_user_id'],
       subscriptionStartDate: json['subscription_start_date'],
       subscriptionDueDay: json['subscription_due_day'] ?? 18,
+      lastPaymentDate: json['last_payment_date'] != null ? DateTime.tryParse(json['last_payment_date']) : null,
       isBlocked: json['is_blocked'] ?? false,
       blockedAt: json['blocked_at'] != null ? DateTime.tryParse(json['blocked_at']) : null,
       blockReason: json['block_reason'] ?? '',
@@ -224,6 +227,7 @@ class Tenant {
     'admin_user_id': adminUserId,
     'subscription_start_date': subscriptionStartDate,
     'subscription_due_day': subscriptionDueDay,
+    'last_payment_date': lastPaymentDate?.toIso8601String().substring(0, 10),
     'is_blocked': isBlocked,
     'block_reason': blockReason,
     'trial_days': trialDays,
